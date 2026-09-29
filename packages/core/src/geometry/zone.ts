@@ -18,6 +18,7 @@ import {
   shapesArea,
 } from './clip';
 import { signedArea } from './polygon';
+import { recoverArcEdges, type EdgeSources } from './zoneArcs';
 import { add, cross, dot, len, neg, normalize, perp, scale, sub, type Vec2 } from './vec';
 
 export interface ZoneEdge {
@@ -61,6 +62,8 @@ export type ZoneWarning =
 
 export interface ZoneResult {
   shapes: Shape[];
+  /** Parallel to `shapes`: which outline arc edge each ring edge lies on (null = not an arc). */
+  edgeSources: EdgeSources[];
   warnings: ZoneWarning[];
 }
 
@@ -226,5 +229,5 @@ export function buildZone(input: ZoneInput): ZoneResult {
   }
 
   if (shapes.length === 0 || shapesArea(shapes) <= EPS) warnings.push({ code: 'emptyZone' });
-  return { shapes, warnings };
+  return { shapes, edgeSources: recoverArcEdges(shapes, input.outline, input.edges), warnings };
 }

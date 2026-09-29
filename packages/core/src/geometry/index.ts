@@ -5,3 +5,4 @@ export * from './arcs';
 export * from './frames';
 export * from './clip';
 export * from './zone';
+export * from './zoneArcs';
