@@ -157,6 +157,25 @@ describe('segmentIntersection', () => {
   });
 });
 
+describe('segmentIntersection: degenerate segments (regression, fast-check seed 1516081221)', () => {
+  it('a point off the other segment does not intersect it, in either argument order', () => {
+    const seg = [vec(0, 0), vec(2, 0)] as const;
+    const pt = vec(2, 20);
+    expect(segmentIntersection(pt, pt, seg[0], seg[1]).kind).toBe('none');
+    expect(segmentIntersection(seg[0], seg[1], pt, pt).kind).toBe('none');
+  });
+
+  it('a point on the other segment intersects it, in either argument order', () => {
+    expect(segmentIntersection(vec(1, 0), vec(1, 0), vec(0, 0), vec(2, 0)).kind).toBe('overlap');
+    expect(segmentIntersection(vec(0, 0), vec(2, 0), vec(1, 0), vec(1, 0)).kind).toBe('overlap');
+  });
+
+  it('two identical points intersect; two different points do not', () => {
+    expect(segmentIntersection(vec(3, 3), vec(3, 3), vec(3, 3), vec(3, 3)).kind).toBe('overlap');
+    expect(segmentIntersection(vec(3, 3), vec(3, 3), vec(4, 3), vec(4, 3)).kind).toBe('none');
+  });
+});
+
 describe('pointSegmentDist', () => {
   it('perpendicular, endpoint and degenerate cases', () => {
     expect(pointSegmentDist(vec(5, 3), vec(0, 0), vec(10, 0))).toBe(3);

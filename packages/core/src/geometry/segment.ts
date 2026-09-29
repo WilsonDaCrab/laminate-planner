@@ -21,15 +21,24 @@ export function segmentIntersection(p: Vec2, p2: Vec2, q: Vec2, q2: Vec2): Segme
   // Scale the tolerance by the segment lengths so that it works in mm regardless of size.
   const parallelTol = EPS * Math.sqrt(rLen2 * sLen2);
 
-  if (Math.abs(rxs) <= parallelTol) {
-    if (Math.abs(cross(qp, r)) > EPS * Math.sqrt(rLen2)) return { kind: 'none' }; // parallel, apart
+  // Degenerate (zero-length) segments are points: test them against the other segment directly,
+  // because the cross-product tests below say nothing when a direction vector is zero.
+  if (rLen2 === 0 || sLen2 === 0) {
     if (rLen2 === 0 && sLen2 === 0) {
       return qp.x * qp.x + qp.y * qp.y <= EPS * EPS
         ? { kind: 'overlap', from: p, to: p }
         : { kind: 'none' };
     }
-    // Collinear: project q, q2 onto p→p2 (or the reverse when the first is degenerate).
-    const [a, a2, b, b2] = rLen2 > 0 ? [p, p2, q, q2] : [q, q2, p, p2];
+    const [pt, a, b] = rLen2 === 0 ? [p, q, q2] : [q, p, p2];
+    return pointSegmentDist(pt, a, b) <= EPS
+      ? { kind: 'overlap', from: pt, to: pt }
+      : { kind: 'none' };
+  }
+
+  if (Math.abs(rxs) <= parallelTol) {
+    if (Math.abs(cross(qp, r)) > EPS * Math.sqrt(rLen2)) return { kind: 'none' }; // parallel, apart
+    // Collinear: project q, q2 onto p→p2.
+    const [a, a2, b, b2] = [p, p2, q, q2];
     const d = sub(a2, a);
     const dLen2 = dot(d, d);
     const tb = dot(sub(b, a), d) / dLen2;
