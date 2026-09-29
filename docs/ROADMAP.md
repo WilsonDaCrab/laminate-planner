@@ -54,22 +54,22 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F3. Dekoders, novērtētājs, robežas, validētājs, griešanas saraksts (~5–7 d)
 
-- [ ] `plan`: A posms (`maxPairs`), B posms (B.1, B.2), C posms (best fit), atlikumu krājums ar profilu karogiem, `Plan` ar `placements`
-- [ ] `geometry/zone`: `sourceEdge` atjaunošana pēc Clipper operācijām (atlikta no F1, ADR-011): zonas malām jānorāda, kura sākotnējā loka mala tās ir, ģeometriski (galapunkti uz koncentriskā loka r ± g ar `ARC_TOL`); kritērijs — pusapaļa erkera zonā visas loka malas atpazītas, taisnās nav
-- [ ] `plan`: gabalu pazīmes — slīpi griezumi, robi, strēmeles pēc sienas, līkumoti griezumi (`curveCut` ar ordinātām); caurules → `drill`
-- [ ] `plan/onsite`: secīgais dekoders (`ALGORITHM.md` §4.5)
-- [ ] `evaluate`: f(φ) — B (bez objektiem), V (ātrais + precīzais ceļš), H, R, N; derīgums
-- [ ] `bounds`: LB0, LB1 (ar lūzumpunktiem)
-- [ ] `validate`: visas §11 pārbaudes, pārkāpumu kodi
-- [ ] `cutlist`: griešanas secība katram dēlim (garengriezumi, tad šķērsgriezumi), atdura grupēšana, klāšanas secība pa rindām, marķējumi; izvades izmēri ar stingru `Math.floor` (`num.floorMm` pieļauj +1e-6 mm, sk. ADR-011), lai gabals nekad nav garāks par vietu
-- [ ] `render/svg`: telpa + plāns + marķējumi kā SVG teksts
+- [x] `plan`: A posms (`maxPairs`), B posms (B.1, B.2), C posms (best fit), atlikumu krājums ar profilu karogiem, `Plan` ar `placements`
+- [x] `geometry/zone`: `sourceEdge` atjaunošana pēc Clipper operācijām (atlikta no F1, ADR-011): zonas malām jānorāda, kura sākotnējā loka mala tās ir, ģeometriski (galapunkti uz koncentriskā loka r ± g ar `ARC_TOL`); kritērijs — pusapaļa erkera zonā visas loka malas atpazītas, taisnās nav
+- [x] `plan`: gabalu pazīmes — slīpi griezumi, robi, strēmeles pēc sienas, līkumoti griezumi (`curveCut` ar ordinātām); caurules → `drill`
+- [x] `plan/onsite`: secīgais dekoders (`ALGORITHM.md` §4.5)
+- [x] `evaluate`: f(φ) — B (kopīgs dekodera kodols ar `buildPlan`; ātrā typed-array versija F5, sk. ADR-013), V (ātrais + precīzais ceļš), H, R, N; derīgums
+- [x] `bounds`: LB0, LB1 (ar lūzumpunktiem)
+- [x] `validate`: visas §11 pārbaudes, pārkāpumu kodi
+- [x] `cutlist`: griešanas secība katram dēlim (garengriezumi, tad šķērsgriezumi), atdura grupēšana, klāšanas secība pa rindām, marķējumi; izvades izmēri ar stingru `Math.floor` (`num.floorMm` pieļauj +1e-6 mm, sk. ADR-011), lai gabals nekad nav garāks par vietu
+- [x] `render/svg`: telpa + plāns + marķējumi kā SVG teksts
 
 **Kritēriji:**
 
 - vienībtests: `maxPairs` sakrīt ar pilno pārlasi (visas pārošanas) nejaušām mazām kopām (n ≤ 8);
 - īpašību tests (nejaušas telpas × nejaušas φ ∈ F): `evaluate.B === plan.boards.length === validate.boards`; validētājs neziņo pārkāpumus, izņemot nobīdi, ja V > 0; `LB ≤ B`;
 - V = 0 ⇔ validētājs neziņo par nobīdi;
-- ar roku pārbaudīts SVG trim instancēm (taisnstūris, L, trapece).
+- ar roku pārbaudīts SVG trim instancēm (taisnstūris, L, trapece). **Gaida lietotāja pārbaudi:** `pnpm -F @lp/bench render-samples` → `results/f3/*.svg`.
 
 ## F4. Bāzes metodes, CLI, vizualizācija (~2–3 d)
 

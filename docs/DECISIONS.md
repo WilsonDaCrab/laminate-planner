@@ -136,3 +136,27 @@ Aprēķini notiek klientā Web Worker. Serveris nav vajadzīgs.
 - **Neatkarīgs orākuls.** Testi `layout/fixtures/oracle.ts` rēķina gabalu atvērtos garumus no Clipper gabalu formām un kaimiņu segmentu īstajām malām (bez `describePieces`); ar to pārbauda `openLow/openHigh` un „φ ∈ F_s ⇒ L_min” arī vispārīgajam ceļam (nevis tikai ar to pašu predikātu, ar kuru skenē).
 - **Zināmi ierobežojumi.** (a) `sample` neizvēlas izolēto punktu `[0, 0]` (bez šuves, viens `free` gabals), jo tā mērs ir 0; F5 SA sākuma risinājumam un gājieniem to jāņem vērā (`contains`/`project` to sasniedz). (b) Modelis neprasa veselus mm (`z.number()`), jo loku un slīpumu koordinātes var būt daļskaitļi; veselo mm prasību (CLAUDE.md #3) nodrošina redaktors (F8). (c) Slīpu segmentu „gabali klāj bez sprauga” tests izmanto režģa pielaidi (0,005·L·2 uz šuvi), tāpēc nemana < ~10 mm² spraugas; taisnleņķa segmentiem pielaide ir 0,02 mm². (d) Durvju integritāte pārbauda arī vienas malas savienojumu ar sevi un pārklājošās ailas.
 - **Neatrisināts / vēlāk:** (1) `extent` pārošana slīpiem/`complex` segmentiem var būt aptuvena (F14); (2) `sourceEdge` atjaunošana pēc Clipper (F3); (3) daļēji atvērtas malas (pārklājums ne visā garumā) noved segmentu uz vispārīgo ceļu, kas ir lēnāks, bet pareizs.
+
+## ADR-013 — Dekoders, novērtētājs, robežas, validētājs, griešanas saraksts (F3) (2026-09-29)
+
+**Konteksts.** F3 uzbūvē visu, kas no fāzēm φ dod dēļu skaitu un plānu, un neatkarīgu pārbaudi. Galvenais risks ir CLAUDE.md 5. noteikums: `evaluate.B === plan.boards.length === validate.boards`.
+
+**Lēmumi.**
+
+- **Viens dekodera kodols.** `evaluate` un `buildPlan` izsauc vienu un to pašu `decodeLabelled` (`plan/run.ts`), tāpēc B sakrīt pēc konstrukcijas. Ātrā typed-array versija (≥ 100 000 nov./s) ir F5 uzdevums ar tiem pašiem ekvivalences testiem; ROADMAP F3 formulējums "bez objektiem" tika precizēts.
+- **Dekodera modelis.** Katrs dēlis ir taisnstūris L × W; A un B posmu visi gabali ir "joslas" (strips), un atlikumi ir taisnstūri ar profilu karogiem `left/right/low/high` (kuras malas ir dēļa oriģinālās). C posms un secīgais dekoders izmanto vienu best-fit funkciju (`placeBestFit`). Pārošana slīpiem gabaliem pēc `extent` (konservatīvi, precīzā ir F14).
+- **Validētājs ir neatkarīgs.** Tas pārrēķina zonu no `Project` (Room→ZoneInput kartējums atkārtots tīši, tests pārbauda sakritību) un savienojumus, šuves un `I_st` nolasa no gabalu precīzajām formām, izmantojot `Plan.frame`. Dēļa forma tiek pārbaudīta kā tīra pārbīde (bez rotācijas).
+- **Šuvju nobīde.** Konflikts, ja abas šuves ir `I_st` paplašinātā par D un `|x − x′| < D` (ALGORITHM §5). Validētājs izmanto pielaidi 0,01 mm (Clipper režģis), tāpēc `V = 0 ⇔` nav `stagger` pārkāpuma var atšķirties tikai šaurā logā ap `D`. Tests to pārbauda ar nejaušām un ar mērķtiecīgi sašķeltām φ.
+- **Clipper režģa pielaide** 0,01 mm gabalu formu un dēļa taisnstūra salīdzinājumā (novirze līdz ~0,005 mm arī taisnstūrī, jo šuves ir patvaļīgi float).
+- **LB1** tiek rēķināts pa kandidātlīmeņiem (virsotņu augstumi, 0, W) ar slēgtām kopām; griesti atlaiž režģa troksni (0,01 mm × segmentu skaits), lai robeža nekad nepārsniegtu patieso vērtību. Taisnstūriem sakrīt ar slēgto formulu astoņiem y0.
+- **Marķējumi** pēc DOMAIN §10 (`S`, `B`, `NN`, segmenta burts tikai ar vairākiem segmentiem). Sākotnējā realizācija (`E`, `M<n>`) nesakrita ar DOMAIN un tika izlabota.
+- **Griešanas saraksts.** Dēļa novietojumi ir guillotine izkārtojums: rekursīvi vispirms garengriezumi, tad šķērsgriezumi; visi izmēri `Math.floor`. Katra gabalu grupa tiek mērīta no sava apgabala sākuma ("sablīvēta"), citādi šaurs atlikums starp gabaliem dod negatīvu griezumu (regresijas tests).
+- **ESLint labojums (F0 kļūda).** Validētāja noteikuma `group` raksts `'..'` (gitignore semantika) sakrita ar jebkuru `../…` importu, tāpēc `validate/` nevarēja importēt `geometry` un `model`. Aizstāts ar precīziem `paths` un `regex`; pārbaudīts ar tīšiem pārkāpumiem.
+
+**Atklājumi un zināmie ierobežojumi.**
+
+- **Iepriekšējā griešana bez B.3 ir vājāka par secīgo dekoderu** uz reālām instancēm (sk. mērījumu ALGORITHM §4.2), jo strēmeles nevar izmantot A posma atlikumus. Jāizlemj, vai B.3 velk uz priekšu no F14 pirms F5/F6 eksperimentiem. `B_onsite ≥ B_precut` ir pierādīts un testēts tikai tīrai pilna platuma klasei.
+- **y0 netiek filtrēts** (F5 ārējā cilpa): plāns ar nelabvēlīgu y0 var pārkāpt `w_min`; validētājs to ziņo. Testos izmanto `goodY0`.
+- **Apaļas kolonnas** caurums gabalā šobrīd bez pazīmes (`cutout`); `curveCut` ir tikai kontūras lokiem (`sourceEdge`). Pirmās/pēdējās joslas gabaliem, kur loks pieskaras horizontālei, `curveCut` mala var būt `low`/`high`.
+- `w_min` validētājs pārbauda tikai asīm paralēlas strēmeles (slīpas sienas strēmeles ir scribe).
+- Sarežģītu segmentu gabalam var būt vairākas komponentes (`PlannedPiece.parts`); dekoderā tas ir viens taisnstūris.

@@ -160,6 +160,8 @@ Slīpiem gabaliem A posms izmanto `extent` (konservatīvi, taisnstūra griezums 
 3. Atlikumi (garengriezuma atlikusī strēmele `W − w − k`, garuma atlikumi) ar pareiziem profilu karogiem nonāk krājumā C posmam.
 4. **B.3 (F14).** Pirms B.1 mēģina strēmeļu gabalus izvietot A posma atlikumos (best fit), un tikai pēc tam pāro strēmeles.
 
+   **Mērījums (F3).** Bez B.3 iepriekšējās griešanas dekoders uz reālām instancēm bieži dod *vairāk* dēļu nekā secīgais dekoders (§4.5), jo tas strēmeles jau izmanto iepriekšējo gabalu atlikumus. 200 nejaušām φ ∈ F (sēklas 1–200, noklusējuma y0): `B_onsite < B_precut` R1 112, R2 73, L1 31, U1 6, S1 30, S2 161, C1 29, C2 14 reizes; vidēji R1 55,52 pret 56,13, S2 39,83 pret 40,90. Tātad kursa eksperimentā "cik ietaupa iepriekšēja griešana" (F6) bez B.3 rezultāts var iznākt negaidīts; to jāizlemj pirms F5/F6.
+
 ### 4.3 C posms — brīvie gabali (short = free vai long = none)
 
 Sakārto pēc laukuma dilstoši. Katram gabalam izvēlas **best fit** krājumā: mazākais atlikums, kam ir vajadzīgie profili, platums ≥ w un garums ≥ ℓ. Gabalu griež no atbilstošā gala, un atlikumu atgriež krājumā. Ja nekas neder, atver jaunu dēli (`B_C += 1`), un tā atlikums nonāk krājumā.
@@ -169,7 +171,8 @@ Sakārto pēc laukuma dilstoši. Katram gabalam izvēlas **best fit** krājumā:
 - `B = B_A + B_B + B_C`.
 - Plāns: dēļi ar `placements` (taisnstūri dēļa koordinātās). Dēļu numurus piešķir griešanai ērtā secībā (grupēti pēc griezuma garuma).
 - **Determinisms:** visas kārtošanas ir stabilas ar sasaisti pēc gabala ID.
-- Novērtētājs (`evaluate`) izpilda to pašu loģiku bez objektiem (typed arrays) un atgriež B, nesapārotos sarakstus (N un M4 vajadzībām) un statistiku. Īpašību tests: `evaluate(φ).B === plan(φ).boards.length === validate(plan).boards`.
+- Novērtētājs (`evaluate`) un plāna konstruktors (`buildPlan`) izmanto **vienu dekodera kodolu** (`plan/decode.ts`, izvēli pēc režīma dara `plan/run.ts`), tāpēc B sakrīt pēc konstrukcijas; `evaluate` atgriež arī nesapārotos sarakstus (N un M4 vajadzībām) un statistiku. Ātrā versija bez objektiem (typed arrays) ir F5 uzdevums, ar tiem pašiem ekvivalences testiem. Īpašību tests: `evaluate(φ).B === plan(φ).boards.length === validate(plan).boards`.
+- Dēļa novietojums (`boardRect`): sākuma gabals pie dēļa labā gala, beigu gabals pie kreisā, apakšmalas profils pie `y = 0`, augšmalas pie `y = W`; pirmās rindas strēmele (`long = high`) sēž dēļa augšā, pēdējās (`low`) apakšā.
 
 ### 4.5 Secīgais režīms (`mode: onsite`)
 
@@ -180,6 +183,7 @@ Modelē klāšanu bez iepriekšējas griešanas: atgriezumu var izmantot tikai v
 - Sākuma gabals s: best fit no `stackS` (mazākais ≥ s); citādi jauns dēlis, un kreisā daļa `L − s − k` nonāk `stackE`.
 - Beigu gabals e: best fit no `stackE`; citādi jauns dēlis, un labā daļa `L − e − k` nonāk `stackS`.
 - Strēmeles un brīvie gabali analogi, ievērojot platumus.
+- **Realizācija** (`decodeSequential`, `decodeOnsite`): viens best-fit cikls pār visiem gabaliem klāšanas secībā; atlikumi ar profilu karogiem (`left/right/low/high`) aizstāj abas kaudzes, un A/B pārošanas nav. `B_onsite ≥ B_precut` ir pierādāms tikai tīrai pilna platuma klasei (katrā dēlī ≤ 1 beigu un ≤ 1 sākuma gabals, un precut pāro maksimāli); vispārīgi tas nav garantēts (sk. B.3 mērījumu §4.2).
 
 Šis dekoders ir B-INST bāzes metodes pamatā. Salīdzinājums `SA(precut)` pret `SA(onsite)` parāda, cik ietaupa tieši iepriekšēja griešana.
 
@@ -318,18 +322,18 @@ B-NEXT ir tas pats, tikai `stackS` satur vienīgi pēdējo radīto atgriezumu, u
 
 ## 11. Validētājs
 
-Ievade: `Project` un `Plan`. Izmanto tikai `geometry` un `model`. Pārbaudes:
+Ievade: `Project` un `Plan`. Izmanto tikai `geometry` un `model` (un `num`); zonu pārrēķina pats (`validate/zoneInput.ts`), šuves un savienojumus nolasa no gabalu precīzajām formām rindas koordinātās (`Plan.frame`). Pārbaudes:
 
-1. **Pārklājums:** ⋃ gabali = Z (simetriskās starpības laukums ≤ tolerance), un Σ laukumi ≈ laukums(⋃) (nav pārklāšanās).
-2. **Dēļi:** katrs `rect` ir [0, L] × [0, W] robežās; taisnstūri nepārklājas, un starp tiem x vai y virzienā ir ≥ k; gabala forma, pārnesta dēļa koordinātās, ir tā `rect` iekšpusē.
-3. **Profili:** no telpas ģeometrijas neatkarīgi nosaka, kuras gabala malas pieskaras citiem gabaliem (ar pozitīvu garumu). Vajag kreiso → `rect.x = 0`; labo → `rect.x + rect.w = L`; apakšmalu → `rect.y = 0`; augšmalu → `rect.y + rect.h = W`.
-4. **L_min:** gabaliem ar sienas galu — garums gar katru pieslēgto garo malu ≥ L_min.
-5. **w_min:** strēmeļu platumi.
-6. **Nobīde:** no gabalu blakusattiecībām izvelk īso galu savienojumus un pārbauda, ka blakus rindās tie ir ≥ D attālumā.
-7. **Caurules:** katra caurule ir tieši viena gabala urbumā (vai uz šuves), un koordinātas sakrīt.
-8. **Skaits:** plāna dēļu skaits = `stats.boards`; `packs = ⌈boards·(1 + reserve)/perPack⌉`.
+1. **Pārklājums** (`coverage`, `overlap`): ⋃ gabali = Z (simetriskās starpības laukums ≤ 0,5 + 0,01·perimetrs mm²), un Σ laukumi ≈ laukums(⋃) (nav pārklāšanās).
+2. **Dēļi** (`boardBounds`, `overlap`, `kerf`, `shapeNotOnBoard`, `orientation`): katrs `rect` ir [0, L] × [0, W] robežās; taisnstūri nepārklājas, un starp tiem x vai y virzienā ir ≥ k; gabala forma dēļa koordinātās ir tā `rect` iekšpusē un ir tikai **pārbīde** no rindas koordinātu formas (dēli nevar pagriezt vai spoguļot).
+3. **Profili** (`profile`): neatkarīgi nosaka, kuras gabala malas pieskaras citiem gabaliem (kopīga kolineāra mala > 0,02 mm). Vajag kreiso → `rect.x = 0`; labo → `rect.x + rect.w = L`; apakšmalu → `rect.y = 0`; augšmalu → `rect.y + rect.h = W`.
+4. **L_min** (`minLength`): gabalam ar tieši vienu šuvi (sākuma/beigu) — kopīgais garums gar katru pieslēgto garo malu ≥ L_min; ja garās malas nav pieslēgtas, `extent ≥ L_min` (ADR-012).
+5. **w_min** (`ripWidth`): tikai strēmelēm (augstums < W), kuru kontūra ir paralēla asīm; slīpas sienas strēmeles (scribe) netiek pārbaudītas, jo y0 filtrs (§8) attiecas uz rindām paralēlām sienām.
+6. **Nobīde** (`stagger`): šuves (vertikālas kopīgas malas vienas rindas gabalu starpā) un kopīgā horizontālā robeža `I_st` (no blakus rindu gabalu kopīgajām malām); konflikts, ja abas šuves ir `I_st` paplašinātā par D un `|x − x′| < D − 0,01 mm` (režģa pielaide). Tā pati semantika kā V (§5), tāpēc `V = 0 ⇔` nav `stagger` pārkāpuma.
+7. **Caurules** (`pipe`): katra caurule, kuras centrs ir gabalā vai kuras caurums sasniedz gabalu, tur ir urbumā (`drill`), koordinātas sakrīt (±0,05 mm), un nav urbumu bez caurules.
+8. **Skaits** (`count`): plāna dēļu skaits = `stats.boards`; unikāli dēļu un gabalu ID, katrs gabals tieši vienā dēlī ar to pašu `rect`; `packs = ⌈boards·(1 + reserve)/perPack⌉`.
 
-Izvade: pārkāpumu saraksts ar kodiem un atsaucēm uz gabaliem.
+Izvade: `{ boards, violations }`; pārkāpums ir `{ code, message, refs }` ar atsaucēm uz gabaliem, segmentiem vai dēļiem. Plānotājs `y0` nefiltrē (tas ir ārējās cilpas darbs, F5), tāpēc plāns ar nelabvēlīgu y0 var pārkāpt `w_min`; validētājs to pareizi ziņo.
 
 ## 12. Instances ar zināmu optimumu
 

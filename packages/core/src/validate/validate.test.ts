@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildBands, rowConfigFromSettings } from '../layout/bands';
-import { buildRoomZone } from '../layout/roomZone';
+import { rowConfigFromSettings } from '../layout/bands';
+import { goodY0 } from '../layout/fixtures/rows';
 import { sample } from '../layout/feasible';
 import { instanceFiles } from '../layout/fixtures/instances';
 import { roomToZoneInput } from '../layout/roomZone';
@@ -21,40 +21,13 @@ const randomPhi = (ctx: PlanContext, seed: number): number[] => {
 /** Deep copy of plain data (the core has no structuredClone typings). */
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
-/**
- * A row offset y0 for which every horizontal wall leaves strips of at least w_min on both sides
- * (or lies on a band boundary). The planner does not filter y0 (that is the outer loop of F5), so
- * plans built at an arbitrary y0 can legitimately break w_min.
- */
-function goodY0(p: Project): number {
-  const base = rowConfigFromSettings(p.settings);
-  const W = p.product.boardWidth;
-  const wMin = p.rules.minRipWidth;
-  const zone = buildRoomZone(p, p.rooms[0]!.id);
-  for (let y0 = 0; y0 < W; y0 += 1) {
-    const layout = buildBands(zone.shapes, { ...base, y0 }, W);
-    const ok = layout.segments.every((s) =>
-      [s.shape.outer, ...s.shape.holes].every((ring) =>
-        ring.every((a, k) => {
-          const b = ring[(k + 1) % ring.length]!;
-          if (Math.abs(a.y - b.y) > 1e-6) return true;
-          const r = (((a.y - layout.cfg.y0) % W) + W) % W;
-          return r < 0.02 || W - r < 0.02 || (r >= wMin && W - r >= wMin);
-        }),
-      ),
-    );
-    if (ok) return y0;
-  }
-  throw new Error('no y0 satisfies w_min');
-}
-
 const codes = (p: Project, plan: Plan): ViolationCode[] => [
   ...new Set(validatePlan(p, plan).violations.map((x) => x.code)),
 ];
 
 describe.each(instanceFiles.map((f) => [f.id, f.raw] as const))('valid plans on %s', (_id, raw) => {
   const p = parseProject(raw);
-  const ctx = buildContext(p, { ...rowConfigFromSettings(p.settings), y0: goodY0(p) });
+  const ctx = buildContext(p, { ...rowConfigFromSettings(p.settings), y0: goodY0(p)! });
 
   it('report no violations except seam offsets', () => {
     for (let seed = 1; seed <= 15; seed++) {

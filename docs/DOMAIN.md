@@ -456,7 +456,7 @@ Testa instancēm pievieno lauku `"meta": { "knownOptimum"?: number, "bestKnown"?
 - `DZ-05a-03` — 3. gabals rindā;
 - `DZ-05a-B` — beigu gabals.
 
-Ja projektā ir viena telpa, telpas kodu var izlaist. Segmenta burtu raksta tikai tad, ja joslā ir vairāki segmenti. Dēļiem ir numuri `D01`, `D02`, …
+Gabalam bez šuvēm (viss segments) marķējums ir `-01`. Ja projektā ir viena telpa, telpas kodu var izlaist. Segmenta burtu raksta tikai tad, ja joslā ir vairāki segmenti. Dēļiem ir numuri `D01`, `D02`, …
 
 ### Griešanas karte (piemērs teksta formā)
 
