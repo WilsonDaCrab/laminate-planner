@@ -86,3 +86,14 @@ Aprēķini notiek klientā Web Worker. Serveris nav vajadzīgs.
 **Alternatīvas.** Lokus uzreiz glabāt kā lauztu līniju (vienkāršāk, bet nevar rediģēt rādiusu, un izmēri "izplūst"); pilns parametrisks CAD ar ierobežojumu risinātāju (pārāk sarežģīti šim produktam).
 
 **Sekas.** Redaktors strādā ar lokiem (rokturi, izmēri, piesaiste centram un pieskarei). Kodols paliek daudzstūru pasaulē. Gabaliem pie lokiem ir `curveCut` pazīme: figūrzāģis, ordinātas un 1:1 šablons. Pēc noklusējuma tos iesaka griezt uz vietas, jo liektas sienas reti ir precīzas.
+
+## ADR-010 — Repozitorija rīki: MIT, TypeScript 6, `main` (2026-09-29)
+
+**Konteksts.** F0 fāzē jāizvēlas licence un rīku versijas.
+
+**Lēmums.**
+
+- Licence **MIT**. `clipper2-ts` (Boost Software License) ar to ir saderīga; pirms instalēšanas F1 fāzē licenci pārbauda vēlreiz (sk. ADR-002).
+- **TypeScript 6.x**, nevis 7: `typescript-eslint` 8.70 vēl neatbalsta TS 7 un ESLint krīt. Uz TS 7 pāriet, kad `typescript-eslint` to atbalsta.
+- Noklusējuma zars ir `main`. `.gitattributes` fiksē `eol=lf`, lai Prettier nekrīt Windows vidē.
+- Stop hook izsauc `pnpm run <skripts>`: pnpm 12 nepieņem `pnpm -s` kā klusuma karogu.

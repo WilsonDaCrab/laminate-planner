@@ -3,7 +3,10 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-const NODE_MODULES = ['node:*', 'fs', 'path', 'os', 'child_process', 'crypto', 'worker_threads'];
+const NODE_PATTERN = {
+  group: ['node:*', 'fs', 'path', 'os', 'child_process', 'crypto', 'worker_threads'],
+  message: 'core must not use Node API.',
+};
 
 export default tseslint.config(
   { ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', 'results/**', 'report/**'] },
@@ -41,7 +44,7 @@ export default tseslint.config(
           message: 'Use the injected clock.',
         },
       ],
-      'no-restricted-imports': ['error', { patterns: NODE_MODULES }],
+      'no-restricted-imports': ['error', { patterns: [NODE_PATTERN] }],
     },
   },
   {
@@ -53,7 +56,7 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            ...NODE_MODULES,
+            NODE_PATTERN,
             {
               group: [
                 '**/layout',

@@ -44,15 +44,21 @@ Instalē jaunākās stabilās versijas; lockfile ir commit sastāvā.
 ```bash
 pnpm install
 pnpm dev                      # web lietotne (apps/web)
-pnpm test                     # visi testi
+pnpm test                     # visi testi (Vitest, dot reporteris)
 pnpm -F @lp/core test         # tikai kodols
-pnpm typecheck && pnpm lint
-pnpm bench run instances/rect/R2.json --method sa --seed 1 --time 2000 --svg
-pnpm bench all                # visi eksperimenti → results/*.csv
+pnpm typecheck && pnpm lint   # tsc pa pakotnēm + ESLint visam repo
+pnpm format                   # Prettier (tikai kods; docs/ un CLAUDE.md ir izslēgti)
 pnpm build
 ```
 
-Kad komandas ir izveidotas (F0 fāzē), precizē šo sadaļu.
+Vēl nav (parādīsies vēlākās fāzēs; `pnpm bench` ir tikai stubs līdz F4):
+
+```bash
+pnpm bench run instances/rect/R2.json --method sa --seed 1 --time 2000 --svg   # F4+
+pnpm bench all                # visi eksperimenti → results/*.csv (F6)
+```
+
+TypeScript ir piesprausts uz 6.x, jo `typescript-eslint` vēl neatbalsta 7 (sk. ADR-010).
 
 ## Struktūra
 

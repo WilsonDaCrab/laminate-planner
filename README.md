@@ -24,8 +24,14 @@ Skatīt [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Palaišana
 
+Vajag Node ≥ 22 un pnpm.
+
 ```bash
 pnpm install
-pnpm test
-pnpm dev
+pnpm typecheck && pnpm lint && pnpm test
+pnpm dev        # web lietotne (apps/web)
 ```
+
+## Licence
+
+[MIT](LICENSE)
