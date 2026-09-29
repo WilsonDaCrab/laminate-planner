@@ -9,6 +9,7 @@ import type { Vec2 } from '../geometry/vec';
 import { pieceShapes, lengthDeficit } from '../layout/pieces';
 import type { PiecePart, Plan, PlanWarning, PlannedBoard, PlannedPiece } from '../model/plan';
 import { decode } from './decode';
+import { pipeDrills, shapeFeatures, type PipeDrill } from './features';
 import { piecesForPhases, seamsFor, type LabelledPiece, type PlanContext } from './context';
 
 export interface BuildPlanOptions {
@@ -62,6 +63,7 @@ export function buildPlan(
     return per[piece.descriptor.index] ?? [];
   };
 
+  const drillsByPipe = new Map<string, PipeDrill[]>();
   const pieces: PlannedPiece[] = labelled.map((lp) => {
     const d = lp.descriptor;
     const pl = placement.get(lp.id)!;
@@ -84,6 +86,16 @@ export function buildPlan(
         refs: [lp.id],
       });
     }
+    const featureInput = {
+      short: d.short,
+      long: d.long,
+      rect: pl.rect,
+      parts,
+      toBoard: (p: Vec2) => toBoard(p, pl.rect, d.x0, yRef),
+    };
+    const drills = pipeDrills(ctx, featureInput);
+    for (const dr of drills)
+      drillsByPipe.set(dr.pipeId, [...(drillsByPipe.get(dr.pipeId) ?? []), dr]);
     return {
       id: lp.id,
       roomId: ctx.room.id,
@@ -100,9 +112,23 @@ export function buildPlan(
       parts,
       boardId: boardId(pl.board),
       boardRect: pl.rect,
-      features: [],
+      features: [...shapeFeatures(ctx, featureInput), ...drills.map((dr) => dr.feature)],
     };
   });
+
+  for (const o of ctx.room.obstacles) {
+    if (o.kind !== 'pipe') continue;
+    const hits = drillsByPipe.get(o.id) ?? [];
+    if (hits.length === 0) {
+      warnings.push({
+        code: 'pipeOutsideFloor',
+        message: `Pipe ${o.id} is not on the floor`,
+        refs: [o.id],
+      });
+    } else if (hits.length > 1 || !hits[0]!.clear) {
+      warnings.push({ code: 'pipeOnSeam', message: `Pipe ${o.id} meets a cut edge`, refs: [o.id] });
+    }
+  }
 
   const boards: PlannedBoard[] = decoded.boards.map((bd) => ({
     id: boardId(bd.index),
