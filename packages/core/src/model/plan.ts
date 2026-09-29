@@ -3,6 +3,7 @@
  * independent validator can import them without touching `layout`/`plan`.
  */
 
+import type { Affine } from '../geometry/frames';
 import type { Mm } from '../num/index';
 
 export interface Point {
@@ -91,6 +92,8 @@ export interface PlanStats {
 }
 
 export interface Plan {
+  /** Room → row frame (rotation by −θ, mirror for a right-hand stack): rows run along +x. */
+  frame: Affine;
   boards: PlannedBoard[];
   pieces: PlannedPiece[];
   stats: PlanStats;

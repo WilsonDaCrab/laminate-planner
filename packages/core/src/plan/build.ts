@@ -181,5 +181,5 @@ export function buildPlan(
     lb1,
     provenOptimal: B > 0 && B === Math.max(lb0, lb1),
   };
-  return { boards, pieces, stats, warnings };
+  return { frame: layout.frame, boards, pieces, stats, warnings };
 }

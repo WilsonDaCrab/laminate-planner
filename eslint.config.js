@@ -61,24 +61,17 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
+          // Exact specifiers: the package roots and the core barrel.
+          paths: ['..', '../index', '../../index', '@lp/core'].map((name) => ({
+            name,
+            message: 'core/validate may only import geometry and model.',
+          })),
           patterns: [
             NODE_PATTERN,
+            // `group` patterns use gitignore semantics, where a bare `..` matches every `../x`
+            // import; regexes are exact.
             {
-              group: [
-                '..',
-                '../index',
-                '../../index',
-                '@lp/core',
-                '@lp/core/*',
-                '**/layout',
-                '**/layout/**',
-                '**/plan',
-                '**/plan/**',
-                '**/evaluate',
-                '**/evaluate/**',
-                '**/optimize',
-                '**/optimize/**',
-              ],
+              regex: String.raw`^\.\./(layout|plan|evaluate|optimize|bounds)(/|$)|^@lp/core/`,
               message: 'core/validate may only import geometry and model.',
             },
           ],
