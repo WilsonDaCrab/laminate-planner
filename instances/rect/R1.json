@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "name": "R1 taisnstūris 3×4 m",
+  "product": {
+    "id": "demo-1285x192",
+    "name": "Demo 1285×192",
+    "boardLength": 1285,
+    "boardWidth": 192,
+    "boardsPerPack": 8
+  },
+  "rules": {
+    "kerf": 3,
+    "minPieceLength": 300,
+    "minStagger": 300,
+    "minRipWidth": 50,
+    "expansionGap": 10,
+    "minGap": 7,
+    "maxGap": 14,
+    "hPattern": {
+      "enabled": true,
+      "distance": 100
+    },
+    "pattern": {
+      "kind": "free"
+    },
+    "reservePercent": 2
+  },
+  "rooms": [
+    {
+      "id": "r1",
+      "name": "Istaba",
+      "code": "R1",
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 3000,
+          "y": 0
+        },
+        {
+          "x": 3000,
+          "y": 4000
+        },
+        {
+          "x": 0,
+          "y": 4000
+        }
+      ],
+      "edges": [
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        }
+      ],
+      "obstacles": []
+    }
+  ],
+  "doorways": [],
+  "settings": {
+    "angleDeg": 0,
+    "stackSide": "left",
+    "rowOffset": "auto",
+    "mode": "precut",
+    "trimMargin": 0,
+    "aesthetics": 0.5,
+    "seed": 1,
+    "timeLimitMs": 3000
+  },
+  "meta": {
+    "source": "manual"
+  }
+}

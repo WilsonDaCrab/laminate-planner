@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "name": "L1 L veida dzīvojamā istaba",
+  "product": {
+    "id": "demo-1285x192",
+    "name": "Demo 1285×192",
+    "boardLength": 1285,
+    "boardWidth": 192,
+    "boardsPerPack": 8
+  },
+  "rules": {
+    "kerf": 3,
+    "minPieceLength": 300,
+    "minStagger": 300,
+    "minRipWidth": 50,
+    "expansionGap": 10,
+    "minGap": 7,
+    "maxGap": 14,
+    "hPattern": {
+      "enabled": true,
+      "distance": 100
+    },
+    "pattern": {
+      "kind": "free"
+    },
+    "reservePercent": 2
+  },
+  "rooms": [
+    {
+      "id": "r1",
+      "name": "Dzīvojamā",
+      "code": "DZ",
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 5200,
+          "y": 0
+        },
+        {
+          "x": 5200,
+          "y": 3100
+        },
+        {
+          "x": 3000,
+          "y": 3100
+        },
+        {
+          "x": 3000,
+          "y": 4600
+        },
+        {
+          "x": 0,
+          "y": 4600
+        }
+      ],
+      "edges": [
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        }
+      ],
+      "obstacles": [
+        {
+          "kind": "pipe",
+          "id": "p1",
+          "center": {
+            "x": 5130,
+            "y": 1400
+          },
+          "diameter": 16
+        }
+      ]
+    }
+  ],
+  "doorways": [
+    {
+      "id": "d1",
+      "roomA": "r1",
+      "edgeA": 0,
+      "offsetA": 1200,
+      "width": 900,
+      "depth": 120,
+      "jambUndercut": 20,
+      "mode": "continuous"
+    }
+  ],
+  "settings": {
+    "angleDeg": 0,
+    "stackSide": "left",
+    "rowOffset": "auto",
+    "mode": "precut",
+    "trimMargin": 0,
+    "aesthetics": 0.5,
+    "seed": 1,
+    "timeLimitMs": 3000
+  },
+  "meta": {
+    "source": "manual"
+  }
+}
