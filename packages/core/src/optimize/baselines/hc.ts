@@ -1,11 +1,10 @@
 import { lowerBounds } from '../../bounds/bounds';
 import { evaluate } from '../../evaluate/evaluate';
-import { sample } from '../../layout/feasible';
 import type { PlanContext } from '../../plan/context';
 import type { DecodeMode } from '../../plan/run';
 import type { Rng } from '../../rng/index';
 import { Budget, Incumbent } from '../incumbent';
-import { resetPhase, shiftPhase } from '../moves';
+import { PhaseSpace } from '../phaseSpace';
 import type { OptimizeBudget, SearchResult } from '../types';
 import { DEFAULT_ITERS } from './rs';
 
@@ -37,7 +36,8 @@ export function runHillClimb(
   const b = new Budget(budget, DEFAULT_ITERS);
   const best = new Incumbent();
   const evalAt = (phi: number[]) => evaluate(ctx, phi, { mode: opts.mode });
-  const randomPhi = () => segs.map((s) => sample(ctx.feasible[s.id]!.feasible, rng));
+  const space = new PhaseSpace(ctx);
+  const randomPhi = () => segs.map((_, i) => space.sample(i, rng));
 
   if (!b.allows(0)) throw new RangeError('runHillClimb: budget allows no evaluation');
   let evals = 0;
@@ -57,10 +57,12 @@ export function runHillClimb(
       sinceImprove = 0;
     } else {
       const i = rng.int(0, segs.length - 1);
-      const F = ctx.feasible[segs[i]!.id]!.feasible;
       const old = phi[i]!;
       const amplitude = Math.max(20, (L / 2) * rng.next() ** 2);
-      phi[i] = rng.next() < pReset ? resetPhase(F, rng) : shiftPhase(F, old, amplitude, rng);
+      phi[i] =
+        rng.next() < pReset
+          ? space.sample(i, rng)
+          : space.place(i, old + (rng.next() * 2 - 1) * amplitude);
       const ev = evalAt(phi);
       evals++;
       if (ev.f <= cur.f) {

@@ -1,5 +1,6 @@
 export * from './types';
 export * from './incumbent';
+export * from './phaseSpace';
 export * from './moves';
 export * from './baselines/sequential';
 export * from './baselines/sequentialRuns';

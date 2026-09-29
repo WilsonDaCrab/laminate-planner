@@ -11,7 +11,7 @@ import { validatePlan } from '../validate/index';
 import { runBInst } from './baselines/sequentialRuns';
 import { runHillClimb } from './baselines/hc';
 import { better, Budget } from './incumbent';
-import { resetPhase, shiftPhase } from './moves';
+import { PhaseSpace } from './phaseSpace';
 import { runMethod } from './run';
 import type { Method } from './types';
 
@@ -89,6 +89,7 @@ describe('run budget', () => {
 describe('moves keep φ in F_s', () => {
   const project = parseProject(instanceFiles[3]!.raw); // U1: several segment shapes
   const { ctx } = runMethod(project, 'b-inst');
+  const space = new PhaseSpace(ctx);
 
   it('reset and shift stay feasible (property)', () => {
     fc.assert(
@@ -99,8 +100,9 @@ describe('moves keep φ in F_s', () => {
           const rng = createRng(seed);
           const s = ctx.layout.segments[seed % ctx.layout.segments.length]!;
           const F = ctx.feasible[s.id]!.feasible;
-          const a = resetPhase(F, rng);
-          const b = shiftPhase(F, a, delta, rng);
+          const i = seed % ctx.layout.segments.length;
+          const a = space.sample(i, rng);
+          const b = space.place(i, a + delta * (rng.next() * 2 - 1));
           return contains(F, a) && contains(F, b) && b >= 0 && b < ctx.L + 1e-9;
         },
       ),
