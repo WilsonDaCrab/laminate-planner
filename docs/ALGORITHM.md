@@ -302,6 +302,8 @@ B-INST(inst):                         // atgriež φ; B skaita secīgais dekoder
 
 B-NEXT ir tas pats, tikai `stackS` satur vienīgi pēdējo radīto atgriezumu, un `stackE` neizmanto.
 
+**Realizācija (F4).** Pseidokods izvēlas tikai φ (`sequentialPhases`); dēļu skaitu B vienmēr mēra `evaluate` ar `mode: onsite`, tāpēc simulācijas kļūda nevar sabojāt B. Kandidāts φ_s tiek pieņemts, ja φ ∈ F_s un nobīde ≥ D pret jau nolemtajiem apakšējiem kaimiņiem. Segments bez apakšējā kaimiņa arī drīkst ņemt `stackS` atgriezumu. Bāzes līnijas RS un HC (F4) izmanto tikai M1 Reset un M2 Shift; HC sāk no B-INST φ un restartē no nejaušiem pēc 2000 neuzlabojošiem novērtējumiem (ADR-014).
+
 ## 10. Apakšējās robežas
 
 - **LB0** = ⌈area(Z) / (L·W)⌉.

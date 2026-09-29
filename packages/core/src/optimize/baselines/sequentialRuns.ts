@@ -19,6 +19,7 @@ export function runSequential(
   return {
     method,
     phi,
+    mode,
     evaluation,
     evals: 1,
     provenOptimal: evaluation.feasible && evaluation.B === lowerBounds(ctx).lb,

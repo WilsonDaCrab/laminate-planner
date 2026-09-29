@@ -32,6 +32,7 @@ export function runRandomSearch(
   return {
     method: 'rs',
     phi: best.phi,
+    mode: mode ?? ctx.project.settings.mode,
     evaluation: best.evaluation!,
     evals,
     provenOptimal: proven,

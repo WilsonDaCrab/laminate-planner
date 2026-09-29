@@ -1,2 +1,6 @@
-// CLI stub; commands (run, validate, lb, generate, exhaustive) arrive in F4-F6.
-console.log('lp-bench: not implemented yet');
+import { main } from './cli';
+
+// `pnpm -F @lp/bench` runs in the package directory; paths on the command line are relative to
+// where the user invoked pnpm.
+if (process.env.INIT_CWD) process.chdir(process.env.INIT_CWD);
+process.exitCode = main(process.argv.slice(2));

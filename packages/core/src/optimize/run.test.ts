@@ -25,7 +25,7 @@ describe('baselines on instances/*', () => {
       for (const method of methods) {
         it(`${method}: valid plan, B agrees with plan and validator, B ≥ LB, φ ∈ F`, () => {
           const { ctx, result } = runMethod(project, method, { seed: 1, budget: { iters: ITERS } });
-          const mode = method === 'b-inst' || method === 'b-next' ? 'onsite' : project.settings.mode;
+          const mode = result.mode;
           const plan = buildPlan(ctx, result.phi, { mode });
           const val = validatePlan(project, plan);
           expect(result.evaluation.B).toBe(plan.boards.length);
@@ -55,9 +55,9 @@ describe('baselines on instances/*', () => {
         const start = runBInst(ctx).phi;
         const before = evaluate(ctx, start);
         const hc = runHillClimb(ctx, createRng(1), { iters: 100 }, { start });
-        expect(hc.evaluation.feasible === before.feasible ? hc.evaluation.B <= before.B : true).toBe(
-          true,
-        );
+        expect(
+          hc.evaluation.feasible === before.feasible ? hc.evaluation.B <= before.B : true,
+        ).toBe(true);
         expect(hc.evaluation.B).toBeLessThanOrEqual(before.feasible ? before.B : Infinity);
       });
     });

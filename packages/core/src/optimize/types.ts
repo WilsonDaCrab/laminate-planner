@@ -1,4 +1,5 @@
 import type { Evaluation } from '../evaluate/evaluate';
+import type { DecodeMode } from '../plan/run';
 
 export type Method = 'b-next' | 'b-inst' | 'rs' | 'hc';
 
@@ -19,6 +20,8 @@ export interface TracePoint {
 export interface SearchResult {
   method: Method;
   phi: number[];
+  /** Decoder the evaluation (and therefore B) refers to; build the plan with the same mode. */
+  mode: DecodeMode;
   evaluation: Evaluation;
   /** Objective evaluations spent. */
   evals: number;

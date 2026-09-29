@@ -2,17 +2,15 @@
 // Run: pnpm -F @lp/bench render-samples
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import {
-  buildBands,
   buildContext,
   buildPlan,
-  buildRoomZone,
   createRng,
+  goodY0,
   parseProject,
   renderPlanSvg,
   rowConfigFromSettings,
   sample,
   validatePlan,
-  type Project,
 } from '@lp/core';
 
 const root = new URL('../../../', import.meta.url);
@@ -27,32 +25,6 @@ const rooms: [group: string, id: string][] = [
   ['curved', 'C2'],
 ];
 
-/** First row offset whose strips beside horizontal walls are all at least w_min wide. */
-function goodY0(project: Project): number {
-  const W = project.product.boardWidth;
-  const zone = buildRoomZone(project, project.rooms[0]!.id);
-  const base = rowConfigFromSettings(project.settings);
-  for (let y0 = 0; y0 < W; y0++) {
-    const layout = buildBands(zone.shapes, { ...base, y0 }, W);
-    const ok = layout.segments.every((s) =>
-      [s.shape.outer, ...s.shape.holes].every((ring) =>
-        ring.every((a, k) => {
-          const b = ring[(k + 1) % ring.length]!;
-          if (Math.abs(a.y - b.y) > 1e-6) return true;
-          const r = (((a.y - layout.cfg.y0) % W) + W) % W;
-          return (
-            r < 0.02 ||
-            W - r < 0.02 ||
-            (r >= project.rules.minRipWidth && W - r >= project.rules.minRipWidth)
-          );
-        }),
-      ),
-    );
-    if (ok) return y0;
-  }
-  return 0;
-}
-
 const out = new URL('results/f3/', root);
 mkdirSync(out, { recursive: true });
 
@@ -60,7 +32,7 @@ for (const [group, id] of rooms) {
   const project = parseProject(
     JSON.parse(readFileSync(new URL(`instances/${group}/${id}.json`, root), 'utf8')),
   );
-  const y0 = goodY0(project);
+  const y0 = goodY0(project) ?? 0;
   const ctx = buildContext(project, { ...rowConfigFromSettings(project.settings), y0 });
   const rng = createRng(project.settings.seed);
   const phi = ctx.layout.segments.map((s) => sample(ctx.feasible[s.id]!.feasible, rng));

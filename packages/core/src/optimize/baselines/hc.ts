@@ -77,6 +77,7 @@ export function runHillClimb(
   return {
     method: 'hc',
     phi: best.phi!,
+    mode: opts.mode ?? ctx.project.settings.mode,
     evaluation: best.evaluation!,
     evals,
     provenOptimal: proven,

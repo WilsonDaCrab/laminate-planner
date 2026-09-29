@@ -51,10 +51,19 @@ pnpm format                   # Prettier (tikai kods; docs/ un CLAUDE.md ir izsl
 pnpm build
 ```
 
-Vēl nav (`pnpm bench` skripta pagaidām nav; tas parādīsies F4 fāzē):
+Bench CLI (F4; ceļi ir no vietas, kur palaists pnpm):
 
 ```bash
-pnpm bench run instances/rect/R2.json --method sa --seed 1 --time 2000 --svg   # F4+
+pnpm bench run instances/rect/R2.json --method hc --seed 1 --iters 20000 --svg   # b-next|b-inst|rs|hc → results/f4/
+pnpm bench validate results/f4/R2-hc-s1.json
+pnpm bench lb instances/lshape/L1.json
+pnpm bench baselines instances          # tabula: visas metodes × visas instances
+```
+
+Vēl nav (parādīsies vēlāk):
+
+```bash
+pnpm bench run instances/rect/R2.json --method sa --seed 1 --time 2000 --svg   # F5+
 pnpm bench all                # visi eksperimenti → results/*.csv (F6)
 ```
 

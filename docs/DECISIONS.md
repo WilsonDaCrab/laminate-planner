@@ -166,3 +166,38 @@ Aprēķini notiek klientā Web Worker. Serveris nav vajadzīgs.
 - Nejaušās telpas integrācijas testā ir tikai taisnleņķa "histogrammas" ar noklusējuma kerf un tikai `precut` režīmu; slīpas sienas, loki un šķēršļi ir tikai fiksētajās instancēs. Plašāks ģenerators — F5/F6.
 - Validētājs un V atšķiras logā [D − 0,01; D) mm (režģa pielaide); `V = 0 ⇔` ir precīzs ārpus šī loga.
 - Sarežģītu segmentu gabalam var būt vairākas komponentes (`PlannedPiece.parts`); dekoderā tas ir viens taisnstūris.
+
+## ADR-014 — Bāzes metodes, CLI un rezultātu formāts (F4) (2026-09-29)
+
+**Konteksts.** F4 dod metodes, ar kurām F5 SA tiks salīdzināts (B-NEXT, B-INST, RS, HC), un `bench` CLI.
+
+**Lēmumi.**
+
+- **B-INST/B-NEXT konstruē tikai φ.** Atlikumu kaudžu simulācija (`optimize/baselines/sequential.ts`) izvēlas φ_s klāšanas secībā; dēļu skaitu vienmēr mēra īstais secīgais dekoders (`evaluate`, `mode: onsite`). Tā B sakrīt ar plāna konstruktoru un validētāju pēc konstrukcijas (5. noteikums), un simulācijas neprecizitāte nevar dot nepareizu skaitli. Atkāpe no §9 pseidokoda: segments bez apakšējā kaimiņa (kolonnas apvidus, U telpas otrā kāja) arī var izmantot `stackS` atgriezumu, ne tikai vesela dēļa sākumu.
+- **`SearchResult.mode`.** Katrs rezultāts nes dekodera režīmu, kuram B attiecas (B-* vienmēr `onsite`; RS/HC — `settings.mode`); plānu būvē ar to pašu režīmu.
+- **HC izmanto tikai M1 Reset un M2 Shift** (`optimize/moves.ts`); F5 pievieno M3–M5. Ja HC gājienu kopa F5 mainīsies, HC rezultāti jāpārrēķina. HC sāk no B-INST φ un restartē no nejaušiem φ pēc 2000 neuzlabojošiem novērtējumiem.
+- **RS/HC labākais derīgais** pēc (derīgums, B, f); ja derīga nav, atgriež labāko pēc f (CLI tabulā ar `*`).
+- **`goodY0`** pārcelts no testu palīgfailiem uz `layout/y0.ts` (nevis `optimize/`, jo tas ir `layout` slāņa funkcija: atkarību virziens); lieto CLI, testi un vēlāk F5 `outer`. Filtrs nemainīts.
+- **Budžets:** `iters` (deterministisks) vai `timeMs` ar padotu `clock` (kodols nelieto sistēmas laiku); `Budget` lasa pulksteni ik pēc 256 novērtējumiem.
+- **Rezultāta JSON ir pašpietiekams** (`project` + `plan` + `stats`), lai `validate` darbotos bez instances faila. Bez jaunām atkarībām (`node:util parseArgs`).
+- **`pnpm bench` un ceļi.** `pnpm -F` izpilda komandu pakotnes mapē, tāpēc `index.ts` pārslēdzas uz `INIT_CWD`, un relatīvie ceļi ir no vietas, kur palaists pnpm.
+
+**Mērījums** (`pnpm bench baselines instances`, sēkla 1, 2000 novērtējumi RS/HC; y0 = `goodY0`; `*` = V > 0):
+
+| instance | segm. | LB | B-NEXT | B-INST | RS | HC |
+|---|---|---|---|---|---|---|
+| C1 | 16 | 64 | 68 | 68 | 67* | 66 |
+| C2 | 20 | 66 | 68 | 68 | 70* | 67 |
+| L1 | 25 | 85 | 94 | 89 | 88* | 87 |
+| U1 | 34 | 78 | 89 | 89 | 82* | 81 |
+| R1 | 21 | 49 | 49 | 49 | 52* | 49 |
+| R2 | 27 | 81 | 91 | 86 | 84* | 84 |
+| S1 | 16 | 50 | 53 | 52 | 52* | 52 |
+| S2 | 11 | 34 | 40 | 37 | 37* | 38 |
+
+B-INST ≤ B-NEXT visām 8 instancēm (C1, C2, U1, R1 vienādi). RS gandrīz nekad neatrod derīgu (V = 0) φ ar 2000 novērtējumiem, tāpēc tā B nav salīdzināms ar derīgajiem (B-*, HC); tas ir pats par sevi atklājums par nobīdes nosacījuma stingrību, un F5 salīdzināšanā RS jāuzrāda kopā ar derīgo sēklu īpatsvaru.
+
+**Zināmie ierobežojumi.**
+
+- Baseline φ ir float; ADR-013 ieteikums par veseliem mm (M2/M4) paliek F5 uzdevums.
+- B-INST atlikumu izvēle ir vienkāršota (kaudzes ar garumiem, bez profilu/platuma karogiem); tā ir bāzes līnija, nevis "labākā klājēja metode".

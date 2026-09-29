@@ -12,6 +12,7 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "test": "vitest run --reporter=dot",
+    "bench": "pnpm -F @lp/bench bench",
     "format": "prettier --write ."
   },
   "devDependencies": {

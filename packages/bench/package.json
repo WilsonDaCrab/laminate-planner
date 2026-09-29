@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
+    "bench": "tsx src/index.ts",
     "render-samples": "tsx src/renderSamples.ts"
   },
   "dependencies": {

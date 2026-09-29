@@ -74,16 +74,16 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F4. Bāzes metodes, CLI, vizualizācija (~2–3 d)
 
-- [ ] `optimize/baselines`: B-NEXT, B-INST, RS, HC
-- [ ] `bench` CLI: `run <instance> --method … --seed … --iters … --time … --out … --svg`
-- [ ] `bench` CLI: `validate <plan.json>`, `lb <instance>`
-- [ ] Rezultātu formāts: JSON (plāns + statistika) un SVG
+- [x] `optimize/baselines`: B-NEXT, B-INST, RS, HC
+- [x] `bench` CLI: `run <instance> --method … --seed … --iters … --time … --out … --svg`
+- [x] `bench` CLI: `validate <result.json>`, `lb <instance>` (+ `baselines` tabula)
+- [x] Rezultātu formāts: JSON (plāns + statistika) un SVG
 
 **Kritēriji:** visas metodes uz visām esošajām instancēm dod validētāja pārbaudītus plānus; B-INST ≤ B-NEXT visām instancēm (ja nē — izskaidrot); SVG izskatās pareizi (pārbauda cilvēks).
 
 ## F5. SA un ārējā cilpa (~4–5 d)
 
-- [ ] `optimize/moves`: M1–M5, gājienu statistika
+- [ ] `optimize/moves`: M1–M5, gājienu statistika. **Ņemt vērā (ADR-013):** taisnleņķa segmentiem φ jāturas pie veseliem mm (citādi griešanas saraksts zaudē līdz `k` mm uz gabalu); `optimize/outer` y0 filtrs ir obligāts, jo plānotājs y0 nefiltrē
 - [ ] `optimize/sa`: kalibrācija, grafiks (iterāciju un laika režīms), labākais derīgais, apstāšanās pie LB, neobligātā pārkarsēšana
 - [ ] `optimize/outer`: θ kandidāti, sākuma puse, y0 skenēšana ar filtru, top-K, budžeta sadale, salīdzinājuma tabula
 - [ ] Parametru pielāgošana nelielā eksperimentā (p0, gājienu varbūtības); rezultātu pieraksta `DECISIONS.md`
