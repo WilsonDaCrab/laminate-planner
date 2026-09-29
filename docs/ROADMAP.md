@@ -79,7 +79,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [x] `bench` CLI: `validate <result.json>`, `lb <instance>` (+ `baselines` tabula)
 - [x] Rezultātu formāts: JSON (plāns + statistika) un SVG
 
-**Kritēriji:** visas metodes uz visām esošajām instancēm dod validētāja pārbaudītus plānus; B-INST ≤ B-NEXT visām instancēm (ja nē — izskaidrot); SVG izskatās pareizi (pārbauda cilvēks).
+**Kritēriji:** visas metodes uz visām esošajām instancēm dod validētāja pārbaudītus plānus; B-INST ≤ B-NEXT visām instancēm (ja nē — izskaidrot); SVG izskatās pareizi (pārbauda cilvēks). Pārbaudīts (lietotājs, 2026-09-29): `results/f4/*.svg`.
 
 ## F5. SA un ārējā cilpa (~4–5 d)
 
