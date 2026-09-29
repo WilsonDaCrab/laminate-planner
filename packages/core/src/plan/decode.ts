@@ -227,6 +227,25 @@ function cutFromStock(b: Builder, s: Stock, p: DecodePiece): void {
   });
 }
 
+/** Cuts `p` from the best-fitting leftover, or from a fresh board when nothing fits. */
+function placeBestFit(b: Builder, p: DecodePiece): void {
+  const { L, W } = b.params;
+  const n = needsOf(p);
+  let i = findStock(b.stock, p, n);
+  if (i < 0) {
+    const bi = b.newBoard();
+    b.addStock(bi, 0, 0, L, W, { left: true, right: true, low: true, high: true });
+    i = b.stock.length - 1;
+    if (!fits(b.stock[i]!, p, n)) {
+      // Piece larger than a board (extent > L or width > W): decoder input is invalid.
+      throw new RangeError(`decode: piece ${p.id} does not fit on a board`);
+    }
+  }
+  const s = b.stock[i]!;
+  b.stock.splice(i, 1);
+  cutFromStock(b, s, p);
+}
+
 export function decode(pieces: readonly DecodePiece[], params: DecodeParams): DecodeResult {
   const { L, W, kerf } = params;
   const b = new Builder(params);
@@ -345,22 +364,7 @@ export function decode(pieces: readonly DecodePiece[], params: DecodeParams): De
 
   // ---- C: free pieces, best fit -----------------------------------------------------------
   const order = [...free].sort((p, q) => q.extent * q.width - p.extent * p.width || byId(p, q));
-  for (const p of order) {
-    const n = needsOf(p);
-    let i = findStock(b.stock, p, n);
-    if (i < 0) {
-      const bi = b.newBoard();
-      b.addStock(bi, 0, 0, L, W, { left: true, right: true, low: true, high: true });
-      i = b.stock.length - 1;
-      if (!fits(b.stock[i]!, p, n)) {
-        // Piece larger than a board (extent > L or width > W): decoder input is invalid.
-        throw new RangeError(`decode: piece ${p.id} does not fit on a board`);
-      }
-    }
-    const s = b.stock[i]!;
-    b.stock.splice(i, 1);
-    cutFromStock(b, s, p);
-  }
+  for (const p of order) placeBestFit(b, p);
   const BC = b.boards.length - BA - BB;
   return {
     B: b.boards.length,
@@ -370,5 +374,28 @@ export function decode(pieces: readonly DecodePiece[], params: DecodeParams): De
     boards: b.boards,
     unpairedEnds,
     unpairedStarts,
+  };
+}
+
+/**
+ * Sequential decoder (ALGORITHM §4.5): pieces are laid in the given order and a leftover can only
+ * serve pieces laid later. Every piece is best-fitted into the leftovers (start pieces need the
+ * right-end profile, end pieces the left-end profile, ...) or opens a new board; no global pairing.
+ * The input order is kept (no sorting).
+ */
+export function decodeSequential(
+  pieces: readonly DecodePiece[],
+  params: DecodeParams,
+): DecodeResult {
+  const b = new Builder(params);
+  for (const p of pieces) placeBestFit(b, p);
+  return {
+    B: b.boards.length,
+    BA: 0,
+    BB: 0,
+    BC: b.boards.length,
+    boards: b.boards,
+    unpairedEnds: [],
+    unpairedStarts: [],
   };
 }

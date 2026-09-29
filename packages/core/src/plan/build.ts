@@ -8,13 +8,16 @@ import { applyAll, invert } from '../geometry/frames';
 import type { Vec2 } from '../geometry/vec';
 import { pieceShapes, lengthDeficit } from '../layout/pieces';
 import type { PiecePart, Plan, PlanWarning, PlannedBoard, PlannedPiece } from '../model/plan';
-import { decode } from './decode';
+import { decode, decodeSequential } from './decode';
+import { layingOrder } from './onsite';
 import { pipeDrills, shapeFeatures, type PipeDrill } from './features';
 import { piecesForPhases, seamsFor, type LabelledPiece, type PlanContext } from './context';
 
 export interface BuildPlanOptions {
   /** Lower bounds for the statistics (filled by `bounds` once available). */
   bounds?: { lb0: number; lb1: number };
+  /** Decoder: global pairing (`precut`) or sequential laying (`onsite`). Default: project setting. */
+  mode?: 'precut' | 'onsite';
 }
 
 const boardId = (index: number): string => `D${String(index + 1).padStart(2, '0')}`;
@@ -36,10 +39,17 @@ export function buildPlan(
 ): Plan {
   const { L, W, project, layout } = ctx;
   const labelled = piecesForPhases(ctx, phi);
-  const decoded = decode(
-    labelled.map((p) => p.decode),
-    ctx.decodeParams,
-  );
+  const mode = opts.mode ?? project.settings.mode;
+  const decoded =
+    mode === 'onsite'
+      ? decodeSequential(
+          layingOrder(labelled, ctx).map((p) => p.decode),
+          ctx.decodeParams,
+        )
+      : decode(
+          labelled.map((p) => p.decode),
+          ctx.decodeParams,
+        );
   const placement = new Map<
     string,
     { board: number; rect: PlannedBoard['placements'][0]['rect'] }
