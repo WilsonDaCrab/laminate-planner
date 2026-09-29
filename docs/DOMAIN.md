@@ -251,7 +251,13 @@ Kolonna "Fāze" norāda `ROADMAP.md` fāzi, kurā gadījumu atbalsta. ✗ nozīm
 
 ## 8. Datu modelis (TypeScript)
 
-Orientējošs. Precizē F2 fāzē un atjauno šo sadaļu.
+Patiesības avots ir zod shēmas `packages/core/src/model/schema.ts`; TypeScript tipi ir to izvade (`z.output`). Zemāk esošais bloks ir lasāms pārskats. Atšķirības no tā, kas tika plānots pirms F2:
+
+- Noklusējumus aizpilda shēma: visiem `Rules` laukiem ir noklusējums no §5 tabulas (`hPattern.enabled` = true, `pattern` = `{ kind: 'free' }`; `fixed.fraction` ∈ (0, 1)); `EdgeProps.kind` = `wall`; `Doorway.mode` = `continuous`; `LayoutSettings` = `auto` virzienam, pusei un `y0`, `precut`, `aesthetics` 0,5, `seed` 1, `timeLimitMs` 3000.
+- `Project.meta?: { source: 'planted' | 'manual' | 'real'; knownOptimum?; bestKnown? }` (testa instancēm, sk. §9).
+- Modeļa integritāti pārbauda `model/integrity.ts` (parametru diapazoni no §5, CCW un vienkāršs kontūrs ar lokiem, `edges.length === outline.length`, unikāli ID, durvju atsauces un diapazons); tā nav neatkarīgais plāna validētājs `core/validate`.
+- Ielāde: `parseProject` = migrācija (`schemaVersion`) → zod → integritāte; `saveProject` raksta kanonisku JSON (shēmas atslēgu secība).
+- `Plan`, `PlannedPiece`, `PlannedBoard` (zemāk) ir F3 izvade un modelī vēl nav.
 
 ```ts
 /** Visi garumi — milimetros. */

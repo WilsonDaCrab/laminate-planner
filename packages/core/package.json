@@ -10,6 +10,7 @@
     "test": "vitest run --reporter=dot"
   },
   "dependencies": {
-    "clipper2-ts": "2.0.1-18"
+    "clipper2-ts": "2.0.1-18",
+    "zod": "^4.6.5"
   }
 }
