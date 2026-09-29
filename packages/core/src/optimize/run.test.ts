@@ -10,6 +10,7 @@ import { createRng } from '../rng/index';
 import { validatePlan } from '../validate/index';
 import { runBInst } from './baselines/sequentialRuns';
 import { runHillClimb } from './baselines/hc';
+import { better, Budget } from './incumbent';
 import { resetPhase, shiftPhase } from './moves';
 import { runMethod } from './run';
 import type { Method } from './types';
@@ -50,21 +51,24 @@ describe('baselines on instances/*', () => {
         }
       });
 
-      it('hc is never worse than its start', () => {
+      it('hc is never worse than its B-INST start (same decoder)', () => {
         const { ctx } = runMethod(project, 'b-inst');
         const start = runBInst(ctx).phi;
-        const before = evaluate(ctx, start);
         const hc = runHillClimb(ctx, createRng(1), { iters: 100 }, { start });
-        expect(
-          hc.evaluation.feasible === before.feasible ? hc.evaluation.B <= before.B : true,
-        ).toBe(true);
-        expect(hc.evaluation.B).toBeLessThanOrEqual(before.feasible ? before.B : Infinity);
+        const before = evaluate(ctx, start, { mode: hc.mode });
+        expect(better(before, hc.evaluation)).toBe(false);
       });
     });
   }
 });
 
 describe('run budget', () => {
+  it('rejects a time limit without a clock', () => {
+    expect(() => new Budget({ timeMs: 100 }, 10)).toThrow(/clock/);
+    const project = parseProject(instanceFiles[0]!.raw);
+    expect(() => runMethod(project, 'rs', { budget: { timeMs: 100 } })).toThrow(/clock/);
+  });
+
   const project = parseProject(instanceFiles[0]!.raw);
 
   it('honours the evaluation budget exactly when the bound is not reached', () => {
@@ -77,8 +81,8 @@ describe('run budget', () => {
     let t = 0;
     const clock = () => (t += 100);
     const r = runMethod(project, 'rs', { seed: 2, budget: { timeMs: 250, clock } }).result;
-    expect(r.evals).toBeGreaterThan(0);
-    expect(r.evals).toBeLessThan(10_000);
+    // Clock reads: start 100; at 0 evals 200 (elapsed 100); at 256 → 300 (200); at 512 → 400 (300 ≥ 250).
+    expect(r.evals).toBe(512);
   });
 });
 

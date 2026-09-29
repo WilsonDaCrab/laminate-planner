@@ -43,6 +43,9 @@ export class Budget {
     private readonly limits: { iters?: number; timeMs?: number; clock?: () => number },
     private readonly defaultIters: number,
   ) {
+    if (limits.timeMs !== undefined && !limits.clock) {
+      throw new RangeError('Budget: timeMs needs a clock (the core never reads system time)');
+    }
     this.t0 = limits.clock ? limits.clock() : 0;
   }
 

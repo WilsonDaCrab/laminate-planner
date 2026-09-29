@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import {
   buildContext,
   buildPlan,
+  evaluate,
   goodY0,
   lowerBounds,
   parseProject,
@@ -30,7 +31,7 @@ const USAGE = `lp-bench <command>
                                   table of all methods over instance files or directories
 `;
 
-export class CliError extends Error {}
+class CliError extends Error {}
 
 const loadInstance = (file: string): Project =>
   parseProject(JSON.parse(readFileSync(file, 'utf8')));
@@ -193,35 +194,54 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
   const iters = toInt('iters', values.iters, DEFAULT_ITERS)!;
   const seed = toInt('seed', values.seed, 1)!;
 
-  log(['instance', 'segs', 'LB', ...METHODS.map((m) => m.toUpperCase()), 'ms'].map(pad).join(' '));
+  log(
+    ['instance', 'segs', 'LB', 'B-NEXT', 'B-INST', 'B-INST/pc', 'RS', 'HC', 'ms']
+      .map(pad)
+      .join(' '),
+  );
   let bad = 0;
   for (const file of files) {
-    const project = loadInstance(file);
-    const t0 = performance.now();
-    const cells: string[] = [];
-    let segs = 0;
-    let lb = 0;
-    const B: Partial<Record<Method, number>> = {};
-    for (const m of METHODS) {
-      const { ctx, result } = runMethod(project, m, { seed, budget: { iters } });
-      segs = ctx.layout.segments.length;
-      lb = lowerBounds(ctx).lb;
-      B[m] = result.evaluation.B;
-      const plan = buildPlan(ctx, result.phi, { mode: result.mode });
-      const v = validatePlan(project, plan);
-      const other = v.violations.some((x) => x.code !== 'stagger');
-      const mark = other ? '!' : result.evaluation.feasible ? '' : '*';
-      if (other) bad++;
-      cells.push(`${result.evaluation.B}${mark}`);
+    try {
+      const project = loadInstance(file);
+      const t0 = performance.now();
+      const cells: string[] = [];
+      let segs = 0;
+      let lb = 0;
+      const B: Partial<Record<Method, number>> = {};
+      for (const m of METHODS) {
+        const { ctx, result } = runMethod(project, m, { seed, budget: { iters } });
+        segs = ctx.layout.segments.length;
+        lb = lowerBounds(ctx).lb;
+        B[m] = result.evaluation.B;
+        const plan = buildPlan(ctx, result.phi, { mode: result.mode });
+        const v = validatePlan(project, plan);
+        const other = v.violations.some((x) => x.code !== 'stagger');
+        const disagree = v.boards !== result.evaluation.B;
+        const mark = other || disagree ? '!' : result.evaluation.feasible ? '' : '*';
+        if (other || disagree) bad++;
+        cells.push(`${result.evaluation.B}${mark}`);
+        if (m === 'b-inst') {
+          // The same phases under the pre-cut decoder: what RS and HC (project mode) compare to.
+          cells.push(String(evaluate(ctx, result.phi, { mode: 'precut' }).B));
+        }
+      }
+      const flag = B['b-inst']! > B['b-next']! ? '  <- B-INST > B-NEXT' : '';
+      log(
+        [instanceId(file), String(segs), String(lb), ...cells, fixed(performance.now() - t0, 0)]
+          .map(pad)
+          .join(' ') + flag,
+      );
+    } catch (e) {
+      bad++;
+      log(`${instanceId(file)}: error: ${e instanceof Error ? e.message : String(e)}`);
     }
-    const flag = B['b-inst']! > B['b-next']! ? '  <- B-INST > B-NEXT' : '';
-    log(
-      [instanceId(file), String(segs), String(lb), ...cells, fixed(performance.now() - t0, 0)]
-        .map(pad)
-        .join(' ') + flag,
-    );
   }
-  log('* = seam offset not satisfied (V > 0), ! = validator found another violation');
+  log(
+    'B-NEXT, B-INST: on-site decoder; B-INST/pc: same phases, pre-cut decoder; RS, HC: project mode (pre-cut).',
+  );
+  log(
+    '* = seam offset not satisfied (V > 0), ! = validator found another violation or board count.',
+  );
   return bad === 0 ? 0 : 1;
 }
 
@@ -245,10 +265,8 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return command === undefined || command === 'help' ? 0 : 2;
     }
   } catch (e) {
-    if (e instanceof CliError || (e instanceof TypeError && 'code' in e)) {
-      log(`error: ${e.message}`);
-      return 2;
-    }
-    throw e;
+    // Usage, I/O, parse and model errors: exit 2, so that 1 stays "the plan has violations".
+    log(`error: ${e instanceof Error ? e.message : String(e)}`);
+    return 2;
   }
 }

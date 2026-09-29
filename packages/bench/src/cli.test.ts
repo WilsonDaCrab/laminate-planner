@@ -76,6 +76,17 @@ describe('bench CLI', () => {
     expect(run('nope').code).toBe(2);
   });
 
+  it('maps I/O, parse and budget errors to exit code 2 (1 means plan violations)', () => {
+    const bad = join(tmp, 'bad.json');
+    writeFileSync(bad, '{ not json');
+    expect(run('run', join(tmp, 'missing.json'), '--method', 'rs').code).toBe(2);
+    expect(run('run', bad, '--method', 'rs').code).toBe(2);
+    expect(run('validate', bad).code).toBe(2);
+    expect(run('validate', join(tmp, 'missing.json')).code).toBe(2);
+    expect(run('run', instance('rect/R1.json'), '--method', 'rs', '--iters', '0').code).toBe(2);
+    expect(run('lb', bad).code).toBe(2);
+  });
+
   it('rejects malformed result files', () => {
     expect(() => parseRunResult({ version: 99 })).toThrow(/version/);
     expect(() => parseRunResult(null)).toThrow();
