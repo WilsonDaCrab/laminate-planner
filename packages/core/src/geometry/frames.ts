@@ -7,6 +7,7 @@
  * - board: x_b ∈ [0, L], y_b ∈ [0, W]; a pure translation of the row frame (board orientation is fixed).
  */
 
+import type { Shape } from './clip';
 import { cross, type Vec2 } from './vec';
 
 /** Affine map: x' = a·x + c·y + e, y' = b·x + d·y + f. */
@@ -75,6 +76,15 @@ export const applyAll = (m: Affine, pts: readonly Vec2[]): Vec2[] => pts.map((p)
 export function applyToPolygon(m: Affine, poly: readonly Vec2[]): Vec2[] {
   const out = applyAll(m, poly);
   return determinant(m) < 0 ? out.reverse() : out;
+}
+
+/** Transforms a shape and keeps its convention: outer counter-clockwise, holes clockwise. */
+export function transformShape(m: Affine, s: Shape): Shape {
+  const outer = applyAll(m, s.outer);
+  const holes = s.holes.map((h) => applyAll(m, h));
+  return determinant(m) < 0
+    ? { outer: outer.reverse(), holes: holes.map((h) => h.reverse()) }
+    : { outer, holes };
 }
 
 /** True when the map reverses orientation (mirrors). */

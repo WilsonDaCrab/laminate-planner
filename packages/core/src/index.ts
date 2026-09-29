@@ -1,4 +1,6 @@
 export * from './num/index';
+export * from './num/intervals';
 export * from './rng/index';
 export * from './geometry/index';
 export * from './model/index';
+export * from './layout/index';
