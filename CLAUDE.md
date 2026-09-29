@@ -51,7 +51,7 @@ pnpm format                   # Prettier (tikai kods; docs/ un CLAUDE.md ir izsl
 pnpm build
 ```
 
-Vēl nav (parādīsies vēlākās fāzēs; `pnpm bench` ir tikai stubs līdz F4):
+Vēl nav (`pnpm bench` skripta pagaidām nav; tas parādīsies F4 fāzē):
 
 ```bash
 pnpm bench run instances/rect/R2.json --method sa --seed 1 --time 2000 --svg   # F4+

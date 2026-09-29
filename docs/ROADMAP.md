@@ -10,15 +10,15 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F0. Repozitorijs un rīki (~1 d)
 
-- [ ] pnpm workspace: `packages/core` (@lp/core), `packages/bench` (@lp/bench), `apps/web` (@lp/web — pagaidām tukšs Vite + React šablons)
-- [ ] `tsconfig.base.json`: `strict`, `noUncheckedIndexedAccess`; kodolam `lib: ["ES2023"]`, `types: []` (bez DOM)
-- [ ] ESLint flat config + Prettier. Kodolam: aizliegt `window`, `document`, `Math.random`, `Date.now`; `validate` nedrīkst importēt `layout`/`plan`/`evaluate`/`optimize`
-- [ ] Vitest + fast-check; viens parauga tests kodolā
-- [ ] Saknes skripti `typecheck`, `lint`, `test` (tos izmanto Stop hook); `test` ar kluso reporteri (`vitest run --reporter=dot`), lai izvadē būtu tikai kļūdas
-- [ ] Pārbaudīt `.claude/` konfigurāciju: Stop hook bloķē pabeigšanu ar tīši salauztu testu un pēc labojuma ļauj pabeigt; `test-runner` atgriež tikai kļūdas
-- [ ] GitHub Actions: typecheck, lint, test uz katru push/PR
-- [ ] README.md (īss apraksts, palaišana), LICENSE (izvēlēties; pārbaudīt `clipper2-ts` licences saderību)
-- [ ] Precizēt komandu sadaļu `CLAUDE.md`
+- [x] pnpm workspace: `packages/core` (@lp/core), `packages/bench` (@lp/bench), `apps/web` (@lp/web — pagaidām tukšs Vite + React šablons)
+- [x] `tsconfig.base.json`: `strict`, `noUncheckedIndexedAccess`; kodolam `lib: ["ES2023"]`, `types: []` (bez DOM)
+- [x] ESLint flat config + Prettier. Kodolam: aizliegt `window`, `document`, `Math.random`, `Date.now`; `validate` nedrīkst importēt `layout`/`plan`/`evaluate`/`optimize`
+- [x] Vitest + fast-check; viens parauga tests kodolā
+- [x] Saknes skripti `typecheck`, `lint`, `test` (tos izmanto Stop hook); `test` ar kluso reporteri (`vitest run --reporter=dot`), lai izvadē būtu tikai kļūdas
+- [x] Pārbaudīt `.claude/` konfigurāciju: Stop hook bloķē pabeigšanu ar tīši salauztu testu un pēc labojuma ļauj pabeigt; `test-runner` atgriež tikai kļūdas
+- [x] GitHub Actions: typecheck, lint, test uz katru push/PR
+- [x] README.md (īss apraksts, palaišana), LICENSE (izvēlēties; pārbaudīt `clipper2-ts` licences saderību)
+- [x] Precizēt komandu sadaļu `CLAUDE.md`
 
 **Kritēriji:** `pnpm install && pnpm test` strādā tīrā klonā; CI zaļš; ESLint noķer `Math.random()` kodolā (pārbaudīts ar tīšu pārkāpumu); Stop hook un abi aģenti strādā.
 
