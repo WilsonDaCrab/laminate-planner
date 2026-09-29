@@ -8,13 +8,14 @@ import { applyAll, invert } from '../geometry/frames';
 import type { Vec2 } from '../geometry/vec';
 import { pieceShapes, lengthDeficit } from '../layout/pieces';
 import type { PiecePart, Plan, PlanWarning, PlannedBoard, PlannedPiece } from '../model/plan';
+import { lowerBounds } from '../bounds/bounds';
 import { decode, decodeSequential } from './decode';
 import { layingOrder } from './onsite';
 import { pipeDrills, shapeFeatures, type PipeDrill } from './features';
 import { piecesForPhases, seamsFor, type LabelledPiece, type PlanContext } from './context';
 
 export interface BuildPlanOptions {
-  /** Lower bounds for the statistics (filled by `bounds` once available). */
+  /** Precomputed lower bounds (they do not depend on φ); computed from the context if omitted. */
   bounds?: { lb0: number; lb1: number };
   /** Decoder: global pairing (`precut`) or sequential laying (`onsite`). Default: project setting. */
   mode?: 'precut' | 'onsite';
@@ -179,7 +180,7 @@ export function buildPlan(
 
   const areaInstalled = shapesArea(ctx.zone.shapes);
   const B = decoded.B;
-  const { lb0, lb1 } = opts.bounds ?? { lb0: 0, lb1: 0 };
+  const { lb0, lb1 } = opts.bounds ?? lowerBounds(ctx);
   const stats = {
     boards: B,
     packs: Math.ceil(

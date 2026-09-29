@@ -5,3 +5,4 @@ export * from './geometry/index';
 export * from './model/index';
 export * from './layout/index';
 export * from './plan/index';
+export * from './bounds/index';
