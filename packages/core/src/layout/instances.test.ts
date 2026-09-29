@@ -18,7 +18,7 @@ import { buildProfiles } from './xprofile';
  *  R2 zone y ∈ [10, 4990]: rows 182 + 24·192 + 190 → 26 rows.
  *  L1 zone y ∈ [−120, 4590]: the doorway on the bottom wall pushes the floor 120 mm outwards,
  *     which adds the row [−192, 0] (a 940 mm wide segment) to the 24 rows of the L itself
- *     (182 + 22·192 + 184) → 25 rows, one segment each (the L stays connected).
+ *     (182 + 22·192 + 174 = 4580) → 25 rows, one segment each (the L stays connected).
  *  U1 zone y ∈ [10, 3990]: 21 rows; rows with lower edge ≥ 1490 (k ≥ 8, 13 rows) split into two arms:
  *     8 + 13·2 = 34 segments.
  *  S1 zone y ∈ [10, 2990]: 182 + 14·192 + 110 → 16 rows.

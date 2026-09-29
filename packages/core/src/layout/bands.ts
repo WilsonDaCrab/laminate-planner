@@ -64,6 +64,8 @@ export interface Layout {
 
 /** Segments smaller than this (mm²) are numerical slivers from clipping, not geometry. */
 const MIN_SEGMENT_AREA = 1e-3;
+/** Segments thinner than two Clipper grid steps (mm) are dropped for the same reason. */
+const MIN_SEGMENT_HEIGHT = 2 * CLIPPER_GRID_MM;
 
 /**
  * Row configuration from project settings. 'auto' values are resolved by the outer loop (F5);
@@ -121,6 +123,8 @@ export function buildBands(zoneShapes: readonly Shape[], cfg: RowConfig, W: Mm):
     const parts = intersect(shapes, [rectShape(box.minX - 1, lo, box.maxX + 1, hi)])
       .filter((s) => shapeArea(s) > MIN_SEGMENT_AREA)
       .map((shape) => ({ shape, box: bbox(shape.outer) }))
+      // A strip only a grid step or two high is clipping noise (a wall grazing the band line).
+      .filter(({ box: sb }) => sb.maxY - sb.minY >= MIN_SEGMENT_HEIGHT)
       .sort((p, q) => p.box.minX - q.box.minX);
     if (parts.length === 0) continue;
 

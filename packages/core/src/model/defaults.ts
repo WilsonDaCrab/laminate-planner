@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { CURRENT_SCHEMA_VERSION } from './migrations';
 import {
   LayoutSettingsSchema,
   ProductSchema,
@@ -39,7 +40,7 @@ export interface ProjectInit {
 /** A complete, valid project from a partial description. */
 export function createProject(init: ProjectInit = {}): Project {
   return ProjectSchema.parse({
-    schemaVersion: 1,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     name: init.name ?? 'Untitled',
     product: init.product ?? DEFAULT_PRODUCT,
     rules: init.rules ?? {},

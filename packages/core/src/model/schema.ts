@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { CURRENT_SCHEMA_VERSION } from './migrations';
 
 const mm = z.number();
 const nonNegMm = z.number().nonnegative();
@@ -163,7 +164,7 @@ export const ProjectMetaSchema = z.object({
 });
 
 export const ProjectSchema = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   name: z.string(),
   product: ProductSchema,
   rules: RulesSchema.prefault({}),

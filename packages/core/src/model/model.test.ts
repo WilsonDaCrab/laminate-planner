@@ -210,6 +210,29 @@ describe('rejection', () => {
     expect(issueCodes(() => parseProject(doc))).toContain('doorwayOnArc');
   });
 
+  it('a doorway joining an edge to itself, and doorways that overlap on one edge', () => {
+    const door = (id: string, offsetA: number, extra: Record<string, unknown> = {}) => ({
+      id,
+      roomA: 'r1',
+      edgeA: 0,
+      offsetA,
+      width: 800,
+      depth: 100,
+      jambUndercut: 20,
+      ...extra,
+    });
+    const doc = domainExample() as ReturnType<typeof domainExample> & { doorways: unknown[] };
+
+    doc.doorways = [door('d1', 100, { roomB: 'r1', edgeB: 0, offsetB: 2000 })];
+    expect(issueCodes(() => parseProject(doc))).toContain('doorwaySameEdge');
+
+    doc.doorways = [door('d1', 100), door('d2', 800)]; // [100, 900] and [800, 1600] overlap
+    expect(issueCodes(() => parseProject(doc))).toContain('doorwayOverlap');
+
+    doc.doorways = [door('d1', 100), door('d2', 900)]; // touching ends are fine
+    expect(issueCodes(() => parseProject(doc))).not.toContain('doorwayOverlap');
+  });
+
   it('invalid JSON text and non-object documents', () => {
     expect(issueCodes(() => loadProject('{ nope'))).toContain('invalidJson');
     expect(issueCodes(() => parseProject([]))).toContain('notAnObject');

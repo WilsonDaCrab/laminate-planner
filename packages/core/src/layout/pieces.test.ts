@@ -5,8 +5,9 @@ import { referenceRooms } from '../geometry/fixtures/rooms';
 import { bbox } from '../geometry/polygon';
 import { buildZone } from '../geometry/zone';
 import { measure } from '../num/intervals';
-import { buildBands, type Segment } from './bands';
-import { buildNeighbors, horizontalEdges } from './neighbors';
+import { buildBands, type Layout, type Segment } from './bands';
+import { oraclePieces } from './fixtures/oracle';
+import { buildNeighbors, horizontalEdges, type NeighborGraph } from './neighbors';
 import {
   describePieces,
   describePiecesFast,
@@ -230,7 +231,7 @@ describe('complex segment (C shape)', () => {
 
 /** Every segment (with profile) of the reference rooms under a few row configurations. */
 function corpus() {
-  const items: { segment: Segment; profile: XProfile }[] = [];
+  const items: { segment: Segment; profile: XProfile; layout: Layout; graph: NeighborGraph }[] = [];
   for (const room of referenceRooms) {
     const shapes = buildZone(room.input).shapes;
     for (const c of [
@@ -242,7 +243,7 @@ function corpus() {
       const graph = buildNeighbors(layout);
       const profiles = buildProfiles(layout.segments, graph);
       for (const segment of layout.segments)
-        items.push({ segment, profile: profiles[segment.id]! });
+        items.push({ segment, profile: profiles[segment.id]!, layout, graph });
     }
   }
   return items;
@@ -367,5 +368,58 @@ describe('properties over the reference rooms', () => {
       }),
       { numRuns: 300 },
     );
+  });
+});
+
+describe('open edges of pieces against an independent oracle', () => {
+  it('openLow / openHigh / extent agree with Clipper piece shapes ∩ the neighbours’ real edges', () => {
+    fc.assert(
+      fc.property(itemIndex, phase, (i, phi) => {
+        const { segment, profile, layout, graph } = items[i]!;
+        const seams = seamsOf(segment.a, segment.b, L, phi);
+        const pieces = describePieces(profile, L, phi);
+        const oracle = oraclePieces(layout, graph, segment, seams);
+        // Seams are snapped to the 0.01 mm Clipper grid: compare within 0.05 mm.
+        return (
+          oracle.length === pieces.length &&
+          pieces.every(
+            (p, k) =>
+              p.short === oracle[k]!.short &&
+              Math.abs(p.extent - oracle[k]!.extent) < 0.05 &&
+              Math.abs(p.openLow - oracle[k]!.openLow) < 0.05 &&
+              Math.abs(p.openHigh - oracle[k]!.openHigh) < 0.05,
+          )
+        );
+      }),
+      { numRuns: 300 },
+    );
+  });
+});
+
+describe('open-edge noise threshold', () => {
+  it('an open edge of a hundredth of a millimetre does not demand L_min', () => {
+    // 3000 × 192 rectangle whose bottom edge is "open" for only 0.01 mm (grid-snapping noise).
+    const { profile } = standalone(rectShape(0, 0, 3000, 192), 0, 192, {
+      low: [[0, 0.01]],
+      high: [],
+    });
+    expect(profile.isRect).toBe(false); // partial open edge → general path
+    const pieces = describePieces(profile, L, 100); // start piece [0, 100]
+    expect(pieces[0]!.short).toBe('start');
+    expect(pieces[0]!.openLow).toBeCloseTo(0.01, 9);
+    expect(pieces[0]!.long).toBe('none');
+    // Without the threshold this sliver would be an open edge needing 300 mm; it is no real open
+    // edge, so the piece itself must be ≥ 300 mm: phase 100 is short; phase 500 (seams 500, 1785,
+    // pieces 500 | 1285 | 1215) is fine at both ends.
+    expect(lengthDeficit(pieces, 300)).toBeGreaterThan(0);
+    expect(lengthDeficit(describePieces(profile, L, 500), 300)).toBe(0);
+  });
+
+  it('a real open edge of 0.05 mm still counts', () => {
+    const { profile } = standalone(rectShape(0, 0, 3000, 192), 0, 192, {
+      low: [[0, 0.05]],
+      high: [],
+    });
+    expect(describePieces(profile, L, 400)[0]!.long).toBe('low');
   });
 });

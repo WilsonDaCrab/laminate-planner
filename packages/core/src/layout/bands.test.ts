@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shapesArea, type Shape } from '../geometry/clip';
+import { rectShape, shapesArea, type Shape } from '../geometry/clip';
 import { signedArea } from '../geometry/polygon';
 import { buildZone } from '../geometry/zone';
 import { createProject } from '../model/defaults';
@@ -168,6 +168,23 @@ describe('edge cases', () => {
     const layout = buildBands(rectZone(3000, 120), { theta: 0, stackSide: 'left', y0: 0 }, W);
     expect(layout.segments).toHaveLength(1);
     expect(layout.segments[0]!.yHi - layout.segments[0]!.yLo).toBeCloseTo(100, 6);
+  });
+
+  it('a strip only a hundredth of a millimetre high above a band line is clipping noise, not a row', () => {
+    // Zone 1000 × 192.01: the second band [192, 384] would hold a 0.01 mm sliver (10 mm²).
+    const layout = buildBands(
+      [rectShape(0, 0, 1000, 192.01)],
+      { theta: 0, stackSide: 'left', y0: 0 },
+      W,
+    );
+    expect(layout.segments.map((s) => s.id)).toEqual(['1a']);
+    // A genuine thin row (0.05 mm = 2.5 grid steps) is kept.
+    const thin = buildBands(
+      [rectShape(0, 0, 1000, 192.05)],
+      { theta: 0, stackSide: 'left', y0: 0 },
+      W,
+    );
+    expect(thin.segments.map((s) => s.id)).toEqual(['1a', '2a']);
   });
 });
 

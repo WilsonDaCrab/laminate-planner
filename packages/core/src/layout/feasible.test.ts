@@ -6,10 +6,11 @@ import { bbox } from '../geometry/polygon';
 import { buildZone } from '../geometry/zone';
 import { circDist } from '../num/index';
 import { createRng } from '../rng/index';
-import { buildBands, type Segment } from './bands';
+import { buildBands, type Layout, type Segment } from './bands';
+import { oraclePieces, oracleMeetsMinLength } from './fixtures/oracle';
 import { contains, feasibleSet, measureOf, project, sample, type Feasible } from './feasible';
-import { buildNeighbors } from './neighbors';
-import { describePieces, meetsMinLength } from './pieces';
+import { buildNeighbors, type NeighborGraph } from './neighbors';
+import { describePieces, meetsMinLength, seamsOf } from './pieces';
 import { buildProfile, buildProfiles, type XProfile } from './xprofile';
 
 const W = 192;
@@ -130,7 +131,7 @@ describe('rectangle: analytic set agrees with brute force over φ', () => {
         fc.integer({ min: 50, max: 642 }),
         (a, len, lMin) => {
           const r = feasibleSet(rectProfile(a, a + len), L, lMin);
-          return !r.relaxed && measureOf(r.feasible) >= 0 && r.feasible.intervals.length > 0;
+          return !r.relaxed && r.feasible.intervals.length > 0;
         },
       ),
       { numRuns: 300 },
@@ -276,7 +277,13 @@ describe('operations: contains / measureOf / sample / project', () => {
 });
 
 describe('property: every φ ∈ F_s meets L_min (reference rooms, several row configurations)', () => {
-  const items: { profile: XProfile; feasible: Feasible }[] = [];
+  const items: {
+    profile: XProfile;
+    feasible: Feasible;
+    segment: Segment;
+    layout: Layout;
+    graph: NeighborGraph;
+  }[] = [];
   let counter = 0;
   for (const room of referenceRooms) {
     const shapes = buildZone(room.input).shapes;
@@ -285,15 +292,24 @@ describe('property: every φ ∈ F_s meets L_min (reference rooms, several row c
       { theta: Math.PI / 6, y0: 40 },
     ]) {
       const layout = buildBands(shapes, { ...c, stackSide: 'left' }, W);
-      const profiles = buildProfiles(layout.segments, buildNeighbors(layout));
+      const graph = buildNeighbors(layout);
+      const profiles = buildProfiles(layout.segments, graph);
       for (const s of layout.segments) {
         const profile = profiles[s.id]!;
         // Scans are the slow part: keep every rectangle but only a sample of the other segments.
         if (!profile.isRect && counter++ % 6 !== 0) continue;
-        items.push({ profile, feasible: feasibleSet(profile, L, 300).feasible });
+        const { feasible, relaxed } = feasibleSet(profile, L, 300);
+        if (!relaxed) items.push({ profile, feasible, segment: s, layout, graph });
       }
     }
   }
+
+  /** The rule judged on exact Clipper piece shapes (no `describePieces`), grid tolerance 0.05 mm. */
+  const oracleOk = (i: number, phi: number): boolean => {
+    const { segment, layout, graph } = items[i]!;
+    const seams = seamsOf(segment.a, segment.b, L, ((phi % L) + L) % L);
+    return oracleMeetsMinLength(oraclePieces(layout, graph, segment, seams), 300, 0.05);
+  };
 
   it('the corpus mixes rectangles and scanned segments', () => {
     expect(items.some((i) => i.profile.isRect)).toBe(true);
@@ -308,20 +324,21 @@ describe('property: every φ ∈ F_s meets L_min (reference rooms, several row c
         (i, seed) => {
           const { profile, feasible } = items[i]!;
           const phi = sample(feasible, createRng(seed));
-          return feasibleOk(profile, phi, 300);
+          return feasibleOk(profile, phi, 300) && oracleOk(i, phi);
         },
       ),
       { numRuns: 1000 },
     );
   });
 
-  it('interval endpoints and midpoints satisfy the rule too', () => {
-    for (const { profile, feasible } of items) {
+  it('interval endpoints and midpoints satisfy the rule too (also on the exact-shape oracle)', () => {
+    items.forEach(({ profile, feasible }, i) => {
       for (const [lo, hi] of feasible.intervals) {
         for (const phi of [lo, hi, (lo + hi) / 2]) {
           expect(feasibleOk(profile, phi, 300), `${profile.segmentId} φ=${phi}`).toBe(true);
+          expect(oracleOk(i, phi), `oracle ${profile.segmentId} φ=${phi}`).toBe(true);
         }
       }
-    }
+    });
   });
 });

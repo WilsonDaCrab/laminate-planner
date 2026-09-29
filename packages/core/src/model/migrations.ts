@@ -1,7 +1,7 @@
 import { ProjectError, errorIssue } from './errors';
 
 /** Version written by this build. Bump it together with a new entry in MIGRATIONS. */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 1 as const;
 
 /** Upgrades a raw (unvalidated) project document from `from` to `to`. */
 export interface Migration {

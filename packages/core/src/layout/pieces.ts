@@ -7,6 +7,7 @@ import { intersect, rectShape, type Shape } from '../geometry/clip';
 import { EPS, mod, type Mm } from '../num/index';
 import { overlapMeasure } from '../num/intervals';
 import type { Segment } from './bands';
+import { MIN_OPEN_LENGTH } from './neighbors';
 import { sectionsIn, type XProfile } from './xprofile';
 
 /** Which short (x) ends of a piece are cut: `start` = right end only, `end` = left end only. */
@@ -52,10 +53,15 @@ function shortOf(index: number, seamCount: number): ShortNeeds {
   return 'full';
 }
 
+/**
+ * A long edge counts as needed only when its open part inside the piece exceeds the clipping
+ * noise (MIN_OPEN_LENGTH); a sliver of a hundredth of a millimetre from two independently snapped
+ * shapes must not demand a full L_min.
+ */
 function longOf(openLow: number, openHigh: number): LongNeeds {
-  if (openLow > EPS && openHigh > EPS) return 'both';
-  if (openLow > EPS) return 'low';
-  if (openHigh > EPS) return 'high';
+  if (openLow > MIN_OPEN_LENGTH && openHigh > MIN_OPEN_LENGTH) return 'both';
+  if (openLow > MIN_OPEN_LENGTH) return 'low';
+  if (openHigh > MIN_OPEN_LENGTH) return 'high';
   return 'none';
 }
 
@@ -71,23 +77,26 @@ export function describePiecesFast(profile: XProfile, L: Mm, phi: number): Piece
   const { a, b, yLo, yHi, bandLo, bandHi } = profile;
   const seams = seamsOf(a, b, L, phi);
   const xs = boundaries(a, b, seams);
+  // isRect: an open edge is open along the whole segment, hence along the whole piece.
   const lowOpen = profile.openLow.length > 0;
   const highOpen = profile.openHigh.length > 0;
-  const long = longOf(lowOpen ? 1 : 0, highOpen ? 1 : 0);
-  const width =
-    long === 'both'
-      ? bandHi - bandLo
-      : long === 'low'
-        ? yHi - bandLo
-        : long === 'high'
-          ? bandHi - yLo
-          : yHi - yLo;
   const onLow = Math.abs(yLo - bandLo) <= EPS;
   const onHigh = Math.abs(yHi - bandHi) <= EPS;
 
   return xs.slice(0, -1).map((x0, index) => {
     const x1 = xs[index + 1]!;
     const extent = x1 - x0;
+    const openLow = lowOpen ? extent : 0;
+    const openHigh = highOpen ? extent : 0;
+    const long = longOf(openLow, openHigh);
+    const width =
+      long === 'both'
+        ? bandHi - bandLo
+        : long === 'low'
+          ? yHi - bandLo
+          : long === 'high'
+            ? bandHi - yLo
+            : yHi - yLo;
     return {
       index,
       x0,
@@ -98,8 +107,8 @@ export function describePiecesFast(profile: XProfile, L: Mm, phi: number): Piece
       width,
       lengthLow: onLow ? extent : 0,
       lengthHigh: onHigh ? extent : 0,
-      openLow: lowOpen ? extent : 0,
-      openHigh: highOpen ? extent : 0,
+      openLow,
+      openHigh,
     };
   });
 }
@@ -182,8 +191,8 @@ export function lengthDeficit(pieces: readonly PieceDescriptor[], minLength: Mm)
   let deficit = 0;
   for (const p of pieces) {
     if (p.short !== 'start' && p.short !== 'end') continue;
-    const lows = p.openLow > EPS;
-    const highs = p.openHigh > EPS;
+    const lows = p.openLow > MIN_OPEN_LENGTH;
+    const highs = p.openHigh > MIN_OPEN_LENGTH;
     // EPS is a threshold (float noise), not part of the amount.
     const short = (have: number): number => (minLength - have > EPS ? minLength - have : 0);
     if (lows) deficit += short(p.openLow);

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Shape } from '../geometry/clip';
+import { rectShape, type Shape } from '../geometry/clip';
 import { referenceRooms } from '../geometry/fixtures/rooms';
 import { buildZone } from '../geometry/zone';
 import { measure, type Interval } from '../num/intervals';
 import { buildBands, segmentById, type Layout } from './bands';
-import { buildNeighbors, horizontalEdges, type NeighborGraph } from './neighbors';
+import { buildNeighbors, horizontalEdges, MIN_OPEN_LENGTH, type NeighborGraph } from './neighbors';
 
 const W = 192;
 const uniform = (n: number, gap = 10) => Array.from({ length: n }, () => ({ gap }));
@@ -28,6 +28,29 @@ describe('horizontalEdges', () => {
     expect(horizontalEdges(square, 0, 'top')).toEqual([]);
     expect(horizontalEdges(square, 5, 'bottom')).toEqual([]);
     expect(horizontalEdges(square, 2, 'bottom')).toEqual([]);
+  });
+});
+
+describe('open-edge noise threshold', () => {
+  const cfg = { theta: 0, stackSide: 'left' as const, y0: 0 };
+  // Row 1 is [0, 1000] × [0, 192]; row 2 starts at x = `from` on the shared line y = 192.
+  const linked = (from: number): boolean => {
+    const layout = buildBands(
+      [rectShape(0, 0, 1000, 192), rectShape(from, 192, 2000, 384)],
+      cfg,
+      W,
+    );
+    return buildNeighbors(layout).links.length > 0;
+  };
+
+  it('an overlap of a hundredth of a millimetre (grid noise) is not a connection', () => {
+    expect(MIN_OPEN_LENGTH).toBeCloseTo(0.02, 12);
+    expect(linked(999.99)).toBe(false);
+  });
+
+  it('a real overlap of 0.05 mm is', () => {
+    expect(linked(999.95)).toBe(true);
+    expect(linked(500)).toBe(true);
   });
 });
 

@@ -104,11 +104,16 @@ function checkRoom(room: Room, ri: number, issues: ModelIssue[]): void {
 function checkDoorways(p: Project, issues: ModelIssue[]): void {
   const rooms = new Map(p.rooms.map((r) => [r.id, r]));
   const seen = new Set<string>();
+  /** Openings already placed on each (room, edge), to reject overlaps. */
+  const placed = new Map<string, [lo: number, hi: number][]>();
   p.doorways.forEach((d, di) => {
     const at = `doorways[${di}]`;
     if (seen.has(d.id))
       issues.push(errorIssue('duplicateId', `${at}.id`, `duplicate doorway id "${d.id}"`));
     seen.add(d.id);
+    if (d.roomB === d.roomA && d.edgeB === d.edgeA) {
+      issues.push(errorIssue('doorwaySameEdge', at, 'both sides of a doorway are the same edge'));
+    }
 
     const sides: [string, number | undefined, number | undefined][] = [
       [d.roomA, d.edgeA, d.offsetA],
@@ -137,6 +142,13 @@ function checkDoorways(p: Project, issues: ModelIssue[]): void {
           errorIssue('doorwayRange', at, 'the opening extends beyond the end of its edge'),
         );
       }
+      const key = `${roomId}#${edge}`;
+      const list = placed.get(key) ?? [];
+      if (list.some(([lo, hi]) => offset < hi - EPS && offset + d.width > lo + EPS)) {
+        issues.push(errorIssue('doorwayOverlap', at, `overlaps another doorway on edge ${edge}`));
+      }
+      list.push([offset, offset + d.width]);
+      placed.set(key, list);
     }
   });
 }

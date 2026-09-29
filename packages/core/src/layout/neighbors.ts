@@ -4,10 +4,17 @@
  * there are joined to the neighbouring row. The rest of the boundary is closed (wall, obstacle).
  */
 
-import type { Shape } from '../geometry/clip';
+import { CLIPPER_GRID_MM, type Shape } from '../geometry/clip';
 import { EPS } from '../num/index';
 import { intersectIntervals, normalizeIntervals, type Interval } from '../num/intervals';
 import type { Layout, Segment } from './bands';
+
+/**
+ * Shortest overlap (mm) that counts as an open edge. Segments are clipped independently and
+ * snapped to the 0.01 mm Clipper grid, so slanted or curved walls that merely touch a band line
+ * can overlap by a grid step or two without being connected.
+ */
+export const MIN_OPEN_LENGTH: number = 2 * CLIPPER_GRID_MM;
 
 export interface NeighborLink {
   lower: string;
@@ -81,7 +88,7 @@ export function buildNeighbors(layout: Layout): NeighborGraph {
     for (const t of layout.segments) {
       if (t.band !== s.band + 1) continue;
       const overlap = intersectIntervals(tops.get(s.id)!, bottoms.get(t.id)!, {
-        minLength: EPS,
+        minLength: MIN_OPEN_LENGTH,
       });
       if (overlap.length === 0) continue;
       graph.links.push({ lower: s.id, upper: t.id, intervals: overlap });
