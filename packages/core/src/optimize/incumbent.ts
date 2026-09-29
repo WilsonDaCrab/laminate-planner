@@ -1,10 +1,10 @@
-import type { Evaluation } from '../evaluate/evaluate';
+import type { QuickEval } from '../evaluate/evaluator';
 import type { TracePoint } from './types';
 
 const MAX_TRACE = 200;
 
 /** `a` beats `b`: feasible before infeasible, then fewer boards, then lower objective. */
-export function better(a: Evaluation, b: Evaluation): boolean {
+export function better(a: QuickEval, b: QuickEval): boolean {
   if (a.feasible !== b.feasible) return a.feasible;
   if (a.B !== b.B) return a.B < b.B;
   return a.f < b.f;
@@ -13,11 +13,11 @@ export function better(a: Evaluation, b: Evaluation): boolean {
 /** Best solution of a run (ALGORITHM §5: the best feasible one, else the best by f) and its trace. */
 export class Incumbent {
   phi: number[] | undefined;
-  evaluation: Evaluation | undefined;
+  evaluation: QuickEval | undefined;
   private readonly points: TracePoint[] = [];
 
   /** Offers a candidate (copied when accepted); returns whether it became the best. */
-  offer(phi: readonly number[], evaluation: Evaluation, evalNo: number): boolean {
+  offer(phi: readonly number[], evaluation: QuickEval, evalNo: number): boolean {
     if (this.evaluation && !better(evaluation, this.evaluation)) return false;
     this.phi = [...phi];
     this.evaluation = evaluation;

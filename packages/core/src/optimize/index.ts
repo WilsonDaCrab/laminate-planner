@@ -7,3 +7,4 @@ export * from './baselines/sequentialRuns';
 export * from './baselines/rs';
 export * from './baselines/hc';
 export * from './run';
+export * from './sa';

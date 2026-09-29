@@ -6,6 +6,7 @@ import { fork } from '../rng/index';
 import { runHillClimb } from './baselines/hc';
 import { runRandomSearch } from './baselines/rs';
 import { runBInst, runBNext } from './baselines/sequentialRuns';
+import { runSa } from './sa';
 import type { Method, OptimizeBudget, SearchResult } from './types';
 
 export interface RunOptions {
@@ -42,6 +43,12 @@ export function runMethod(project: Project, method: Method, opts: RunOptions = {
       break;
     case 'hc':
       result = runHillClimb(ctx, fork(seed, 0), budget, { start: runBInst(ctx).phi });
+      break;
+    case 'sa':
+      result = runSa(ctx, fork(seed, 0), { ...budget });
+      break;
+    case 'sa-onsite':
+      result = runSa(ctx, fork(seed, 0), { ...budget, mode: 'onsite' });
       break;
   }
   return { ctx, y0, result };

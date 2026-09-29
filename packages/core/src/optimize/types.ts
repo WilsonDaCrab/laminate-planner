@@ -1,7 +1,7 @@
-import type { Evaluation } from '../evaluate/evaluate';
+import type { QuickEval } from '../evaluate/evaluator';
 import type { DecodeMode } from '../plan/run';
 
-export type Method = 'b-next' | 'b-inst' | 'rs' | 'hc';
+export type Method = 'b-next' | 'b-inst' | 'rs' | 'hc' | 'sa' | 'sa-onsite';
 
 export interface OptimizeBudget {
   /** Number of evaluations (deterministic budget for experiments). */
@@ -22,7 +22,7 @@ export interface SearchResult {
   phi: number[];
   /** Decoder the evaluation (and therefore B) refers to; build the plan with the same mode. */
   mode: DecodeMode;
-  evaluation: Evaluation;
+  evaluation: QuickEval;
   /** Objective evaluations spent. */
   evals: number;
   /** Feasible and B equals the lower bound. */

@@ -12,6 +12,7 @@ import { buildContext } from '../plan/context';
 import { createRng } from '../rng/index';
 import { goodY0 } from '../layout/y0';
 import { DEFAULT_MOVE_WEIGHTS, MOVE_KINDS, MoveSet, shiftAmplitude, type MoveKind } from './moves';
+import { describePieces } from '../layout/pieces';
 import { PhaseSpace } from './phaseSpace';
 
 const load = (id: string) => {
@@ -57,6 +58,28 @@ describe('PhaseSpace', () => {
     const seq = space.bands.map((list) => bandOf(list[0]!));
     expect(seq).toEqual([...seq].sort((p, q) => p - q));
   });
+});
+
+describe('PhaseSpace start and end lengths', () => {
+  for (const id of ['R2', 'U1', 'S1', 'C2', 'P2']) {
+    it(`${id}: agree with the piece descriptors of the reference`, () => {
+      const { ctx, space } = load(id);
+      const rng = createRng(11);
+      for (let n = 0; n < 60; n++) {
+        const i = rng.int(0, space.size - 1);
+        const phi = space.sample(i, rng);
+        const pieces = describePieces(ctx.profiles[ctx.layout.segments[i]!.id]!, ctx.L, phi);
+        const start = space.startLen(i, phi);
+        const end = space.endLen(i, phi);
+        if (pieces.length < 2) {
+          expect(start).toBeUndefined();
+          continue;
+        }
+        expect(Math.abs(start! - pieces[0]!.extent)).toBeLessThan(1e-6);
+        expect(Math.abs(end! - pieces[pieces.length - 1]!.extent)).toBeLessThan(1e-6);
+      }
+    });
+  }
 });
 
 describe('MoveSet', () => {
@@ -113,7 +136,11 @@ describe('MoveSet', () => {
 
   it('M4 sets a piece to exactly complete an unpaired piece (e + s + k = L)', () => {
     const { ctx, space } = load('R2');
-    const moves = new MoveSet(ctx, space);
+    // Unpaired pieces as sources, random partners (closure and any-row sources switched off).
+    const moves = new MoveSet(ctx, space, DEFAULT_MOVE_WEIGHTS, {
+      closureProbability: 0,
+      anySourceProbability: 0,
+    });
     const evaluator = createReferenceEvaluator(ctx);
     const C = ctx.L - ctx.project.rules.kerf;
     let m4 = 0;
@@ -128,16 +155,75 @@ describe('MoveSet', () => {
       const { index, value } = p.changes[0]!;
       const start = mod(value - space.a[index]!, ctx.L);
       const end = mod(space.b[index]! - value, ctx.L);
-      const completesEnd = unpaired.ends.some((e) => Math.abs(e.len + start - C) < 1e-6);
-      const completesStart = unpaired.starts.some((s) => Math.abs(s.len + end - C) < 1e-6);
+      const completes = (list: (typeof unpaired)['ends'], part: number): boolean =>
+        Array.from({ length: list.count }, (_, k) => list.len[k]!).some(
+          (len) => Math.abs(len + part - C) < 1e-6,
+        );
+      const completesEnd = completes(unpaired.ends, start);
+      const completesStart = completes(unpaired.starts, end);
       expect(completesEnd || completesStart, `seed ${seed}`).toBe(true);
     }
     expect(m4).toBeGreaterThan(10);
   });
 
+  it('M4 with a closing partner creates two exact pairs from one change', () => {
+    // Planted rooms have rows that complete each other; a plain rectangle has none (M4 then falls back).
+    for (const id of ['P1', 'P2']) {
+      const { ctx, space } = load(id);
+      const moves = new MoveSet(ctx, space, DEFAULT_MOVE_WEIGHTS, {
+        closureProbability: 1,
+        anySourceProbability: 1,
+      });
+      const C = ctx.L - ctx.project.rules.kerf;
+      let closed = 0;
+      for (let seed = 1; seed <= 80; seed++) {
+        const rng = createRng(seed);
+        const phi = randomPhi(space, seed);
+        const p = moves.make('M4', phi, rng, 0.5);
+        if (p.kind !== 'M4') continue;
+        const { index: t, value } = p.changes[0]!;
+        const after = [...phi];
+        after[t] = value;
+        // Some other row i pairs with the partner t in both directions.
+        const pairsBothWays = space.a.some((_, i) => {
+          if (i === t) return false;
+          const eI = space.endLen(i, after[i]!);
+          const sI = space.startLen(i, after[i]!);
+          const eT = space.endLen(t, value);
+          const sT = space.startLen(t, value);
+          if (eI === undefined || sI === undefined || eT === undefined || sT === undefined) {
+            return false;
+          }
+          return Math.abs(eI + sT - C) < 1e-6 && Math.abs(eT + sI - C) < 1e-6;
+        });
+        expect(pairsBothWays, `${id} seed ${seed}`).toBe(true);
+        closed++;
+      }
+      expect(closed, id).toBeGreaterThan(5);
+    }
+  });
+
+  it('M4 closure finds no partner in a plain rectangle and falls back to M2', () => {
+    const { ctx, space } = load('R2');
+    const moves = new MoveSet(ctx, space, DEFAULT_MOVE_WEIGHTS, {
+      closureProbability: 1,
+      anySourceProbability: 1,
+    });
+    for (let seed = 1; seed <= 30; seed++) {
+      const p = moves.make('M4', randomPhi(space, seed), createRng(seed), 0.5);
+      expect(p.kind).toBe('M2');
+    }
+  });
+
   it('M4 falls back to M2 without unpaired pieces', () => {
     const { ctx, space } = load('R1');
-    const p = new MoveSet(ctx, space).make('M4', randomPhi(space, 1), createRng(1), 0.5);
+    const off = { closureProbability: 0, anySourceProbability: 0 };
+    const p = new MoveSet(ctx, space, DEFAULT_MOVE_WEIGHTS, off).make(
+      'M4',
+      randomPhi(space, 1),
+      createRng(1),
+      0.5,
+    );
     expect(p.kind).toBe('M2');
     expect(p.changes).toHaveLength(1);
   });

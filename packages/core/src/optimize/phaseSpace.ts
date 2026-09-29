@@ -5,7 +5,7 @@
 
 import { contains, project, sample, type Feasible } from '../layout/feasible';
 import type { PlanContext } from '../plan/context';
-import { mod } from '../num/index';
+import { EPS, mod } from '../num/index';
 import type { Rng } from '../rng/index';
 
 const key = (x: number): string => (Math.round(x * 1e6) / 1e6).toString();
@@ -75,11 +75,31 @@ export class PhaseSpace {
     if (!this.rect[i]) return p;
     const a = this.a[i]!;
     const off = p - a;
-    for (const step of [Math.round(off), Math.floor(off), Math.ceil(off)]) {
-      const v = mod(a + step, this.L);
-      if (contains(F, v)) return v;
-    }
-    return p;
+    let v = mod(a + Math.round(off), this.L);
+    if (contains(F, v)) return v;
+    v = mod(a + Math.floor(off), this.L);
+    if (contains(F, v)) return v;
+    v = mod(a + Math.ceil(off), this.L);
+    return contains(F, v) ? v : p;
+  }
+
+  /**
+   * Length of the start piece of segment `i` for phase φ: the distance from a_s to the first seam
+   * (a seam at the wall makes a whole board). Undefined when the segment has no seam (one piece).
+   */
+  startLen(i: number, phi: number): number | undefined {
+    const r = mod(phi - this.a[i]!, this.L);
+    const first = this.a[i]! + (r > EPS ? r : this.L);
+    return first < this.b[i]! - EPS ? first - this.a[i]! : undefined;
+  }
+
+  /** Length of the end piece of segment `i` for phase φ (from the last seam to b_s); see `startLen`. */
+  endLen(i: number, phi: number): number | undefined {
+    const r = mod(phi - this.a[i]!, this.L);
+    const first = this.a[i]! + (r > EPS ? r : this.L);
+    if (!(first < this.b[i]! - EPS)) return undefined;
+    const last = first + Math.floor((this.b[i]! - EPS - first) / this.L) * this.L;
+    return this.b[i]! - last;
   }
 
   /** A uniformly random feasible phase (whole-mm for rectangular segments). */

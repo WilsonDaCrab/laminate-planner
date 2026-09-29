@@ -6,6 +6,7 @@ import {
   buildPlan,
   evaluate,
   goodY0,
+  isSaResult,
   lowerBounds,
   parseProject,
   renderPlanSvg,
@@ -17,20 +18,28 @@ import {
   type Project,
 } from '@lp/core';
 import { generatePlanted, PLANTED_PRESETS } from './generate/planted';
+import { measure, PERF_SEGMENTS, PERF_TARGET, tallRoom } from './perf';
 import { parseRunResult, RESULT_VERSION, type RunResult } from './result';
 
-const METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc'];
+const METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc', 'sa', 'sa-onsite'];
+/** Methods of the `baselines` table (SA-onsite is a separate experiment, F6). */
+const TABLE_METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc', 'sa'];
 const DEFAULT_OUT = 'results/f4';
 const DEFAULT_ITERS = 2000;
 
 const USAGE = `lp-bench <command>
 
-  run <instance.json> --method b-next|b-inst|rs|hc [--seed N] [--iters N] [--time ms]
+  run <instance.json> --method b-next|b-inst|rs|hc|sa|sa-onsite [--seed N] [--iters N] [--time ms]
                       [--y0 mm] [--out dir] [--svg]
   validate <result.json>          check a result file with the independent validator
   lb <instance.json> [--y0 mm]    lower bounds LB0, LB1
   generate planted (--preset P1..P4 | --n N --m M --seed S) [--base instance.json] [--out file]
                                   planted staircase room with known optimum
+  perf [path...] [--evals N] [--rows N]
+                                  evaluations per second (reference, typed-array, SA-like) and the
+                                  F5 criterion on a rectangular room of --rows (default 60) rows
+  planted [path...] [--method sa|hc|rs] [--seeds N] [--iters N]
+                                  share of seeds that reach the known optimum of planted instances
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -133,6 +142,7 @@ function runCommand(args: string[], log: (line: string) => void): number {
       provenOptimal: result.provenOptimal,
       trace: result.trace,
     },
+    search: isSaResult(result) ? { stats: result.stats, curve: result.curve } : undefined,
     project,
     plan,
   };
@@ -199,7 +209,7 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
   const seed = toInt('seed', values.seed, 1)!;
 
   log(
-    ['instance', 'segs', 'LB', 'B-NEXT', 'B-INST', 'B-INST/pc', 'RS', 'HC', 'ms']
+    ['instance', 'segs', 'LB', 'B-NEXT', 'B-INST', 'B-INST/pc', 'RS', 'HC', 'SA', 'ms']
       .map(pad)
       .join(' '),
   );
@@ -212,7 +222,7 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
       let segs = 0;
       let lb = 0;
       const B: Partial<Record<Method, number>> = {};
-      for (const m of METHODS) {
+      for (const m of TABLE_METHODS) {
         const { ctx, result } = runMethod(project, m, { seed, budget: { iters } });
         segs = ctx.layout.segments.length;
         lb = lowerBounds(ctx).lb;
@@ -241,7 +251,7 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
     }
   }
   log(
-    'B-NEXT, B-INST: on-site decoder; B-INST/pc: same phases, pre-cut decoder; RS, HC: project mode (pre-cut).',
+    'B-NEXT, B-INST: on-site decoder; B-INST/pc: same phases, pre-cut decoder; RS, HC, SA: project mode (pre-cut).',
   );
   log(
     '* = seam offset not satisfied (V > 0), ! = validator found another violation or board count.',
@@ -249,7 +259,7 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
   return bad === 0 ? 0 : 1;
 }
 
-const pad = (s: string): string => s.padEnd(9);
+const pad = (s: string): string => s.padEnd(10);
 
 function generateCommand(args: string[], log: (line: string) => void): number {
   const [kind, ...rest] = args;
@@ -293,6 +303,104 @@ function generateCommand(args: string[], log: (line: string) => void): number {
   return 0;
 }
 
+function perfCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { evals: { type: 'string' }, rows: { type: 'string' } },
+  });
+  const evals = toInt('evals', values.evals, 100_000)!;
+  const rows = toInt('rows', values.rows, PERF_SEGMENTS)!;
+  const files = collectInstances(positionals.length > 0 ? positionals : ['instances']);
+  const clock = () => performance.now();
+  const table = files.map((f) => measure(instanceId(f), loadInstance(f), evals, clock));
+  const base = loadInstance('instances/rect/R1.json');
+  const tall = measure(`tall-${rows}`, tallRoom(base, rows), evals, clock);
+  log(
+    ['room', 'segs', 'reference', 'fast full', 'fast SA', 'SA iter.', 'speed-up']
+      .map(pad)
+      .join(' '),
+  );
+  for (const r of [...table, tall]) {
+    log(
+      [
+        r.name,
+        String(r.segments),
+        String(Math.round(r.reference)),
+        String(Math.round(r.fastFull)),
+        String(Math.round(r.fastSa)),
+        String(Math.round(r.saIteration)),
+        `${(r.fastSa / r.reference).toFixed(0)}x`,
+      ]
+        .map(pad)
+        .join(' '),
+    );
+  }
+  log(
+    'evaluations per second. fast full: random vectors (no reuse); fast SA: the evaluator alone on a replay of recorded moves M1-M5 (30 % accepted); SA iter.: a whole SA iteration incl. generating the move',
+  );
+  const ok = tall.fastSa >= PERF_TARGET && tall.segments >= PERF_SEGMENTS;
+  log(
+    `criterion: >= ${PERF_TARGET}/s at ${PERF_SEGMENTS} segments: ${tall.segments} segments, ` +
+      `${Math.round(tall.fastSa)}/s -> ${ok ? 'MET' : 'NOT MET'}`,
+  );
+  return ok ? 0 : 1;
+}
+
+function plantedCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { method: { type: 'string' }, seeds: { type: 'string' }, iters: { type: 'string' } },
+  });
+  const method = toMethod(values.method ?? 'sa');
+  const seeds = toInt('seeds', values.seeds, 20)!;
+  const iters = toInt('iters', values.iters, 200_000)!;
+  const files = collectInstances(positionals.length > 0 ? positionals : ['instances/planted']);
+  if (files.length === 0) throw new CliError('planted: no instance files found');
+  log(
+    ['instance', 'optimum', 'found', 'share', 'best B', 'mean B', 'mean ms'].map(pad).join(' ') +
+      `   (${method}, ${seeds} seeds, ${iters} evaluations)`,
+  );
+  let worst = 1;
+  for (const file of files) {
+    const project = loadInstance(file);
+    const optimum = project.meta?.knownOptimum;
+    if (optimum === undefined) throw new CliError(`${file}: no meta.knownOptimum`);
+    let found = 0;
+    let sum = 0;
+    let best = Infinity;
+    let ms = 0;
+    for (let seed = 1; seed <= seeds; seed++) {
+      const t0 = performance.now();
+      const { result } = runMethod(project, method, { seed, budget: { iters } });
+      ms += performance.now() - t0;
+      const b = result.evaluation.B;
+      sum += b;
+      best = Math.min(best, b);
+      if (result.evaluation.feasible && b === optimum) found++;
+    }
+    worst = Math.min(worst, found / seeds);
+    log(
+      [
+        instanceId(file),
+        String(optimum),
+        `${found}/${seeds}`,
+        `${((100 * found) / seeds).toFixed(0)} %`,
+        String(best),
+        fixed(sum / seeds, 2),
+        fixed(ms / seeds, 0),
+      ]
+        .map(pad)
+        .join(' '),
+    );
+  }
+  log(
+    `criterion: optimum in >= 90 % of the seeds on every instance: ${worst >= 0.9 ? 'MET' : 'NOT MET'}`,
+  );
+  return 0;
+}
+
 /** Runs a command line (without `node script`); returns the exit code. */
 export function main(argv: string[], log: (line: string) => void = console.log): number {
   const [command, ...rest] = argv;
@@ -306,6 +414,10 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return lbCommand(rest, log);
       case 'generate':
         return generateCommand(rest, log);
+      case 'perf':
+        return perfCommand(rest, log);
+      case 'planted':
+        return plantedCommand(rest, log);
       case 'baselines':
         return baselinesCommand(rest, log);
       default:

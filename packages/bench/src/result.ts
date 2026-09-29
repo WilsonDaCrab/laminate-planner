@@ -1,4 +1,12 @@
-import { parseProject, type Method, type Plan, type Project, type TracePoint } from '@lp/core';
+import {
+  parseProject,
+  type CurvePoint,
+  type Method,
+  type SaStats,
+  type Plan,
+  type Project,
+  type TracePoint,
+} from '@lp/core';
 
 export const RESULT_VERSION = 1;
 
@@ -31,6 +39,8 @@ export interface RunResult {
   mode: 'precut' | 'onsite';
   phi: number[];
   stats: RunStats;
+  /** SA only: move statistics and the trajectory (ALGORITHM §15). */
+  search?: { stats: SaStats; curve: CurvePoint[] };
   project: Project;
   plan: Plan;
 }

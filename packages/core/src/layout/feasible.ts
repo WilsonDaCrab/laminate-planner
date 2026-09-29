@@ -143,9 +143,15 @@ export function feasibleSet(profile: XProfile, L: Mm, minLength: Mm): FeasibleRe
 /** Membership test (phases are taken modulo L; 0 and L are the same point). */
 export function contains(F: Feasible, phi: number): boolean {
   const p = mod(phi, F.L);
-  return F.intervals.some(
-    ([lo, hi]) => (p >= lo - EPS && p <= hi + EPS) || (p + F.L >= lo - EPS && p + F.L <= hi + EPS),
-  );
+  const intervals = F.intervals;
+  // A plain loop: this is called several times per proposed move.
+  for (let i = 0; i < intervals.length; i++) {
+    const lo = intervals[i]![0];
+    const hi = intervals[i]![1];
+    if ((p >= lo - EPS && p <= hi + EPS) || (p + F.L >= lo - EPS && p + F.L <= hi + EPS))
+      return true;
+  }
+  return false;
 }
 
 /** Total length of the feasible set. */

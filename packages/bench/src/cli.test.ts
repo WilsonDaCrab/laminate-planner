@@ -70,7 +70,7 @@ describe('bench CLI', () => {
 
   it('reports argument errors with exit code 2', () => {
     expect(run('run', instance('rect/R1.json')).code).toBe(2);
-    expect(run('run', instance('rect/R1.json'), '--method', 'sa').code).toBe(2);
+    expect(run('run', instance('rect/R1.json'), '--method', 'annealing').code).toBe(2);
     expect(run('run', instance('rect/R1.json'), '--method', 'rs', '--iters', 'x').code).toBe(2);
     expect(run('run', instance('rect/R1.json'), '--bogus').code).toBe(2);
     expect(run('nope').code).toBe(2);

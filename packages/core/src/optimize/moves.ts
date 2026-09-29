@@ -10,7 +10,7 @@
  *   M5 Block  add one δ to the segments of 2–6 consecutive bands
  */
 
-import type { UnpairedInfo, UnpairedPiece } from '../evaluate/evaluator';
+import type { UnpairedInfo } from '../evaluate/evaluator';
 import type { PlanContext } from '../plan/context';
 import { mod } from '../num/index';
 import type { Rng } from '../rng/index';
@@ -20,7 +20,33 @@ export type MoveKind = 'M1' | 'M2' | 'M3' | 'M4' | 'M5';
 export const MOVE_KINDS: readonly MoveKind[] = ['M1', 'M2', 'M3', 'M4', 'M5'];
 
 export type MoveWeights = Record<MoveKind, number>;
-export const DEFAULT_MOVE_WEIGHTS: MoveWeights = { M1: 0.15, M2: 0.3, M3: 0.15, M4: 0.3, M5: 0.1 };
+/** The move probabilities of ALGORITHM §6 as first specified. */
+export const SPEC_MOVE_WEIGHTS: MoveWeights = { M1: 0.15, M2: 0.3, M3: 0.15, M4: 0.3, M5: 0.1 };
+
+/**
+ * Tuned probabilities (ADR-016): M4 is by far the most productive move on tight instances, so it
+ * gets 60 %. On rooms without a tight bound the mixes are indistinguishable.
+ */
+export const DEFAULT_MOVE_WEIGHTS: MoveWeights = {
+  M1: 0.05,
+  M2: 0.15,
+  M3: 0.05,
+  M4: 0.6,
+  M5: 0.15,
+};
+
+export interface PairingOptions {
+  /**
+   * Probability that M4 looks for a partner row that *closes a cycle*: completing the source piece
+   * with the partner's makes the partner's other piece exactly complete the source row's other piece
+   * as well (two exact pairs from one change).
+   */
+  closureProbability: number;
+  /** Probability that M4 takes any row as the source (not only rows with an unpaired piece). */
+  anySourceProbability: number;
+}
+
+export const DEFAULT_PAIRING: PairingOptions = { closureProbability: 1, anySourceProbability: 0.5 };
 
 export interface PhaseChange {
   index: number;
@@ -40,6 +66,7 @@ export const shiftAmplitude = (L: number, tRatio: number): number =>
 const SAME_CLASS_PROBABILITY = 0.7;
 const OWN_START_PROBABILITY = 0.7;
 const PAIR_TRIES = 3;
+const CLOSURE_TOLERANCE = 1e-6;
 const BLOCK_BANDS: [number, number] = [2, 6];
 
 export class MoveSet {
@@ -50,6 +77,7 @@ export class MoveSet {
     private readonly ctx: PlanContext,
     private readonly space: PhaseSpace,
     weights: MoveWeights = DEFAULT_MOVE_WEIGHTS,
+    private readonly pairing: PairingOptions = DEFAULT_PAIRING,
   ) {
     let sum = 0;
     this.cumulative = MOVE_KINDS.filter((k) => weights[k] > 0).map((kind) => ({
@@ -87,7 +115,7 @@ export class MoveSet {
         break;
       }
       case 'M4': {
-        const pair = unpaired ? this.pair(rng, unpaired) : undefined;
+        const pair = this.pair(phi, rng, unpaired);
         if (pair) return { kind, changes: [pair] };
         break;
       }
@@ -128,26 +156,81 @@ export class MoveSet {
   }
 
   /** M4: complete an unpaired end e by a start piece C − e, or an unpaired start s by an end piece C − s. */
-  private pair(rng: Rng, unpaired: UnpairedInfo): PhaseChange | undefined {
+  private pair(
+    phi: readonly number[],
+    rng: Rng,
+    unpaired: UnpairedInfo | undefined,
+  ): PhaseChange | undefined {
+    if (rng.next() < this.pairing.anySourceProbability) {
+      // Any row as the source: a closing partner makes both rows exact whatever they pair with now.
+      const seg = rng.int(0, this.space.size - 1);
+      const fromEnd = rng.next() < 0.5;
+      const len = fromEnd ? this.space.endLen(seg, phi[seg]!) : this.space.startLen(seg, phi[seg]!);
+      if (len !== undefined) {
+        const closing = this.closingPartner(phi, rng, fromEnd, seg, this.C - len);
+        if (closing) return closing;
+      }
+    }
+    if (!unpaired) return undefined;
     const { ends, starts } = unpaired;
-    if (ends.length === 0 && starts.length === 0) return undefined;
-    const fromEnd = ends.length > 0 && (starts.length === 0 || rng.next() < 0.5);
-    const source = rng.pick(fromEnd ? ends : starts);
+    if (ends.count === 0 && starts.count === 0) return undefined;
+    const fromEnd = ends.count > 0 && (starts.count === 0 || rng.next() < 0.5);
+    const source = fromEnd ? ends : starts;
+    const sourceIndex = rng.int(0, source.count - 1);
+    const sourceSegment = source.segment[sourceIndex]!;
     // Segments whose *opposite* piece is unpaired make the best partners (they also relieve that piece).
     const preferred = fromEnd ? starts : ends;
-    const target = this.C - source.len;
+    const target = this.C - source.len[sourceIndex]!;
+    if (rng.next() < this.pairing.closureProbability) {
+      const closing = this.closingPartner(phi, rng, fromEnd, sourceSegment, target);
+      if (closing) return closing;
+    }
     for (let t = 0; t < PAIR_TRIES; t++) {
-      const usePreferred = preferred.length > 0 && rng.next() < OWN_START_PROBABILITY;
-      const candidate: UnpairedPiece | number = usePreferred
-        ? rng.pick(preferred)
+      const usePreferred = preferred.count > 0 && rng.next() < OWN_START_PROBABILITY;
+      const index = usePreferred
+        ? preferred.segment[rng.int(0, preferred.count - 1)]!
         : rng.int(0, this.space.size - 1);
-      const index = typeof candidate === 'number' ? candidate : candidate.segment;
-      if (index === source.segment) continue;
+      if (index === sourceSegment) continue;
       const phase = fromEnd
         ? mod(this.space.a[index]! + target, this.ctx.L) // start piece = φ − a
         : mod(this.space.b[index]! - target, this.ctx.L); // end piece = b − last seam
       const value = this.space.exact(index, phase);
       if (value !== undefined) return { index, value };
+    }
+    return undefined;
+  }
+
+  /**
+   * A partner row for M4 that closes a cycle: completing the source piece with the partner's piece
+   * makes the partner's *other* piece exactly complete the source row's other piece too (two exact
+   * pairs from one change). Rows are tried from a random position; undefined when none closes.
+   */
+  private closingPartner(
+    phi: readonly number[],
+    rng: Rng,
+    fromEnd: boolean,
+    sourceSegment: number,
+    target: number,
+  ): PhaseChange | undefined {
+    const n = this.space.size;
+    const sourceOther = fromEnd
+      ? this.space.startLen(sourceSegment, phi[sourceSegment]!)
+      : this.space.endLen(sourceSegment, phi[sourceSegment]!);
+    if (sourceOther === undefined) return undefined;
+    const from = rng.int(0, n - 1);
+    for (let k = 0; k < n; k++) {
+      const t = (from + k) % n;
+      if (t === sourceSegment) continue;
+      const phase = fromEnd
+        ? mod(this.space.a[t]! + target, this.ctx.L)
+        : mod(this.space.b[t]! - target, this.ctx.L);
+      const value = this.space.exact(t, phase);
+      if (value === undefined) continue;
+      const partnerOther = fromEnd ? this.space.endLen(t, value) : this.space.startLen(t, value);
+      if (partnerOther === undefined) continue;
+      if (Math.abs(partnerOther + sourceOther - this.C) <= CLOSURE_TOLERANCE) {
+        return { index: t, value };
+      }
     }
     return undefined;
   }
