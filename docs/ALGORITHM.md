@@ -73,7 +73,8 @@ Katram segmentam vienreiz aprēķina:
 - `[a_s, b_s]` — projekcija uz x ass (sakarīgam segmentam tā ir intervāls);
 - `isRect` — vai segments ir taisnstūris ar konstantām atvērtajām malām (atvērts visā garumā vai nemaz). Tas ir ātrais ceļš, un tipiskās telpās tā ir lielākā daļa segmentu;
 - vispārīgam segmentam: sakārtotus x lūzumpunktus (virsotņu x) un katram elementārajam intervālam šķērsgriezuma y-intervālus kā lineāras funkcijas no x; `O_s^low`, `O_s^high` kā intervālu sarakstus;
-- `complex` — vai kādā x šķērsgriezums sastāv no vairāk nekā viena intervāla. Tad gabala vertikālā šķēle var būt nesakarīga, un šim segmentam izmanto lēno ceļu ar Clipper.
+- `complex` — vai kādā x šķērsgriezums sastāv no vairāk nekā viena intervāla (caurums vai C forma). Tad gabala vertikālā šķēle var būt nesakarīga. Deskriptorus arī šādiem segmentiem rēķina no šķērsgriezumiem (`layout/xprofile`), platumu ņemot kā ekstrēmus pār visiem intervāliem; Clipper (`pieceShapes`) izmanto tikai precīzai gabalu formai un kā testa orākulu (ADR-012).
+- `isRect` (ātrais ceļš) prasa taisnstūri **bez cauruma**, kura atvērtā apakšmala un augšmala katra ir atvērta visā garumā vai nemaz; daļēji atvērta mala padara segmentu par vispārīgu.
 
 ## 3. No fāzes uz gabaliem
 
@@ -93,7 +94,7 @@ Gabals i ir `R_s ∩ ([x_i, x_{i+1}] × ℝ)`, kur x_0 = a_s un x_{M+1} = b_s. D
 | `width` w | `both`: W; `low`: max y_hi − β_j; `high`: β_j + W − min y_lo; `none`: max y_hi − min y_lo (sloksnē) |
 | `lengthLow`, `lengthHigh` | gabala malas garums pie y = β_j un y = β_j + W (slīpiem griezumiem) |
 
-`L_min` ierobežojums attiecas uz `start` un `end` gabaliem: gar katru vajadzīgo garo malu atvērtās daļas garums ≥ L_min. `full` gabaliem tas nav vajadzīgs (tie pieslēgti abos galos), `free` gabaliem nav izvēles.
+`L_min` ierobežojums attiecas uz `start` un `end` gabaliem: gar katru vajadzīgo garo malu atvērtās daļas garums ≥ L_min (vajadzīga ir mala, kuras atvērtās daļas mērs gabalā > EPS). Ja gabalam nav nevienas atvērtas malas (`long = none`), tam pašam jābūt `extent ≥ L_min` — tas sakrīt ar §3.4 taisnstūra formulu (ADR-012). `full` gabaliem ierobežojuma nav (tie pieslēgti abos galos), `free` gabaliem nav izvēles. Neizpildes apjoms (`lengthDeficit`) ir kopējais iztrūkums mm; to izmanto, ja F_s ir tukša.
 
 Katram gabalam `extent ≤ L`, jo šuvju taisnes atkārtojas ar periodu L. Tāpēc gabals vienmēr ietilpst dēlī.
 
@@ -115,7 +116,8 @@ else:
 ### 3.4 Pieļaujamās fāzes F_s
 
 - Taisnstūra segmentam: `F_s = {φ : M = 0} ∪ {φ : s ≥ L_min ∧ e ≥ L_min}`. To aprēķina analītiski kā cirkulāru intervālu šķēlumu.
-- Vispārīgam segmentam: vienreiz pārbauda φ ar 1 mm soli un apvieno intervālos (galapunktus pārbauda precīzi; ja vajag, sašaurina par 1 mm).
+- Vispārīgam segmentam: vienreiz pārbauda φ ar 1 mm soli (cirkulāri) un apvieno derīgos punktus atzaros; katra atzara galapunktus precizē ar bisekciju no derīgās puses, tāpēc F_s ir konservatīva (nesatur φ, kas pārkāpj L_min). Šaurus logus < 1 mm (derīgus vai nederīgus) skenēšana var neredzēt.
+- Taisnstūrim analītiski, ar r = (φ − a) mod L un s = pirmā gabala garums: bez šuves iekšā (r = 0 vai r ≥ b − a, ja b − a ≤ L) vai `s ∈ ⋃ₘ [len − (m+1)L, len − mL − L_min] ∩ [L_min, min(L, len))`, kur len = b − a. Tas sakrīt ar brutālu pārlasi (testos).
 - Ja `L_min ≤ L/2`, taisnstūra segmentam F_s nekad nav tukša.
 - Ja F_s ir tukša (ļoti slīpas sienas), atļauj visu [0, L), L_min iztrūkumu soda mērķa funkcijā un izdod brīdinājumu.
 - F_s glabā kā sakārtotu intervālu sarakstu. Vajag: nejauša izvēle, projekcija uz tuvāko punktu, piederības pārbaude.

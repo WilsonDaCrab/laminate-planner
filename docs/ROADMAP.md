@@ -37,13 +37,13 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F2. Modelis, segmenti, fāzes → gabali (~4–5 d)
 
-- [ ] `model`: tipi (`DOMAIN.md` §8), zod shēmas, noklusējumi, JSON ielāde/saglabāšana, `schemaVersion` + migrāciju karkass
-- [ ] `layout/bands`: joslas pēc (θ, stackSide, y0), segmenti (komponentes), `a_s`, `b_s`, ID piešķiršana
-- [ ] `layout/neighbors`: `I_st`, `O_s^low`, `O_s^high`, kaimiņu grafs (arī otrās kārtas — H sodam)
-- [ ] `layout/xprofile`: `isRect`, lūzumpunkti, šķērsgriezumi, `complex` karogs
-- [ ] `layout/pieces`: φ → gabali (ātrais ceļš + vispārīgais), deskriptori (`ALGORITHM.md` §3.2)
-- [ ] `layout/feasible`: F_s (analītiski taisnstūriem, 1 mm skenēšana pārējiem), `sample`, `project`, `contains`
-- [ ] Pirmās instances `instances/rect/`, `instances/lshape/`, `instances/slanted/`, `instances/curved/`
+- [x] `model`: tipi (`DOMAIN.md` §8), zod shēmas, noklusējumi, JSON ielāde/saglabāšana, `schemaVersion` + migrāciju karkass
+- [x] `layout/bands`: joslas pēc (θ, stackSide, y0), segmenti (komponentes), `a_s`, `b_s`, ID piešķiršana
+- [x] `layout/neighbors`: `I_st`, `O_s^low`, `O_s^high`, kaimiņu grafs (arī otrās kārtas — H sodam)
+- [x] `layout/xprofile`: `isRect`, lūzumpunkti, šķērsgriezumi, `complex` karogs
+- [x] `layout/pieces`: φ → gabali (ātrais ceļš + vispārīgais), deskriptori (`ALGORITHM.md` §3.2)
+- [x] `layout/feasible`: F_s (analītiski taisnstūriem, 1 mm skenēšana pārējiem), `sample`, `project`, `contains`
+- [x] Pirmās instances `instances/rect/`, `instances/lshape/`, `instances/slanted/`, `instances/curved/`
 
 **Kritēriji:**
 
