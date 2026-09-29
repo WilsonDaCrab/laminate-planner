@@ -71,11 +71,20 @@ export interface LabelledPiece {
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
 
-/** Marker: room code, band, segment letter and role: S start, E end, M<n> full, X whole segment. */
-function pieceLabel(code: string, segmentId: string, band: number, d: PieceDescriptor): string {
-  const letters = segmentId.slice(String(band).length);
-  const role =
-    d.short === 'start' ? 'S' : d.short === 'end' ? 'E' : d.short === 'full' ? `M${d.index}` : 'X';
+/**
+ * Marker `<room>-<band><segment>-<position>` (DOMAIN §10): `S` start piece, `B` end piece, `NN` the
+ * 1-based position in the row (whole boards and unsplit segments). The segment letter is written
+ * only when the band has several segments.
+ */
+export function pieceLabel(
+  code: string,
+  segmentId: string,
+  band: number,
+  d: Pick<PieceDescriptor, 'short' | 'index'>,
+  segmentsInBand: number,
+): string {
+  const letters = segmentsInBand > 1 ? segmentId.slice(String(band).length) : '';
+  const role = d.short === 'start' ? 'S' : d.short === 'end' ? 'B' : pad2(d.index + 1);
   return `${code || 'R'}-${pad2(band)}${letters}-${role}`;
 }
 
@@ -88,10 +97,12 @@ export function piecesForPhases(ctx: PlanContext, phi: readonly number[]): Label
   if (phi.length !== segments.length) {
     throw new RangeError(`phi has ${phi.length} entries for ${segments.length} segments`);
   }
+  const inBand = new Map(ctx.layout.bands.map((b) => [b.j, b.segmentIds.length]));
+  const segmentsInBand = (band: number): number => inBand.get(band) ?? 1;
   const out: LabelledPiece[] = [];
   segments.forEach((s, i) => {
     for (const d of describePieces(ctx.profiles[s.id]!, ctx.L, phi[i]!)) {
-      const id = pieceLabel(ctx.room.code, s.id, s.band, d);
+      const id = pieceLabel(ctx.room.code, s.id, s.band, d, segmentsInBand(s.band));
       out.push({
         id,
         segmentId: s.id,
