@@ -11,7 +11,7 @@ import type { Method, OptimizeBudget, SearchResult } from './types';
 export interface RunOptions {
   seed?: number;
   budget?: OptimizeBudget;
-  /** Row offset; default: `goodY0` (first offset that keeps the w_min rule), else the setting. */
+  /** Row offset; default: the project's fixed `rowOffset`, else `goodY0` (first offset that keeps w_min). */
   y0?: number;
 }
 
@@ -24,7 +24,8 @@ export interface MethodRun {
 /** One entry point for all baselines: builds the context and runs the method. */
 export function runMethod(project: Project, method: Method, opts: RunOptions = {}): MethodRun {
   const base = rowConfigFromSettings(project.settings);
-  const y0 = opts.y0 ?? goodY0(project) ?? base.y0;
+  const fixedY0 = project.settings.rowOffset === 'auto' ? undefined : base.y0;
+  const y0 = opts.y0 ?? fixedY0 ?? goodY0(project) ?? base.y0;
   const ctx = buildContext(project, { ...base, y0 });
   const seed = opts.seed ?? project.settings.seed;
   const budget = opts.budget ?? {};

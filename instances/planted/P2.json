@@ -1,0 +1,363 @@
+{
+  "schemaVersion": 1,
+  "name": "P2",
+  "product": {
+    "id": "demo-1285x192",
+    "name": "Demo 1285×192",
+    "boardLength": 1285,
+    "boardWidth": 192,
+    "boardsPerPack": 8
+  },
+  "rules": {
+    "kerf": 3,
+    "minPieceLength": 300,
+    "minStagger": 300,
+    "minRipWidth": 50,
+    "expansionGap": 10,
+    "minGap": 7,
+    "maxGap": 14,
+    "hPattern": {
+      "enabled": true,
+      "distance": 100
+    },
+    "pattern": {
+      "kind": "free"
+    },
+    "reservePercent": 2
+  },
+  "rooms": [
+    {
+      "id": "r1",
+      "name": "Kāpņu telpa",
+      "code": "P2",
+      "outline": [
+        {
+          "x": 5147,
+          "y": 182
+        },
+        {
+          "x": 5154,
+          "y": 182
+        },
+        {
+          "x": 5154,
+          "y": 394
+        },
+        {
+          "x": 5141,
+          "y": 394
+        },
+        {
+          "x": 5141,
+          "y": 586
+        },
+        {
+          "x": 5140,
+          "y": 586
+        },
+        {
+          "x": 5140,
+          "y": 758
+        },
+        {
+          "x": 5153,
+          "y": 758
+        },
+        {
+          "x": 5153,
+          "y": 1162
+        },
+        {
+          "x": 5143,
+          "y": 1162
+        },
+        {
+          "x": 5143,
+          "y": 1354
+        },
+        {
+          "x": 5141,
+          "y": 1354
+        },
+        {
+          "x": 5141,
+          "y": 1526
+        },
+        {
+          "x": 5151,
+          "y": 1526
+        },
+        {
+          "x": 5151,
+          "y": 1738
+        },
+        {
+          "x": 5060,
+          "y": 1738
+        },
+        {
+          "x": 5060,
+          "y": 1910
+        },
+        {
+          "x": 5180,
+          "y": 1910
+        },
+        {
+          "x": 5180,
+          "y": 2102
+        },
+        {
+          "x": 5234,
+          "y": 2102
+        },
+        {
+          "x": 5234,
+          "y": 2314
+        },
+        {
+          "x": 5114,
+          "y": 2314
+        },
+        {
+          "x": 5114,
+          "y": 2486
+        },
+        {
+          "x": 5228,
+          "y": 2486
+        },
+        {
+          "x": 5228,
+          "y": 2698
+        },
+        {
+          "x": 5186,
+          "y": 2698
+        },
+        {
+          "x": 5186,
+          "y": 2890
+        },
+        {
+          "x": 5066,
+          "y": 2890
+        },
+        {
+          "x": 5066,
+          "y": 3062
+        },
+        {
+          "x": 5108,
+          "y": 3062
+        },
+        {
+          "x": 5108,
+          "y": 3254
+        },
+        {
+          "x": 5142,
+          "y": 3254
+        },
+        {
+          "x": 5142,
+          "y": 3446
+        },
+        {
+          "x": 5200,
+          "y": 3446
+        },
+        {
+          "x": 5200,
+          "y": 3658
+        },
+        {
+          "x": 5152,
+          "y": 3658
+        },
+        {
+          "x": 5152,
+          "y": 3850
+        },
+        {
+          "x": 5094,
+          "y": 3850
+        },
+        {
+          "x": 5094,
+          "y": 4022
+        },
+        {
+          "x": 5147,
+          "y": 4022
+        },
+        {
+          "x": 5147,
+          "y": 4234
+        },
+        {
+          "x": -10,
+          "y": 4234
+        },
+        {
+          "x": -10,
+          "y": -10
+        },
+        {
+          "x": 5147,
+          "y": -10
+        }
+      ],
+      "edges": [
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        }
+      ],
+      "obstacles": []
+    }
+  ],
+  "doorways": [],
+  "settings": {
+    "angleDeg": 0,
+    "stackSide": "left",
+    "rowOffset": 0,
+    "mode": "precut",
+    "trimMargin": 0,
+    "aesthetics": 0.5,
+    "seed": 1,
+    "timeLimitMs": 3000
+  },
+  "meta": {
+    "knownOptimum": 88,
+    "source": "planted"
+  }
+}

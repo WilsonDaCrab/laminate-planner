@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, extname, join } from 'node:path';
+import { basename, dirname, extname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import {
   buildContext,
@@ -10,11 +10,13 @@ import {
   parseProject,
   renderPlanSvg,
   rowConfigFromSettings,
+  saveProject,
   runMethod,
   validatePlan,
   type Method,
   type Project,
 } from '@lp/core';
+import { generatePlanted, PLANTED_PRESETS } from './generate/planted';
 import { parseRunResult, RESULT_VERSION, type RunResult } from './result';
 
 const METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc'];
@@ -27,6 +29,8 @@ const USAGE = `lp-bench <command>
                       [--y0 mm] [--out dir] [--svg]
   validate <result.json>          check a result file with the independent validator
   lb <instance.json> [--y0 mm]    lower bounds LB0, LB1
+  generate planted (--preset P1..P4 | --n N --m M --seed S) [--base instance.json] [--out file]
+                                  planted staircase room with known optimum
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -247,6 +251,48 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
 
 const pad = (s: string): string => s.padEnd(9);
 
+function generateCommand(args: string[], log: (line: string) => void): number {
+  const [kind, ...rest] = args;
+  if (kind !== 'planted') throw new CliError('generate: only "planted" is available');
+  const { values } = parseArgs({
+    args: rest,
+    options: {
+      preset: { type: 'string' },
+      n: { type: 'string' },
+      m: { type: 'string' },
+      seed: { type: 'string' },
+      base: { type: 'string' },
+      out: { type: 'string' },
+    },
+  });
+  const base = loadInstance(values.base ?? 'instances/rect/R1.json');
+  let params;
+  if (values.preset) {
+    params = PLANTED_PRESETS[values.preset];
+    if (!params)
+      throw new CliError(`--preset must be one of ${Object.keys(PLANTED_PRESETS).join(', ')}`);
+    params = { ...params, name: values.preset };
+  } else {
+    params = {
+      n: toInt('n', values.n) ?? NaN,
+      m: toInt('m', values.m, 2)!,
+      seed: toInt('seed', values.seed, 1)!,
+    };
+    if (!Number.isInteger(params.n)) throw new CliError('generate planted: --n or --preset needed');
+  }
+  const project = generatePlanted(base, params);
+  const json = saveProject(project);
+  const out = values.out ?? (values.preset ? `instances/planted/${values.preset}.json` : undefined);
+  if (out) {
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, json);
+  } else {
+    log(json);
+  }
+  log(`planted n=${params.n} knownOptimum=${project.meta!.knownOptimum}${out ? ` -> ${out}` : ''}`);
+  return 0;
+}
+
 /** Runs a command line (without `node script`); returns the exit code. */
 export function main(argv: string[], log: (line: string) => void = console.log): number {
   const [command, ...rest] = argv;
@@ -258,6 +304,8 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return validateCommand(rest, log);
       case 'lb':
         return lbCommand(rest, log);
+      case 'generate':
+        return generateCommand(rest, log);
       case 'baselines':
         return baselinesCommand(rest, log);
       default:

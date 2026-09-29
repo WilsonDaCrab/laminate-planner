@@ -202,3 +202,28 @@ B-INST ≤ B-NEXT visām 8 instancēm (C1, C2, U1, R1 vienādi). RS gandrīz nek
 
 - Baseline φ ir float; ADR-013 ieteikums par veseliem mm (M2/M4) paliek F5 uzdevums.
 - B-INST atlikumu izvēle ir vienkāršota (kaudzes ar garumiem, bez profilu/platuma karogiem); tā ir bāzes līnija, nevis "labākā klājēja metode".
+
+## ADR-015 — Plantētais ģenerators un instances P1–P4 (F5, velkts uz priekšu no F6) (2026-09-30)
+
+**Konteksts.** F5 kritērijs prasa, lai SA atrod P1–P4 optimumu ≥ 90 % sēklu, bet ģenerators bija F6 uzdevums. Lietotājs apstiprināja kāpņu ģeneratora vilkšanu uz priekšu; bloku variants, pilnā pārlase un P5–P6 paliek F6.
+
+**Atklājums: §12.2 pseidokods nav lietojams burtiski.** Nejauša permutācija un neatkarīgas rindas nedod derīgu instanci (mēģināts; gandrīz visi mēģinājumi krīt). Iemesli, kas izriet no modeļa:
+
+1. **Pirmā un pēdējā rinda** pieskaras sienai ar vienu garo malu, tāpēc to gabali ir strēmeles (`K_high`/`K_low`) un pārojas tikai savā starpā. π tās atstāj uz vietas (rinda pārojas pati ar sevi: `e + s + k = L`).
+2. **L_min un gabala klase tiek mērīti gar *atvērto* garo malu.** Ja rinda pārkaras pāri kaimiņam, beigu gabals zaudē (daļu no) atvērtās malas, maina klasi (`both` → `low`/`high`) vai krīt zem L_min, un pārošana sabrūk. Tāpēc blakus rindu garumu starpība nedrīkst pārsniegt `e − L_min` (garākās rindas beigu gabala pārklājums ar īsāko ≥ L_min).
+3. **Nobīde D** starp blakus rindu šuvēm. Ja pārī ir blakus rindas, |s_a − s_b| ≥ D un tāpēc garumi atšķiras par simtiem mm; pēc 2. punkta tas nav savienojams.
+
+**Lēmums.** Vidējās rindas veido blokus pa četrām (`r..r+3`), π apmaina rindas, kas ir *divu attālumā*: `(r r+2)(r+1 r+3)`. Tad `d = s_r − s_{r+2}` var būt ≈ 0, visu rindu garums ≈ `C + M·L ± 90` (kā robežrindām, kam `R = C + M·L`), un pāra rindām nobīde nav vajadzīga (tās nav kaimiņi). Sēklas bloks pa blokam tiek velkts pret iepriekšējo rindu, un gatavā telpa tiek pārbaudīta ar īsto novērtētāju (`B = Σm + n`, `V = 0`, `LB1 = knownOptimum`, validētājs tīrs). n − 2 jādalās ar 4. Ģenerators ir `bench` (`packages/bench/src/generate/planted.ts`), kodols to neimportē; CLI `pnpm bench generate planted --preset P1..P4 | --n --m --seed`, instances `instances/planted/`. Tests atjauno katru priekšiestatījumu un salīdzina ar failu (`saveProject`), lai instances neaizsprūst nemanot.
+
+**Instances** (M = 3, `knownOptimum` = LB1 = pierādīts optimums; baseline mērījums, 1000 nov., `pnpm bench baselines instances/planted`):
+
+| instance | rindas | m² | optimums | B-NEXT | B-INST | B-INST/pc | RS | HC |
+|---|---|---|---|---|---|---|---|---|
+| P1 | 14 | ≈ 14 | 56 | 59 | 58 | 58 | 57* | 57 |
+| P2 | 22 | ≈ 22 | 88 | 93 | 90 | 90 | 89* | 89 |
+| P3 | 30 | ≈ 30 | 120 | 126 | 123 | 122 | 122* | 121 |
+| P4 | 42 | ≈ 41 | 168 | 181 | 171 | 170 | 170* | 170 |
+
+Bāzes metodes optimumu neatrod nevienā instancē (starpība 1–3 dēļi); tātad instances tiešām nosaka meklēšanas kvalitāti. Ģenerators atgriež arī konstrukcijas φ (`generatePlantedInstance`), un tests pārbauda, ka tie dod `B = knownOptimum` ar tīru validētāju.
+
+**Zināmie ierobežojumi.** Instances ir gandrīz taisnstūra (rindu garumi atšķiras līdz ~180 mm), nevis "īsti kāpņu"; reālistiskāki daudzstūri (bloku variants ar dažādiem R) paliek F6. Tikai `precut` dekoderis.
