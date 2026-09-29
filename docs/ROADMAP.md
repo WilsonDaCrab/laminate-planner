@@ -17,7 +17,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [x] Saknes skripti `typecheck`, `lint`, `test` (tos izmanto Stop hook); `test` ar kluso reporteri (`vitest run --reporter=dot`), lai izvadē būtu tikai kļūdas
 - [x] Pārbaudīt `.claude/` konfigurāciju: Stop hook bloķē pabeigšanu ar tīši salauztu testu un pēc labojuma ļauj pabeigt; `test-runner` atgriež tikai kļūdas
 - [x] GitHub Actions: typecheck, lint, test uz katru push/PR
-- [x] README.md (īss apraksts, palaišana), LICENSE (izvēlēties; pārbaudīt `clipper2-ts` licences saderību)
+- [x] README.md (īss apraksts, palaišana), LICENSE (izvēlēties; pārbaudīt `clipper2-ts` licences saderību) (`clipper2-ts` licences saderība atlikta uz F1, kad pakotni instalē; sk. ADR-010)
 - [x] Precizēt komandu sadaļu `CLAUDE.md`
 
 **Kritēriji:** `pnpm install && pnpm test` strādā tīrā klonā; CI zaļš; ESLint noķer `Math.random()` kodolā (pārbaudīts ar tīšu pārkāpumu); Stop hook un abi aģenti strādā.
