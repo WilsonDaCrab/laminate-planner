@@ -19,9 +19,9 @@ export const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   /** L: visible board length (without tongue). */
-  boardLength: posMm,
+  boardLength: posMm.int(),
   /** W: visible board width. */
-  boardWidth: posMm,
+  boardWidth: posMm.int(),
   boardsPerPack: z.number().int().positive(),
   pricePerPack: nonNegMm.optional(),
 });
