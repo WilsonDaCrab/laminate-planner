@@ -228,7 +228,11 @@ importers:
         specifier: workspace:*
         version: link:../core
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      clipper2-ts:
+        specifier: 2.0.1-18
+        version: 2.0.1-18
 
 packages:
 
@@ -564,6 +568,10 @@ packages:
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
     engines: {node: '>=18'}
+
+  clipper2-ts@2.0.1-18:
+    resolution: {integrity: sha512-WuRO1ZHzyYTVHY78r4wVWVydvQ+1lx9qZ+DeZa/8zhvrxIgCVzElJ6lwSMGtUUKFPefhvfJsHZ5C9RNkgisCOQ==}
+    engines: {node: '>=14.0.0'}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -1366,6 +1374,8 @@ snapshots:
       qified: 0.10.1
 
   chai@6.2.2: {}
+
+  clipper2-ts@2.0.1-18: {}
 
   cross-spawn@7.0.6:
     dependencies:

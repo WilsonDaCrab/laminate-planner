@@ -8,5 +8,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "clipper2-ts": "2.0.1-18"
   }
 }
