@@ -159,6 +159,32 @@ describe('each violation code is detected', () => {
   });
 });
 
+describe('the validator does not trust the planner labels', () => {
+  const p = project('R1');
+  const ctx = buildContext(p);
+
+  it('still finds seam offsets when segment ids and bands are scrambled', () => {
+    const plan = clone(buildPlan(ctx, new Array<number>(ctx.layout.segments.length).fill(0)));
+    for (const q of plan.pieces) {
+      q.segmentId = 'x';
+      q.band = 0;
+    }
+    expect(codes(p, plan)).toContain('stagger');
+  });
+
+  it('orientation: a plan whose rows run in another direction than the settings ask for', () => {
+    const plan = clone(buildPlan(ctx, randomPhi(ctx, 3)));
+    plan.frame = { a: 0, b: -1, c: 1, d: 0, e: 0, f: 0 }; // rotated by 90°
+    expect(codes(p, plan)).toContain('orientation');
+  });
+
+  it('orientation: a frame that is not a rotation or reflection', () => {
+    const plan = clone(buildPlan(ctx, randomPhi(ctx, 3)));
+    plan.frame = { ...plan.frame, a: 2 };
+    expect(codes(p, plan)).toContain('orientation');
+  });
+});
+
 describe('pipe checks (room L1 has a pipe)', () => {
   const p = project('L1');
   const ctx = buildContext(p);

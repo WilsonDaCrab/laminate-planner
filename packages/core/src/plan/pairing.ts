@@ -3,6 +3,8 @@
  * a board) and a start piece `s` (right part) can come from one board when e + s ≤ C, C = L − k.
  */
 
+import { EPS } from '../num/index';
+
 export interface Item {
   /** Stable identifier; ties in length are broken by it so that results are deterministic. */
   id: string;
@@ -29,7 +31,7 @@ export function maxPairs(E: readonly Item[], S: readonly Item[], C: number): Pai
   let j = 0;
   for (const end of ends) {
     const start = starts[j];
-    if (start !== undefined && end.len + start.len <= C) {
+    if (start !== undefined && end.len + start.len <= C + EPS) {
       pairs.push({ end, start });
       j++;
     }

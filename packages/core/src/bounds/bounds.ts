@@ -36,14 +36,28 @@ export interface LowerBounds {
   maxLoad: Mm;
 }
 
-/** x range of a section where `lo + slope·t ≤ y` (below = true) or `≥ y` (below = false). */
-function linearRange(f0: number, f1: number, x0: number, x1: number, y: number, below: boolean) {
-  const ok0 = below ? f0 <= y + EPS : f0 >= y - EPS;
-  const ok1 = below ? f1 <= y + EPS : f1 >= y - EPS;
-  if (ok0 && ok1) return [x0, x1] as Interval;
+/**
+ * Two pieces of one board never touch (the kerf is ≥ 0 but two strips may meet exactly when
+ * kerf = 0), so regions are shrunk by this before testing a level: at a level where one strip ends
+ * and another begins only one of them is counted.
+ */
+const SHRINK = 1e-6;
+
+/** x range of a section where the linear `f` satisfies `f ≤ y` (below) or `f ≥ y` (above). */
+function linearRange(
+  f0: number,
+  f1: number,
+  x0: number,
+  x1: number,
+  y: number,
+  below: boolean,
+): Interval | undefined {
+  const ok0 = below ? f0 <= y : f0 >= y;
+  const ok1 = below ? f1 <= y : f1 >= y;
+  if (ok0 && ok1) return [x0, x1];
   if (!ok0 && !ok1) return undefined;
   const cross = x0 + ((y - f0) / (f1 - f0)) * (x1 - x0);
-  return (ok0 ? [x0, cross] : [cross, x1]) as Interval;
+  return ok0 ? [x0, cross] : [cross, x1];
 }
 
 /** c_s at the absolute level y: length of open-edge x inside the segment at that height. */
@@ -53,8 +67,8 @@ export function coverageAt(profile: XProfile, y: number): number {
   const inside: Interval[] = [];
   for (const section of profile.sections) {
     for (const s of section.spans) {
-      const above = linearRange(s.loA, s.loB, section.x0, section.x1, y, true); // lo(x) ≤ y
-      const below = linearRange(s.hiA, s.hiB, section.x0, section.x1, y, false); // hi(x) ≥ y
+      const above = linearRange(s.loA, s.loB, section.x0, section.x1, y - SHRINK, true); // lo ≤ y
+      const below = linearRange(s.hiA, s.hiB, section.x0, section.x1, y + SHRINK, false); // hi ≥ y
       if (!above || !below) continue;
       const lo = Math.max(above[0], below[0]);
       const hi = Math.min(above[1], below[1]);
@@ -84,7 +98,16 @@ function candidateLevels(input: BoundsInput): number[] {
       }
     }
   }
-  return [...levels].sort((p, q) => p - q);
+  // The shrunken sets are open at their ends, so the plateau next to a candidate level is probed
+  // just inside it on both sides (the load is linear between candidates).
+  const probes = new Set<number>();
+  for (const c of levels) {
+    for (const d of [-2 * SHRINK, 0, 2 * SHRINK]) {
+      const y = c + d;
+      if (y >= 0 && y <= input.W) probes.add(y);
+    }
+  }
+  return [...probes].sort((p, q) => p - q);
 }
 
 /** Ceiling that forgives clipping noise, so a bound never exceeds the true value. */

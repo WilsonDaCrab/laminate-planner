@@ -55,18 +55,36 @@ describe('cutting order and rounding', () => {
     expect(sheet.steps.slice(1).every((s) => s.kind === 'cross')).toBe(true);
   });
 
-  it('rounds every dimension down and never exceeds the space', () => {
+  it('rounds every dimension down and never makes a piece longer than its place', () => {
+    // e must be 743.9 and s 538.1 (gap 3): a 1285 board fits them with 0.0 to spare. s keeps the
+    // right end of the board (its profile), so the cut before it cannot leave it 0.9 mm too long;
+    // the front is cut back instead (a cut of one kerf), which leaves s at 536.
     const sheet = buildBoardSheet(
       board('D02', ['e', 0, 0, 743.9, 192], ['s', 746.9, 0, 538.1, 192]),
       dims,
       k,
     );
-    expect(sheet.steps[0]!.at).toBe(743);
+    expect(sheet.steps.map((s) => s.at)).toEqual([743, 0]);
     const [e, s] = sheet.pieces;
     expect(e!.length).toBe(743);
-    expect(s!.length).toBe(538);
-    for (const p of sheet.pieces) expect(p.length).toBeLessThanOrEqual(p.space.length);
-    expect(e!.length + k + s!.length).toBeLessThanOrEqual(dims.L);
+    expect(s!.length).toBe(536);
+    for (const p of sheet.pieces) {
+      const rect = p.pieceId === 'e' ? 743.9 : 538.1;
+      expect(p.length).toBeLessThanOrEqual(rect);
+      expect(p.space.length).toBeLessThanOrEqual(rect + 1e-6);
+    }
+    // s still ends at the profiled end of the board.
+    expect(s!.region.x + s!.region.w).toBe(dims.L);
+  });
+
+  it('a piece that keeps the profiled end is not shortened when the gap is exactly a kerf', () => {
+    const sheet = buildBoardSheet(
+      board('D02b', ['e', 0, 0, 743, 192], ['s', 746, 0, 539, 192]),
+      dims,
+      k,
+    );
+    expect(sheet.steps).toHaveLength(1);
+    expect(sheet.pieces.map((p) => p.length)).toEqual([743, 539]);
   });
 
   it('cuts waste off a single short piece and reports the offcut', () => {
@@ -96,7 +114,9 @@ describe('cutting order and rounding', () => {
     );
     for (const step of sheet.steps) expect(step.at).toBeGreaterThanOrEqual(0);
     const lengths = Object.fromEntries(sheet.pieces.map((p) => [p.pieceId, p.length]));
-    expect(lengths).toEqual({ a: 500, b: 780 });
+    // b keeps the right end of the board, so it is measured from there and its front is cut
+    // back (never longer than its 780.5 place): 779.
+    expect(lengths).toEqual({ a: 500, b: 779 });
     for (const p of sheet.pieces) expect(p.length).toBeLessThanOrEqual(p.space.length);
   });
 
@@ -145,10 +165,18 @@ describe.each(instanceFiles.map((f) => [f.id, f.raw] as const))('cut lists on %s
         seen.add(p.pieceId);
         const rect = board.placements.find((q) => q.pieceId === p.pieceId)!.rect;
         expect(Number.isInteger(p.length) && Number.isInteger(p.width)).toBe(true);
-        expect(p.length).toBeLessThanOrEqual(rect.w);
-        expect(p.width).toBeLessThanOrEqual(rect.h);
-        expect(p.length).toBeLessThanOrEqual(p.space.length);
-        expect(p.width).toBeLessThanOrEqual(p.space.width);
+        // Never longer than the place (1e-6: float noise of a whole-board extent).
+        expect(p.length).toBeLessThanOrEqual(rect.w + 1e-6);
+        expect(p.width).toBeLessThanOrEqual(rect.h + 1e-6);
+        expect(p.space.length).toBeLessThanOrEqual(rect.w + 1e-6);
+        expect(p.space.width).toBeLessThanOrEqual(rect.h + 1e-6);
+        expect(p.length).toBeLessThanOrEqual(p.space.length + 1e-6);
+        expect(p.width).toBeLessThanOrEqual(p.space.width + 1e-6);
+        // A piece on the board's profiled edge keeps that edge: the physical region reaches it.
+        if (rect.x <= 1e-6) expect(p.region.x).toBeLessThanOrEqual(1e-6);
+        if (rect.x + rect.w >= ctx.L - 1e-6) expect(p.region.x + p.region.w).toBeCloseTo(ctx.L, 6);
+        if (rect.y <= 1e-6) expect(p.region.y).toBeLessThanOrEqual(1e-6);
+        if (rect.y + rect.h >= ctx.W - 1e-6) expect(p.region.y + p.region.h).toBeCloseTo(ctx.W, 6);
       }
       for (const step of sheet.steps) {
         expect(Number.isInteger(step.at)).toBe(true);

@@ -5,7 +5,7 @@
 
 import { lengthDeficit, seamsOf } from '../layout/pieces';
 import type { LayoutSettings, Rules } from '../model/schema';
-import { mod } from '../num/index';
+import { circDist, mod } from '../num/index';
 import { piecesForPhases, type PlanContext } from '../plan/context';
 import type { DecodeResult } from '../plan/decode';
 import { decodeLabelled, type DecodeMode } from '../plan/run';
@@ -133,7 +133,7 @@ export function regularityPenalty(
       if (!longLink(link.upper, next)) continue;
       const d1 = mod(phase[link.upper]! - phase[link.lower]!, L);
       const d2 = mod(phase[next]! - phase[link.upper]!, L);
-      const dist = Math.min(Math.abs(d1 - d2), L - Math.abs(d1 - d2));
+      const dist = circDist(d1, d2, L);
       if (dist < distanceR) R += (distanceR - dist) / distanceR;
     }
   }

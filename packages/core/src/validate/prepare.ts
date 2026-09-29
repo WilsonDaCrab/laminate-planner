@@ -167,3 +167,17 @@ export function connectionsOf(
   }
   return conn;
 }
+
+/**
+ * Rows, derived from geometry alone: pieces that share a vertical boundary lie in one row (they are
+ * neighbours across a seam). Returns the row index of every piece; the planner's `segmentId` and
+ * `band` labels are not trusted.
+ */
+export function rowsOf(geoms: readonly PieceGeom[], shared: readonly SharedBoundary[]): number[] {
+  const parent = geoms.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
+  for (const s of shared) {
+    if (s.verticalLength > SHARED_MIN) parent[find(s.a)] = find(s.b);
+  }
+  return geoms.map((_, i) => find(i));
+}

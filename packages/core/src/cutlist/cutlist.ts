@@ -25,6 +25,8 @@ export interface CutPiece {
   width: number;
   /** Space the piece is cut from (between kerfs and board edges), mm. */
   space: { length: number; width: number };
+  /** That space as a rectangle in board coordinates. */
+  region: { x: number; y: number; w: number; h: number };
 }
 
 export interface BoardCutSheet {
@@ -70,8 +72,10 @@ interface Region {
 
 /** Tolerance for comparing exact placements. */
 const TOL = 1e-6;
-/** A margin of at most this is left uncut: rounding leaves up to one millimetre anyway. */
+/** A sliver in front of a group thinner than a kerf plus this is not cut off but measured over. */
 const MIN_MARGIN = 1 + 1e-6;
+/** Float noise allowed when a value is meant to be a whole number of millimetres. */
+const WHOLE = 1e-9;
 
 type Axis = 'x' | 'y';
 
@@ -107,9 +111,13 @@ class SheetBuilder {
   constructor(private readonly kerf: number) {}
 
   /**
-   * Cuts along one axis so that every group ends up in its own tight region. A group is measured
-   * from the start of its region ("compacted"): a sliver in front of it that is too thin for a
-   * cut simply becomes waste at the end, and the group's cuts stay exact relative to each other.
+   * Cuts along one axis so that every group ends up in its own region, and no piece is ever
+   * longer than its place:
+   * - a group that ends at the high edge of the region keeps that edge (it carries the board's
+   *   profile there): it is measured from the edge, never cut off at its end; if the material in
+   *   front of it is longer than the group, the front is cut back (a cut of at least one kerf);
+   * - every other group is measured from the start of its region ("compacted": a sliver in front
+   *   that is too thin for a cut becomes waste at the end) and cut to the rounded-down length.
    */
   private cutAxis(
     region: Region,
@@ -122,8 +130,8 @@ class SheetBuilder {
     const out: { group: Item[]; region: Region }[] = [];
     let cursor = lo;
 
-    const cut = (exact: number): void => {
-      const at = Math.floor(exact - cursor);
+    /** One cut `at` whole millimetres from the current start of the material. */
+    const cutAt = (at: number): void => {
       const whole =
         axis === 'x'
           ? { x: cursor, y: region.y0, w: hi - cursor, h: region.y1 - region.y0 }
@@ -131,15 +139,38 @@ class SheetBuilder {
       this.steps.push({ kind: axis === 'x' ? 'cross' : 'rip', at, region: whole });
       cursor = cursor + at + k;
     };
+    const part = (group: Item[], from: number, to: number) =>
+      out.push({
+        group,
+        region:
+          axis === 'x'
+            ? { x0: from, x1: to, y0: region.y0, y1: region.y1 }
+            : { x0: region.x0, x1: region.x1, y0: from, y1: to },
+      });
 
     groups.forEach((group, gi) => {
       const start = Math.min(...group.map((i) => startOf(i.rect, axis)));
+      const end = Math.max(...group.map((i) => endOf(i.rect, axis)));
+      const span = end - start;
+      const last = gi === groups.length - 1;
+
+      if (last && hi - end <= TOL) {
+        const excess = hi - cursor - span;
+        if (excess > TOL) {
+          const from = cursor;
+          const at = Math.max(0, Math.ceil(excess - k - WHOLE));
+          cutAt(at);
+          this.offcut(region, axis, from, from + at);
+        }
+        part(group, cursor, hi);
+        return;
+      }
+
       if (start - cursor > k + MIN_MARGIN) {
         const from = cursor;
-        cut(start - k); // waste before the group
+        cutAt(Math.floor(start - k - cursor + WHOLE)); // waste before the group
         this.offcut(region, axis, from, cursor - k);
       }
-      // Compact: the group starts where its region starts.
       const shift = cursor - start;
       const moved = group.map((it) => ({
         id: it.id,
@@ -148,22 +179,14 @@ class SheetBuilder {
             ? { ...it.rect, x: it.rect.x + shift }
             : { ...it.rect, y: it.rect.y + shift },
       }));
-      const end = Math.max(...moved.map((i) => endOf(i.rect, axis)));
       const groupLo = cursor;
-      const last = gi === groups.length - 1;
-      let groupHi = hi;
-      if (!last || hi - end > MIN_MARGIN) {
-        cut(end);
-        groupHi = cursor - k; // the cut line itself
+      if (!last || hi - (groupLo + span) > TOL) {
+        cutAt(Math.floor(span + WHOLE));
+        part(moved, groupLo, cursor - k); // up to the cut line itself
         if (last) this.offcut(region, axis, cursor, hi);
+      } else {
+        part(moved, groupLo, hi);
       }
-      out.push({
-        group: moved,
-        region:
-          axis === 'x'
-            ? { x0: groupLo, x1: groupHi, y0: region.y0, y1: region.y1 }
-            : { x0: region.x0, x1: region.x1, y0: groupLo, y1: groupHi },
-      });
     });
     return out;
   }
@@ -179,26 +202,35 @@ class SheetBuilder {
 
   /** Splits a region into single pieces: rips first, then crosscuts. */
   process(region: Region, items: readonly Item[]): void {
+    const k = this.kerf;
     for (const axis of ['y', 'x'] as const) {
-      const groups = groupsAlong(items, axis, this.kerf);
+      const groups = groupsAlong(items, axis, k);
       const lo = axis === 'x' ? region.x0 : region.y0;
       const hi = axis === 'x' ? region.x1 : region.y1;
       const start = Math.min(...items.map((i) => startOf(i.rect, axis)));
       const end = Math.max(...items.map((i) => endOf(i.rect, axis)));
-      const needsCut = groups.length > 1 || start - lo > MIN_MARGIN || hi - end > MIN_MARGIN;
+      const excess = hi - lo - (end - start);
+      const hugsHigh = hi - end <= TOL;
+      const needsCut =
+        groups.length > 1 ||
+        (hugsHigh ? excess > TOL : start - lo > k + MIN_MARGIN || excess > TOL);
       if (!needsCut) continue;
-      for (const part of this.cutAxis(region, groups, axis)) this.process(part.region, part.group);
+      for (const p of this.cutAxis(region, groups, axis)) this.process(p.region, p.group);
       return;
     }
     if (items.length !== 1) {
       throw new RangeError('cutlist: pieces overlap, the board is not a guillotine layout');
     }
     const { id, rect } = items[0]!;
+    const length = region.x1 - region.x0;
+    const width = region.y1 - region.y0;
     this.pieces.push({
       pieceId: id,
-      length: Math.floor(rect.w),
-      width: Math.floor(rect.h),
-      space: { length: region.x1 - region.x0, width: region.y1 - region.y0 },
+      // The piece is what lies in its region; never longer than its place.
+      length: Math.floor(Math.min(rect.w, length) + WHOLE),
+      width: Math.floor(Math.min(rect.h, width) + WHOLE),
+      space: { length, width },
+      region: { x: region.x0, y: region.y0, w: length, h: width },
     });
   }
 }

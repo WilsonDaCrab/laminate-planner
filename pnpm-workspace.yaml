@@ -2,4 +2,6 @@ packages:
   - packages/*
   - apps/*
 allowBuilds:
-  esbuild: set this to true or false
+  # esbuild's install script only swaps in a faster launcher; the platform binary comes from an
+  # optional dependency, so tsx and Vitest work without running it.
+  esbuild: false

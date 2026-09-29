@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { shapesArea } from '../geometry/clip';
-import { rowConfigFromSettings } from '../layout/bands';
+import { buildBands, rowConfigFromSettings } from '../layout/bands';
+import { buildRoomZone } from '../layout/roomZone';
 import { sample } from '../layout/feasible';
 import { instanceFiles } from '../layout/fixtures/instances';
-import { parseProject } from '../model/index';
+import { createProject, parseProject } from '../model/index';
 import { buildPlan } from '../plan/build';
 import { buildContext, type PlanContext } from '../plan/context';
 import { decodeOnsite } from '../plan/onsite';
@@ -55,6 +56,59 @@ describe('LB1 on rectangles matches the closed formula', () => {
       }
     });
   }
+});
+
+describe('LB1 when the two edge strips meet exactly (kerf = 0, a + b = W)', () => {
+  // Zone height 2900 − 2·10 = 2880 = 15 × 192, so a + b ≡ 0 (mod W) and a + b = W is possible.
+  const p = createProject({
+    rules: { kerf: 0 },
+    rooms: [
+      {
+        id: 'r1',
+        name: 'Touching strips',
+        code: 'T',
+        outline: [
+          { x: 0, y: 0 },
+          { x: 4000, y: 0 },
+          { x: 4000, y: 2900 },
+          { x: 0, y: 2900 },
+        ],
+        edges: [{ kind: 'wall' }, { kind: 'wall' }, { kind: 'wall' }, { kind: 'wall' }],
+        obstacles: [],
+      },
+    ],
+  });
+
+  /** A row offset for which the first and the last strip widths add up to exactly W. */
+  function touchingY0(): number {
+    const W = p.product.boardWidth;
+    const zone = buildRoomZone(p, p.rooms[0]!.id);
+    const cfg = rowConfigFromSettings(p.settings);
+    for (let y0 = 0; y0 < W; y0++) {
+      const layout = buildBands(zone.shapes, { ...cfg, y0 }, W);
+      const heights = layout.bands.map((b) => {
+        const s = layout.segments.find((q) => q.band === b.j)!;
+        return s.yHi - s.yLo;
+      });
+      const a = heights[0]!;
+      const b = heights[heights.length - 1]!;
+      if (a < W - 1e-6 && b < W - 1e-6 && Math.abs(a + b - W) < 1e-6) return y0;
+    }
+    throw new Error('no y0 with a + b = W');
+  }
+
+  it('does not count both strips at the shared level, and stays below B', () => {
+    const y0 = touchingY0();
+    const ctx = buildContext(p, { ...rowConfigFromSettings(p.settings), y0 });
+    const lb = lowerBounds(ctx);
+    // With a + b ≤ W a low and a high strip can share a board, so the closed formula applies.
+    expect(lb.lb1).toBe(rectangleFormula(ctx));
+    for (let seed = 1; seed <= 30; seed++) {
+      const phi = randomPhi(ctx, seed);
+      expect(lb.lb).toBeLessThanOrEqual(buildPlan(ctx, phi).stats.boards);
+      expect(lb.lb).toBeLessThanOrEqual(decodeOnsite(ctx, phi).B);
+    }
+  });
 });
 
 describe.each(instanceFiles.map((f) => [f.id, f.raw] as const))('bounds on %s', (id, raw) => {

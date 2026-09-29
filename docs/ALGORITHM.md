@@ -169,14 +169,14 @@ Sakārto pēc laukuma dilstoši. Katram gabalam izvēlas **best fit** krājumā:
 ### 4.4 Rezultāts
 
 - `B = B_A + B_B + B_C`.
-- Plāns: dēļi ar `placements` (taisnstūri dēļa koordinātās). Dēļu numurus piešķir griešanai ērtā secībā (grupēti pēc griezuma garuma).
+- Plāns: dēļi ar `placements` (taisnstūri dēļa koordinātās). Dēļu numuri seko dekodera secībai (`D01`, `D02`, …); grupēšana pēc griezuma garuma ir griešanas sarakstā (atdura saraksts, `cutlist`).
 - **Determinisms:** visas kārtošanas ir stabilas ar sasaisti pēc gabala ID.
 - Novērtētājs (`evaluate`) un plāna konstruktors (`buildPlan`) izmanto **vienu dekodera kodolu** (`plan/decode.ts`, izvēli pēc režīma dara `plan/run.ts`), tāpēc B sakrīt pēc konstrukcijas; `evaluate` atgriež arī nesapārotos sarakstus (N un M4 vajadzībām) un statistiku. Ātrā versija bez objektiem (typed arrays) ir F5 uzdevums, ar tiem pašiem ekvivalences testiem. Īpašību tests: `evaluate(φ).B === plan(φ).boards.length === validate(plan).boards`.
 - Dēļa novietojums (`boardRect`): sākuma gabals pie dēļa labā gala, beigu gabals pie kreisā, apakšmalas profils pie `y = 0`, augšmalas pie `y = W`; pirmās rindas strēmele (`long = high`) sēž dēļa augšā, pēdējās (`low`) apakšā.
 
 ### 4.5 Secīgais režīms (`mode: onsite`)
 
-Modelē klāšanu bez iepriekšējas griešanas: atgriezumu var izmantot tikai vēlāk ieklātā rindā.
+Modelē klāšanu bez iepriekšējas griešanas: atgriezumu var izmantot tikai vēlāk ieklātam gabalam (arī tajā pašā rindā, bet ne agrāk ieklātam).
 
 - Klāšanas secība: josla augoši, joslā segmenti pēc x.
 - Divas kaudzes: `stackS` (atgriezumi ar labā gala profilu, der sākumam) un `stackE` (ar kreisā gala profilu, der beigām).
@@ -207,7 +207,7 @@ f(φ) = B(φ) + λ_V·V(φ) + λ_H·H(φ) + λ_R·R(φ) + ε·N(φ)
 | λ_R | 0 | ieslēdz pēc vajadzības |
 | ε | 0,2 | ε·N < 1, tāpēc nekad neatsver vienu dēli |
 
-- **Derīgums:** risinājums ir derīgs ⇔ V = 0 (L_min un w_min nodrošina domēns un y0).
+- **Derīgums:** risinājums ir derīgs ⇔ V = 0 un L_min ir izpildīts (`lengthDeficit = 0`; tas ir garantēts, ja φ ∈ F_s, un sods tikai tad, ja F_s ir tukša); w_min nodrošina y0.
 - SA atsevišķi glabā labāko derīgo (salīdzina pēc B, tad pēc f). Ja derīga nav, atgriež labāko pēc f ar brīdinājumu.
 
 ## 6. Gājieni

@@ -3,7 +3,7 @@
  */
 
 import { difference, shapesArea, union, type Shape } from '../geometry/clip';
-import { apply, applyAll } from '../geometry/frames';
+import { apply, applyAll, degToRad, roomToRow } from '../geometry/frames';
 import { ensureCCW, locatePoint } from '../geometry/polygon';
 import { pointSegmentDist } from '../geometry/segment';
 import { buildZone } from '../geometry/zone';
@@ -11,6 +11,7 @@ import type { Plan, PlannedPiece, Project, Room } from '../model/index';
 import { normalizeIntervals, type Interval } from '../num/intervals';
 import {
   connectionsOf,
+  rowsOf,
   sharedBoundaries,
   toGeoms,
   type Connections,
@@ -257,20 +258,20 @@ export function checkConnections(
 
 // ---- 6. stagger ---------------------------------------------------------------------------
 
-/** Seam positions (row frame) of every segment, from shared vertical edges inside the segment. */
-function seamsBySegment(
+/** Seam positions (row frame) of every row, from shared vertical edges between its pieces. */
+function seamsByRow(
   geoms: readonly PieceGeom[],
   shared: readonly SharedBoundary[],
-): Map<string, number[]> {
-  const seams = new Map<string, number[]>();
+  rows: readonly number[],
+): Map<number, number[]> {
+  const seams = new Map<number, number[]>();
   for (const s of shared) {
-    const A = geoms[s.a]!.piece;
-    const B = geoms[s.b]!.piece;
-    if (A.segmentId !== B.segmentId || s.verticalLength <= SHARED_MIN) continue;
-    const list = seams.get(A.segmentId) ?? [];
+    if (s.verticalLength <= SHARED_MIN) continue;
+    const row = rows[s.a]!;
+    const list = seams.get(row) ?? [];
     for (const e of s.vertical)
       if (!list.some((x) => Math.abs(x - e.x) <= LINE_TOL)) list.push(e.x);
-    seams.set(A.segmentId, list);
+    seams.set(row, list);
   }
   for (const list of seams.values()) list.sort((p, q) => p - q);
   return seams;
@@ -282,22 +283,32 @@ export function checkStagger(
   shared: readonly SharedBoundary[],
 ): Violation[] {
   const D = project.rules.minStagger;
-  const seams = seamsBySegment(geoms, shared);
-  // Shared horizontal boundary per (lower segment, upper segment).
+  const rows = rowsOf(geoms, shared);
+  const seams = seamsByRow(geoms, shared, rows);
+  // A readable name for a row: its smallest piece id.
+  const name = new Map<number, string>();
+  geoms.forEach((g, i) => {
+    const row = rows[i]!;
+    const cur = name.get(row);
+    if (cur === undefined || g.piece.id < cur) name.set(row, g.piece.id);
+  });
+
+  // Shared horizontal boundary per (lower row, upper row): neighbouring rows are those whose
+  // pieces share a horizontal edge.
   const links = new Map<string, Interval[]>();
   for (const s of shared) {
     if (s.horizontalLength <= SHARED_MIN) continue;
     const A = geoms[s.a]!;
     const B = geoms[s.b]!;
-    if (Math.abs(A.piece.band - B.piece.band) !== 1) continue;
-    const [lower, upper] = A.cy < B.cy ? [A, B] : [B, A];
-    const key = `${lower.piece.segmentId}|${upper.piece.segmentId}`;
+    const [lower, upper] = A.cy < B.cy ? [s.a, s.b] : [s.b, s.a];
+    if (rows[lower] === rows[upper]) continue;
+    const key = `${rows[lower]}|${rows[upper]}`;
     links.set(key, [...(links.get(key) ?? []), ...s.horizontal]);
   }
 
   const out: Violation[] = [];
   for (const [key, raw] of links) {
-    const [lower, upper] = key.split('|') as [string, string];
+    const [lower, upper] = key.split('|').map(Number) as [number, number];
     const a = seams.get(lower) ?? [];
     const b = seams.get(upper) ?? [];
     for (const [lo, hi] of normalizeIntervals(raw, { eps: LINE_TOL })) {
@@ -308,11 +319,12 @@ export function checkStagger(
         for (const y of b) {
           if (y < from || y > to) continue;
           if (Math.abs(x - y) < D - GRID_TOL) {
+            const refs = [name.get(lower)!, name.get(upper)!];
             out.push(
               v(
                 'stagger',
-                `Seams of segments ${lower} and ${upper} are ${Math.abs(x - y).toFixed(1)} mm apart`,
-                [lower, upper],
+                `Seams of the rows of ${refs[0]} and ${refs[1]} are ${Math.abs(x - y).toFixed(1)} mm apart`,
+                refs,
               ),
             );
           }
@@ -321,6 +333,30 @@ export function checkStagger(
     }
   }
   return out;
+}
+
+// ---- row direction ------------------------------------------------------------------------
+
+/**
+ * The plan's row frame must be a rotation (possibly with a mirror) and, when the project fixes the
+ * row direction and stack side, the one those settings imply.
+ */
+export function checkFrame(project: Project, plan: Plan): Violation[] {
+  const { a, b, c, d } = plan.frame;
+  const orthonormal =
+    Math.abs(a * a + b * b - 1) < 1e-9 &&
+    Math.abs(c * c + d * d - 1) < 1e-9 &&
+    Math.abs(a * c + b * d) < 1e-9;
+  if (!orthonormal) return [v('orientation', 'The row frame is not a rotation or reflection', [])];
+  const { angleDeg, stackSide } = project.settings;
+  if (angleDeg === 'auto' || stackSide === 'auto') return [];
+  const want = roomToRow(degToRad(angleDeg), stackSide);
+  const same = (['a', 'b', 'c', 'd', 'e', 'f'] as const).every(
+    (k) => Math.abs(plan.frame[k] - want[k]) < 1e-9,
+  );
+  return same
+    ? []
+    : [v('orientation', 'The plan rows do not run in the direction the settings ask for', [])];
 }
 
 // ---- 7. pipes -----------------------------------------------------------------------------
@@ -359,13 +395,6 @@ export function checkPipes(project: Project, plan: Plan, geoms: readonly PieceGe
     for (const { g } of hits) {
       const id = g.piece.id;
       expectedDrills.set(id, (expectedDrills.get(id) ?? 0) + 1);
-      const drill = g.piece.features.find(
-        (f) => f.kind === 'drill' && Math.abs(f.diameter - pipe.diameter) <= 1e-9,
-      );
-      if (!drill || drill.kind !== 'drill') {
-        out.push(v('pipe', `Pipe ${pipe.id} has no drill hole on piece ${id}`, [pipe.id, id]));
-        continue;
-      }
       // Expected local position: the board image is a pure translation of the row-frame shape.
       const part = g.piece.parts[0]!;
       const row = applyAll(plan.frame, part.outline)[0]!;
@@ -374,8 +403,17 @@ export function checkPipes(project: Project, plan: Plan, geoms: readonly PieceGe
         x: centreRow.x + t.x - g.piece.boardRect.x,
         y: centreRow.y + t.y - g.piece.boardRect.y,
       };
-      if (Math.abs(drill.x - local.x) > 0.05 || Math.abs(drill.y - local.y) > 0.05) {
-        out.push(v('pipe', `Drill of pipe ${pipe.id} on piece ${id} is misplaced`, [pipe.id, id]));
+      const ok = g.piece.features.some(
+        (f) =>
+          f.kind === 'drill' &&
+          Math.abs(f.diameter - pipe.diameter) <= 1e-9 &&
+          Math.abs(f.x - local.x) <= 0.05 &&
+          Math.abs(f.y - local.y) <= 0.05,
+      );
+      if (!ok) {
+        out.push(
+          v('pipe', `Pipe ${pipe.id} has no drill hole in place on piece ${id}`, [pipe.id, id]),
+        );
       }
     }
   }
@@ -398,6 +436,7 @@ export function geometryChecks(project: Project, plan: Plan): Violation[] {
   const conn = connectionsOf(geoms, shared);
   return [
     ...checkConnections(project, geoms, conn),
+    ...checkFrame(project, plan),
     ...checkStagger(project, geoms, shared),
     ...checkPipes(project, plan, geoms),
   ];
