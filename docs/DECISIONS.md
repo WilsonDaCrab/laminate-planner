@@ -97,3 +97,20 @@ Aprēķini notiek klientā Web Worker. Serveris nav vajadzīgs.
 - **TypeScript 6.x**, nevis 7: `typescript-eslint` 8.70 vēl neatbalsta TS 7 un ESLint krīt. Uz TS 7 pāriet, kad `typescript-eslint` to atbalsta.
 - Noklusējuma zars ir `main`. `.gitattributes` fiksē `eol=lf`, lai Prettier nekrīt Windows vidē.
 - Stop hook izsauc `pnpm run <skripts>`: pnpm 12 nepieņem `pnpm -s` kā klusuma karogu.
+
+## ADR-011 — Ģeometrijas pamati (F1) (2026-09-29)
+
+**Konteksts.** F1 izveido `num → rng → geometry`. `geometry` nedrīkst importēt `model` (tas nāk F2), bet zonas aprēķinam vajag ievadi.
+
+**Lēmumi.**
+
+- **PRNG:** pašu xoshiro128** ar splitmix32 sēklošanu; `fork(seed, i)` dod neatkarīgas plūsmas. Pārbaudīts pret atsauces pirmo izvadi stāvoklim {1,2,3,4} (11520).
+- **`ZoneInput`:** zonas ievade ir ģeometrijas līmeņa tips (`outline`, `edges[].gap/bulge`, šķēršļi, durvju ailas), nevis `Room`. F2 to aizpildīs no modeļa. Kontūrai jābūt CCW (citādi izņēmums), šķēršļus normalizē uz CCW.
+- **Offset:** katras malas taisne nobīdīta par `g_e`; virsotne ir blakus taisņu krustpunkts (miter). Ja miter garums pārsniedz `1/sin 15°` reizes spraugu (iekšējais leņķis < 30°) vai malas ir paralēlas ar dažādām spraugām, virsotne kļūst par diviem punktiem (bevel) un tiek izdots brīdinājums `sharpCorner`. Paššķērsojumus tīra `union` ar `FillRule.Positive`. Miter reflekso stūru vietā dod kvadrātisku, nevis noapaļotu izgriezumu (konservatīvi: grīda paliek tālāk no sienas).
+- **Precīza kontrole:** taisnleņķa daudzstūrim ar vienādu spraugu `A′ = A − g·P + 4g²`; izliekta daudzstūra gadījumā `A′ = A − g·P + g²·Σ tan(τᵢ/2)`. To izmanto īpašību testos.
+- **Apaļas kolonnas** šķērslim izmanto apvilkto (`circumscribed`) daudzstūri, lai tas satur īsto apli. Kontūras loki ir ierakstīti (`inscribed`), novirze ≤ `ARC_TOL`.
+- **Durvju aila (DOMAIN B5) — pieņēmums.** DOMAIN precīzi neapraksta ģeometriju. Zonai pievieno taisnstūri uz āru no malas: platums `width + 2·jambUndercut`, dziļums `depth`, iekšpusē 1 mm aiz spraugas robežas, lai apvienošana būtu tīra. Ja izrādīsies citādi, maina tikai `doorwayShape` failā `geometry/zone.ts`.
+- **`CLIPPER_SCALE = 100`** (0,01 mm); mērogošana tikai `geometry/clip.ts`. Rezultāti tiek noapaļoti uz šo režģi. Sekas: nobīdītām slīpām sienām ar iracionālu virzienu (piem., trapece ar kājām √10) laukuma kļūda ir līdz perimetrs × 0,005 mm (trapecei ~5,5 mm², robeža ~72 mm²), nevis ±0,5 mm². Izvēlēts saglabāt režģi (0,01 mm) un pielaidi saistīt ar to, nevis palielināt `CLIPPER_SCALE` (drošais koordinātu diapazons JS skaitļiem ~90 m). Taisnleņķa un racionāliem virzieniem laukums paliek precīzs ±0,5 mm². Praktiski: 5 mm² uz 12 m² ir 5·10⁻⁵ %; dēļu skaitu tas neietekmē.
+- **Apaļu šķēršļu apvilktais daudzstūris** pieskaras aplim malu viduspunktos, tāpēc tam pieskaita vienu režģa soli rezerves, lai aplis paliek iekšā arī pēc noapaļošanas.
+- **`sourceEdge` pēc Clipper:** `arcs` saglabā `sourceEdge`/`fromArc` katrai diskretizētajai malai. Atjaunošana pēc Clipper operācijām (gabala malas līkumotības noteikšana) netiek darīta F1, jo to pirmo reizi vajag F3 `curveCut`. Tur to veic ģeometriski (galapunkti uz koncentriskā loka rādiusā r ± g ar `ARC_TOL` toleranci).
+- **Licence:** `clipper2-ts` 2.0.1-18 ir BSL-1.0 (Boost), saderīga ar MIT; pakotnes `LICENSE` fails pārbaudīts.

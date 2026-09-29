@@ -33,7 +33,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [ ] `geometry/zone`: mainīga platuma miter offset + tīrīšana; šķēršļu atņemšana; durvju ailas paplašinājums
 - [ ] Atsauces telpas testiem: taisnstūris, L, U, trapece, paralelograms, erkers, telpa ar kolonnu, telpa ar pusapaļu erkeru un apaļu kolonnu
 
-**Kritēriji:** Z laukums visām atsauces telpām (bez lokiem) sakrīt ar manuāli aprēķināto (±0,5 mm²); telpām ar lokiem — ar analītisko laukumu relatīvās kļūdas robežās, ko nosaka ARC_TOL; diskretizētā loka punktu attālums no īstā loka ≤ ARC_TOL; round-trip kļūda < 1e-6 mm; īpašību tests: nejaušiem taisnleņķa daudzstūriem `area(Z) ≤ area(P)`, un Z ir vienkāršs daudzstūris vai daudzstūru kopa.
+**Kritēriji:** Z laukums visām atsauces telpām (bez lokiem) sakrīt ar manuāli aprēķināto (±0,5 mm²; sienām ar iracionālu virzienu — perimetrs × 0,005 mm, jo Clipper noapaļo virsotnes uz 0,01 mm režģi, sk. ADR-011); telpām ar lokiem — ar analītisko laukumu relatīvās kļūdas robežās, ko nosaka ARC_TOL; diskretizētā loka punktu attālums no īstā loka ≤ ARC_TOL; round-trip kļūda < 1e-6 mm; īpašību tests: nejaušiem taisnleņķa daudzstūriem `area(Z) ≤ area(P)`, un Z ir vienkāršs daudzstūris vai daudzstūru kopa.
 
 ## F2. Modelis, segmenti, fāzes → gabali (~4–5 d)
 
