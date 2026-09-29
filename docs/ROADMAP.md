@@ -63,13 +63,14 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [x] `validate`: visas §11 pārbaudes, pārkāpumu kodi
 - [x] `cutlist`: griešanas secība katram dēlim (garengriezumi, tad šķērsgriezumi), atdura grupēšana, klāšanas secība pa rindām, marķējumi; izvades izmēri ar stingru `Math.floor` (`num.floorMm` pieļauj +1e-6 mm, sk. ADR-011), lai gabals nekad nav garāks par vietu
 - [x] `render/svg`: telpa + plāns + marķējumi kā SVG teksts
+- [x] B.3: strēmeļu gabali no A posma atlikumiem (velkts uz priekšu no F14, ADR-013: citādi SA(precut) nevarētu izpildīt F5 kritēriju "SA ≤ bāzes metodes")
 
 **Kritēriji:**
 
 - vienībtests: `maxPairs` sakrīt ar pilno pārlasi (visas pārošanas) nejaušām mazām kopām (n ≤ 8);
 - īpašību tests (nejaušas telpas × nejaušas φ ∈ F): `evaluate.B === plan.boards.length === validate.boards`; validētājs neziņo pārkāpumus, izņemot nobīdi, ja V > 0; `LB ≤ B`;
 - V = 0 ⇔ validētājs neziņo par nobīdi;
-- ar roku pārbaudīts SVG trim instancēm (taisnstūris, L, trapece). **Gaida lietotāja pārbaudi:** `pnpm -F @lp/bench render-samples` → `results/f3/*.svg`.
+- ar roku pārbaudīts SVG trim instancēm (taisnstūris, L, trapece). Pārbaudīts (lietotājs, 2026-09-29): `pnpm -F @lp/bench render-samples` → `results/f3/*.svg`.
 
 ## F4. Bāzes metodes, CLI, vizualizācija (~2–3 d)
 
@@ -205,7 +206,7 @@ Sadarbībā ar klājēju: viena reāla telpa → mērījumi → plāns → iepri
 ## F14. Precīzā griešana (~5–7 d)
 
 - [ ] Slīpo gabalu precīzā pārošana pēc abām malām (pašu Hopcroft–Karp/Kuhn)
-- [ ] B.3: strēmeļu gabali no A posma atlikumiem
+- [x] B.3: strēmeļu gabali no A posma atlikumiem (izpildīts F3, sk. ADR-013)
 - [ ] Urbumu instrukcijas; neobligāta priekšroka šuvei caur caurules centru
 - [ ] Fiksētā raksta režīms (1/2, 1/3) ar pilno pārlasi
 - [ ] Hibrīdrežīms ar `trimMargin`

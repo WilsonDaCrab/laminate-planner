@@ -158,7 +158,7 @@ Aprēķini notiek klientā Web Worker. Serveris nav vajadzīgs.
 - **LB1 pieskārienlīmenis.** Kopas tiek saraustas par 1e-6 mm, lai pie `kerf = 0` un `a + b = W` abas malu strēmeles nesaskaitītos vienā līmenī (LB būtu virs optimuma; tests to noķer: 50 pret 47). Derīga pie jebkura kerf; ar kerf > 0 var vēl nedaudz saasināt (`a + b + k ≤ W`).
 **Atklājumi un zināmie ierobežojumi.**
 
-- **Iepriekšējā griešana bez B.3 ir vājāka par secīgo dekoderu** uz reālām instancēm (sk. mērījumu ALGORITHM §4.2), jo strēmeles nevar izmantot A posma atlikumus. Jāizlemj, vai B.3 velk uz priekšu no F14 pirms F5/F6 eksperimentiem. `B_onsite ≥ B_precut` ir pierādīts un testēts tikai tīrai pilna platuma klasei.
+- **B.3 velkts uz priekšu no F14 uz F3 (lēmums pēc F3 mērījuma).** Bez B.3 iepriekšējā griešana bieži deva vairāk dēļu nekā secīgais dekoders (R1 112/200, S2 161/200 φ; ALGORITHM §4.2), jo strēmeles nevarēja izmantot A posma atlikumus. Tas būtu salauzis F5 kritēriju "SA ≤ bāzes metodes" (B-INST ir secīgs) un kursa atskaites tēzi par iepriekšējas griešanas vērtību. Realizēts `tryPlaceInStock` pirms B.1; ar to vidējais B ir mazāks `precut` režīmā visās 8 instancēs (pārkāpumi R1 18/200, S2 17/200). `B_onsite ≥ B_precut` vispārīgi joprojām nav garantēts (pierādīts un testēts tikai tīrai pilna platuma klasei).
 - **y0 netiek filtrēts** (F5 ārējā cilpa): plāns ar nelabvēlīgu y0 var pārkāpt `w_min`; validētājs to ziņo. Testos izmanto `goodY0`.
 - **Apaļas kolonnas** caurums gabalā šobrīd bez pazīmes (`cutout`); `curveCut` ir tikai kontūras lokiem (`sourceEdge`). Pirmās/pēdējās joslas gabaliem, kur loks pieskaras horizontālei, `curveCut` mala var būt `low`/`high`.
 - `w_min` validētājs pārbauda tikai asīm paralēlas strēmeles (slīpas sienas strēmeles ir scribe).

@@ -227,6 +227,16 @@ function cutFromStock(b: Builder, s: Stock, p: DecodePiece): void {
   });
 }
 
+/** Cuts `p` from the best-fitting existing leftover; returns false (and changes nothing) if none fits. */
+function tryPlaceInStock(b: Builder, p: DecodePiece): boolean {
+  const i = findStock(b.stock, p, needsOf(p));
+  if (i < 0) return false;
+  const s = b.stock[i]!;
+  b.stock.splice(i, 1);
+  cutFromStock(b, s, p);
+  return true;
+}
+
 /** Cuts `p` from the best-fitting leftover, or from a fresh board when nothing fits. */
 function placeBestFit(b: Builder, p: DecodePiece): void {
   const { L, W } = b.params;
@@ -307,6 +317,19 @@ export function decode(pieces: readonly DecodePiece[], params: DecodeParams): De
   const BA = b.boards.length;
   const unpairedEnds = endsA.filter((p) => !pairedEnd.has(p.id)).map(toItem);
   const unpairedStarts = startsA.filter((p) => !pairedStart.has(p.id)).map(toItem);
+
+  // ---- B.3: strip pieces into the leftovers of stage A -------------------------------------
+  // Start/end pieces of the first and last row need a profiled end and one long edge; the
+  // leftover of a full-width pair often has both. Placing one there never costs a board: it
+  // removes one strip unit, and the maximum pairing of the rest drops by at most one.
+  const stripPieces = [...lowB.ends, ...lowB.starts, ...highB.ends, ...highB.starts].sort(
+    (p, q) => q.extent * q.width - p.extent * p.width || byId(p, q),
+  );
+  const inLeftover = new Set(stripPieces.filter((p) => tryPlaceInStock(b, p)).map((p) => p.id));
+  for (const g of [lowB, highB]) {
+    g.ends = g.ends.filter((p) => !inLeftover.has(p.id));
+    g.starts = g.starts.filter((p) => !inLeftover.has(p.id));
+  }
 
   // ---- B: strips ---------------------------------------------------------------------------
   const unitsOf = (side: 'low' | 'high', g: typeof lowB): Unit[] => {

@@ -58,6 +58,41 @@ describe('stage B (strips)', () => {
   });
 });
 
+describe('B.3 (strip pieces into the leftovers of stage A)', () => {
+  it('cuts an end strip piece from the left leftover of an unpaired start piece', () => {
+    // start 1900 leaves 497 with the left profile and both long edges; the strip piece needs the
+    // left profile and the low edge only.
+    const r = boardsOf([piece('start', 'both', 1900), piece('end', 'low', 400, 100)]);
+    expect(r.B).toBe(1);
+    expect(r.BB).toBe(0);
+  });
+
+  it('does not use a leftover that lacks the profiled end the strip piece needs', () => {
+    // A start piece needs the right-end profile, which the leftover of a start piece has lost.
+    expect(boardsOf([piece('start', 'both', 1900), piece('start', 'low', 400, 100)]).B).toBe(2);
+  });
+
+  it('does not use a leftover that is too short or too narrow', () => {
+    expect(boardsOf([piece('start', 'both', 1900), piece('end', 'low', 498, 100)]).B).toBe(2);
+  });
+
+  it('places strip pieces that stay unmatched into stage B as before', () => {
+    const r = boardsOf([piece('full', 'low', L, 50), piece('full', 'high', L, 100)]);
+    expect(r.B).toBe(1);
+    expect(r.BB).toBe(1);
+  });
+
+  it('never needs more boards than the same pieces without leftovers to use', () => {
+    // Two strip pieces and one leftover: the leftover takes one, the other opens a board.
+    const r = boardsOf([
+      piece('start', 'both', 1900),
+      piece('end', 'low', 400, 100),
+      piece('end', 'high', 400, 100),
+    ]);
+    expect(r.B).toBeLessThanOrEqual(2);
+  });
+});
+
 describe('stage C', () => {
   it('best fit picks the smallest sufficient leftover', () => {
     const r = boardsOf([
