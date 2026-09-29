@@ -6,3 +6,4 @@ export * from './model/index';
 export * from './layout/index';
 export * from './plan/index';
 export * from './bounds/index';
+export * from './evaluate/index';
