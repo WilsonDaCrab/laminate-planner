@@ -1,0 +1,6 @@
+docs/
+CLAUDE.md
+README.md
+.claude/
+pnpm-lock.yaml
+results/

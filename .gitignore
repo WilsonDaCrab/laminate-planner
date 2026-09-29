@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+results/raw/
+report/*.pdf
+.claude/settings.local.json

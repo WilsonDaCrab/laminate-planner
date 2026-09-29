@@ -9,7 +9,7 @@
 // - Exit code 2 + stderr = "don't stop yet, here is why" (fed back to Claude).
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -66,7 +66,8 @@ const blocksSoFar = Number(readJson(counterFile)?.count) || 0;
 
 for (const name of checks) {
   // A single command string with shell:true works for pnpm/pnpm.cmd on every OS.
-  const r = spawnSync(`pnpm -s ${name}`, {
+  // `pnpm -s` is not a silent flag in pnpm 12, so use `pnpm run`.
+  const r = spawnSync(`pnpm run ${name}`, {
     cwd: root,
     encoding: 'utf8',
     shell: true,
