@@ -10,3 +10,4 @@ export * from './evaluate/index';
 export * from './cutlist/index';
 export * from './render/index';
 export * from './validate/index';
+export * from './optimize/index';
