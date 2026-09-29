@@ -35,6 +35,14 @@ export type PieceFeature =
       cutOnSite: boolean;
     };
 
+export interface PiecePart {
+  /** Outer ring in room coordinates. */
+  outline: Point[];
+  holes: Point[][];
+  /** The same outer ring after moving the piece onto its board (board coordinates, same order). */
+  boardOutline: Point[];
+}
+
 export interface PlannedPiece {
   id: string;
   roomId: string;
@@ -47,8 +55,14 @@ export interface PlannedPiece {
   lengthLow: Mm;
   lengthHigh: Mm;
   width: Mm;
-  /** Exact shape in room coordinates. */
+  /** Exact shape in room coordinates: outer ring of the main component (= `parts[0].outline`). */
   outline: Point[];
+  /**
+   * All components of the piece (a piece of a complex segment can be several islands or have a
+   * hole). Each has its board-coordinate image, which lets the validator check that the piece
+   * is congruent to its shape and lies inside its board rectangle.
+   */
+  parts: PiecePart[];
   boardId: string;
   /** Placement on the board (board coordinates). */
   boardRect: BoardRect;
