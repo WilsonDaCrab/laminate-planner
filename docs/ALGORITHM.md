@@ -36,9 +36,10 @@ un **minimizēt** izmantoto dēļu skaitu B. Sekundāri minimizē estētikas sod
 `Z = offset_e(P, −g_e) − ⋃_O inflate(O, g_O)`
 
 - **Loki.** Malas ar `bulge ≠ 0` un apaļos šķēršļus pirms visām operācijām pārvērš lauztā līnijā modulī `core/geometry/arcs` (vienīgā vieta, kur to dara). Maksimālā novirze no loka ir `ARC_TOL = 0,5 mm`; segmentu skaits ir `n = ⌈θ / (2·acos(1 − ARC_TOL/r))⌉` (vismaz 2 lokam, 8 aplim). Katrai iegūtajai mazajai malai saglabā atsauci uz sākotnējo loka malu (`sourceEdge`), lai plāna konstruktors varētu atpazīt līkumotus griezumus. Clipper operācijas šo atsauci nesaglabā, tāpēc pēc tām to atjauno ar Clipper Z vērtību (Z-callback) vai ģeometriski: mala ir līkumota, ja tās galapunkti atrodas uz sākotnējā loka koncentriskā loka (rādiuss r ± g) ARC_TOL robežās. Offset izpilda pēc diskretizācijas; kļūda nepārsniedz ARC_TOL.
-- **Mainīga platuma iekšējais offset.** Katras malas taisni nobīda uz iekšu par tās spraugu g_e. Jaunā virsotne ir blakus malu nobīdīto taisnu krustpunkts (miter). Ja blakus malas ir paralēlas, izmanto projekciju.
+- **Mainīga platuma iekšējais offset.** Katras malas taisni nobīda uz iekšu par tās spraugu g_e. Jaunā virsotne ir blakus malu nobīdīto taisnu krustpunkts (miter). Ja blakus malas ir paralēlas ar vienādu spraugu, virsotne ir projekcija uz nobīdīto taisni; ar dažādām spraugām (pakāpiens) vai pretparalēlas — virsotne kļūst par diviem punktiem (abu malu nobīžu galapunktiem).
 - Ja offset rada pašķrustošanos (īsas malas, šauras nišas), rezultātu tīra ar Clipper `union` (FillRule.Positive).
-- Ļoti asos leņķos (< 30°) miter virsotni ierobežo un izdod brīdinājumu.
+- Asos leņķos (pagrieziens > 150°, t.i. iekšējais leņķis < 30° vai > 330°) izdod brīdinājumu `sharpCorner`. Izliektā asā stūrī miter smaile paliek (tas ir precīzs iekšējais offset); tā netiek apcirpta. Sk. ADR-011.
+- **Durvju aila.** Zonai pievieno taisnstūri uz āru no malas: platums `width + 2·jambUndercut`, dziļums `depth` no sienas līnijas (sk. ADR-011; DOMAIN B5 to precīzi neapraksta).
 - Šķēršļus paplašina ar Clipper `inflatePaths` (JoinType.Miter) un atņem ar `difference`.
 - **Caurules neatņem no Z.** Tās neietekmē dēļu patēriņu un profilus, tikai rada urbumu. Plāna konstruktors tās piesaista gabalam kā `drill` pazīmi. Validētājs pārbauda, ka katra caurule atrodas tieši vienā gabalā (vai uz šuves) un ka urbums ir pareizajā vietā.
 

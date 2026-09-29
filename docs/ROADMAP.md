@@ -61,7 +61,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [ ] `evaluate`: f(φ) — B (bez objektiem), V (ātrais + precīzais ceļš), H, R, N; derīgums
 - [ ] `bounds`: LB0, LB1 (ar lūzumpunktiem)
 - [ ] `validate`: visas §11 pārbaudes, pārkāpumu kodi
-- [ ] `cutlist`: griešanas secība katram dēlim (garengriezumi, tad šķērsgriezumi), atdura grupēšana, klāšanas secība pa rindām, marķējumi
+- [ ] `cutlist`: griešanas secība katram dēlim (garengriezumi, tad šķērsgriezumi), atdura grupēšana, klāšanas secība pa rindām, marķējumi; izvades izmēri ar stingru `Math.floor` (`num.floorMm` pieļauj +1e-6 mm, sk. ADR-011), lai gabals nekad nav garāks par vietu
 - [ ] `render/svg`: telpa + plāns + marķējumi kā SVG teksts
 
 **Kritēriji:**
