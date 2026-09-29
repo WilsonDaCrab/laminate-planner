@@ -226,6 +226,31 @@ describe('degenerate input', () => {
     const r = buildZone({ outline, edges: uniform(3, 10) });
     expect(r.warnings.some((w) => w.code === 'sharpCorner')).toBe(true);
     for (const s of r.shapes) expect(isSimple(s.outer)).toBe(true);
+    // Inward offset of a triangle is a similar triangle with inradius r − g, so the exact area is
+    // A·((r − g)/r)². The convex mitre tip must survive (it is the exact offset), not be truncated.
+    const c = Math.hypot(4000, 100);
+    const inradius = 200_000 / ((4000 + 100 + c) / 2);
+    const exact = 200_000 * ((inradius - 10) / inradius) ** 2;
+    expect(r.shapes).toHaveLength(1);
+    expect(Math.abs(totalArea(r.shapes) - exact)).toBeLessThan((4000 + 100 + c) * 0.005);
+  });
+
+  it('reports the interior angle of a sharp convex corner (< 30°)', () => {
+    const r = buildZone({
+      outline: [vec(0, 0), vec(4000, 0), vec(0, 100)],
+      edges: uniform(3, 10),
+    });
+    const w = r.warnings.find((x) => x.code === 'sharpCorner');
+    expect(w && w.code === 'sharpCorner' ? w.angleDeg : NaN).toBeCloseTo(1.43, 1);
+  });
+
+  it('rejects duplicate vertices (zero-length edges)', () => {
+    expect(() =>
+      buildZone({
+        outline: [vec(0, 0), vec(100, 0), vec(100, 0), vec(100, 100), vec(0, 100)],
+        edges: uniform(5, 5),
+      }),
+    ).toThrow(/zero length/);
   });
 
   it('a strip narrower than twice the gap collapses to an empty zone with a warning', () => {

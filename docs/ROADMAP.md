@@ -24,14 +24,14 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F1. Pamati: skaitļi, PRNG, ģeometrija (~3–4 d)
 
-- [ ] `num`: `EPS`, `mod`, `circDist`, `floorMm`, droša salīdzināšana
-- [ ] `rng`: pašu PRNG (piem., xoshiro128** vai sfc32), `next()`, `int(a, b)`, `pick`, `shuffle`, `fork(seed, i)`; determinisma testi
-- [ ] `geometry`: Vec2 operācijas; daudzstūra laukums, orientācija, vienkāršības pārbaude, punkts daudzstūrī, nogriežņu krustpunkti
-- [ ] `geometry/arcs`: bulge ↔ loks (centrs, rādiuss, leņķis, horda, bultas augstums), diskretizācija ar `ARC_TOL` un `sourceEdge` atsaucēm, apļi
-- [ ] `geometry/frames`: telpa ↔ rindas (rotācija −θ, spoguļošana) ↔ dēlis; round-trip testi
-- [ ] `geometry/clip`: `clipper2-ts` adapteris (mērogošana, intersect, difference, union, inflate, PolyTree → daudzstūri ar caurumiem)
-- [ ] `geometry/zone`: mainīga platuma miter offset + tīrīšana; šķēršļu atņemšana; durvju ailas paplašinājums
-- [ ] Atsauces telpas testiem: taisnstūris, L, U, trapece, paralelograms, erkers, telpa ar kolonnu, telpa ar pusapaļu erkeru un apaļu kolonnu
+- [x] `num`: `EPS`, `mod`, `circDist`, `floorMm`, droša salīdzināšana
+- [x] `rng`: pašu PRNG (piem., xoshiro128** vai sfc32), `next()`, `int(a, b)`, `pick`, `shuffle`, `fork(seed, i)`; determinisma testi
+- [x] `geometry`: Vec2 operācijas; daudzstūra laukums, orientācija, vienkāršības pārbaude, punkts daudzstūrī, nogriežņu krustpunkti
+- [x] `geometry/arcs`: bulge ↔ loks (centrs, rādiuss, leņķis, horda, bultas augstums), diskretizācija ar `ARC_TOL` un `sourceEdge` atsaucēm, apļi
+- [x] `geometry/frames`: telpa ↔ rindas (rotācija −θ, spoguļošana) ↔ dēlis; round-trip testi
+- [x] `geometry/clip`: `clipper2-ts` adapteris (mērogošana, intersect, difference, union, inflate, PolyTree → daudzstūri ar caurumiem)
+- [x] `geometry/zone`: mainīga platuma miter offset + tīrīšana; šķēršļu atņemšana; durvju ailas paplašinājums (`sourceEdge` atjaunošana pēc Clipper atlikta uz F3, sk. ADR-011)
+- [x] Atsauces telpas testiem: taisnstūris, L, U, trapece, paralelograms, erkers, telpa ar kolonnu, telpa ar pusapaļu erkeru un apaļu kolonnu
 
 **Kritēriji:** Z laukums visām atsauces telpām (bez lokiem) sakrīt ar manuāli aprēķināto (±0,5 mm²; sienām ar iracionālu virzienu — perimetrs × 0,005 mm, jo Clipper noapaļo virsotnes uz 0,01 mm režģi, sk. ADR-011); telpām ar lokiem — ar analītisko laukumu relatīvās kļūdas robežās, ko nosaka ARC_TOL; diskretizētā loka punktu attālums no īstā loka ≤ ARC_TOL; round-trip kļūda < 1e-6 mm; īpašību tests: nejaušiem taisnleņķa daudzstūriem `area(Z) ≤ area(P)`, un Z ir vienkāršs daudzstūris vai daudzstūru kopa.
 
@@ -55,6 +55,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 ## F3. Dekoders, novērtētājs, robežas, validētājs, griešanas saraksts (~5–7 d)
 
 - [ ] `plan`: A posms (`maxPairs`), B posms (B.1, B.2), C posms (best fit), atlikumu krājums ar profilu karogiem, `Plan` ar `placements`
+- [ ] `geometry/zone`: `sourceEdge` atjaunošana pēc Clipper operācijām (atlikta no F1, ADR-011): zonas malām jānorāda, kura sākotnējā loka mala tās ir, ģeometriski (galapunkti uz koncentriskā loka r ± g ar `ARC_TOL`); kritērijs — pusapaļa erkera zonā visas loka malas atpazītas, taisnās nav
 - [ ] `plan`: gabalu pazīmes — slīpi griezumi, robi, strēmeles pēc sienas, līkumoti griezumi (`curveCut` ar ordinātām); caurules → `drill`
 - [ ] `plan/onsite`: secīgais dekoders (`ALGORITHM.md` §4.5)
 - [ ] `evaluate`: f(φ) — B (bez objektiem), V (ātrais + precīzais ceļš), H, R, N; derīgums

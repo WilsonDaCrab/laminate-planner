@@ -23,6 +23,9 @@ import type { Vec2 } from './vec';
 /** Integer units per mm inside Clipper (0.01 mm). */
 export const CLIPPER_SCALE = 100;
 
+/** Size of one Clipper grid step in mm; other modules use this instead of CLIPPER_SCALE. */
+export const CLIPPER_GRID_MM: Mm = 1 / CLIPPER_SCALE;
+
 /** A polygon with holes. `outer` is counter-clockwise, every hole is clockwise. */
 export interface Shape {
   outer: Vec2[];

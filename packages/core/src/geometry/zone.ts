@@ -8,7 +8,7 @@ import type { Mm } from '../num/index';
 import { EPS } from '../num/index';
 import { discretizeCircle, discretizePolygon } from './arcs';
 import {
-  CLIPPER_SCALE,
+  CLIPPER_GRID_MM,
   difference,
   inflate,
   polygonShape,
@@ -97,8 +97,15 @@ function offsetPolygon(
     const turn = Math.atan2(det, dot(n0, n1));
 
     if (Math.abs(det) < PARALLEL_EPS) {
-      if (dot(n0, n1) > 0 && Math.abs(g0 - g1) <= EPS) out.push(a);
-      else out.push(a, b);
+      if (dot(n0, n1) > 0 && Math.abs(g0 - g1) <= EPS) {
+        out.push(a);
+      } else {
+        // Antiparallel neighbours are a 0° / 360° spike; a step between different gaps is not.
+        if (dot(n0, n1) < 0) {
+          warnings.push({ code: 'sharpCorner', edge: sourceEdge[i] as number, angleDeg: 0 });
+        }
+        out.push(a, b);
+      }
       continue;
     }
     const d = {
@@ -109,9 +116,13 @@ function offsetPolygon(
       warnings.push({
         code: 'sharpCorner',
         edge: sourceEdge[i] as number,
-        angleDeg: 180 - (Math.abs(turn) * 180) / Math.PI,
+        // Interior angle: < 30° for a sharp convex corner, > 330° for a reflex one.
+        angleDeg: 180 - (turn * 180) / Math.PI,
       });
     }
+    // Long mitres are replaced by the two edge-offset endpoints; the Positive-union clean-up
+    // then decides what remains. NOTE: at a convex sharp corner the mitre tip is the exact
+    // inward offset and survives the clean-up (only the warning is issued).
     if (len(d) > MITER_LIMIT * Math.max(g0, g1) + EPS) out.push(a, b);
     else out.push(add(p, d));
   }
@@ -137,7 +148,7 @@ function obstacleShape(o: ZoneObstacle): Shape {
   if (o.kind === 'circle') {
     // Circumscribed polygon touches the circle at edge midpoints; one Clipper grid step of margin
     // keeps the circle inside the obstacle after coordinates are snapped to the grid.
-    const margin = 1 / CLIPPER_SCALE;
+    const margin = CLIPPER_GRID_MM;
     return polygonShape(discretizeCircle(o.center, o.diameter + 2 * margin, 'circumscribed'));
   }
   const oriented = orientCCW(o.points, o.bulges);
@@ -184,6 +195,13 @@ export function buildZone(input: ZoneInput): ZoneResult {
   }
   if (input.edges.length !== input.outline.length) {
     throw new RangeError('buildZone: edges must match outline vertices one to one');
+  }
+  for (let i = 0; i < input.outline.length; i++) {
+    const p = input.outline[i] as Vec2;
+    const q = input.outline[(i + 1) % input.outline.length] as Vec2;
+    if (Math.hypot(q.x - p.x, q.y - p.y) <= EPS) {
+      throw new RangeError(`buildZone: outline edge ${i} has zero length (duplicate vertex)`);
+    }
   }
   const warnings: ZoneWarning[] = [];
 

@@ -7,9 +7,14 @@ function take(n: number, f: () => number): number[] {
 }
 
 describe('xoshiro128**', () => {
-  it('matches the reference first output for state {1,2,3,4}', () => {
-    // rotl(2 * 5, 7) * 9 = 1280 * 9 = 11520 (computed by hand from the reference algorithm)
-    expect(createRngFromState(1, 2, 3, 4).nextU32()).toBe(11520);
+  it('matches hand-computed reference outputs for state {1,2,3,4}', () => {
+    // Worked by hand from the reference algorithm (result = rotl(s1·5, 7)·9, then the state update):
+    //   1st: rotl(10, 7)·9 = 11520       2nd: rotl(0, 7)·9 = 0
+    //   3rd: rotl(5145, 7)·9 = 5927040   4th: rotl(61475, 7)·9 = 70819200
+    const r = createRngFromState(1, 2, 3, 4);
+    expect([r.nextU32(), r.nextU32(), r.nextU32(), r.nextU32()]).toEqual([
+      11520, 0, 5927040, 70819200,
+    ]);
   });
 
   it('rejects the all-zero state', () => {
