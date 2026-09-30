@@ -111,3 +111,41 @@ export function tuneOne(
   }
   return { meanB: sum / seeds, found, runs: seeds };
 }
+
+/** One (instance, method) cell of the difficulty series: how often the planted optimum is found. */
+export interface DifficultyCell {
+  method: Method;
+  runs: number;
+  /** Runs that ended feasible with B equal to the known optimum. */
+  found: number;
+  meanB: number;
+  meanMs: number;
+}
+
+/**
+ * Runs `methods` on a project with `meta.knownOptimum` (`seeds` runs for the stochastic methods,
+ * one for the deterministic ones) and counts the runs that reach the optimum (ADR-015: B* = LB1).
+ */
+export function difficultyCells(
+  project: Project,
+  methods: readonly Method[],
+  seeds: number,
+  iters: number,
+): DifficultyCell[] {
+  const optimum = project.meta?.knownOptimum;
+  if (optimum === undefined) throw new RangeError('difficultyCells: no meta.knownOptimum');
+  return methods.map((method) => {
+    const runs = method === 'b-next' || method === 'b-inst' ? 1 : seeds;
+    let found = 0;
+    let sum = 0;
+    let ms = 0;
+    for (let seed = 1; seed <= runs; seed++) {
+      const t0 = performance.now();
+      const { result } = runMethod(project, method, { seed, budget: { iters } });
+      ms += performance.now() - t0;
+      sum += result.evaluation.B;
+      if (result.evaluation.feasible && result.evaluation.B === optimum) found++;
+    }
+    return { method, runs, found, meanB: sum / runs, meanMs: ms / runs };
+  });
+}

@@ -8,6 +8,7 @@ import {
   goodY0,
   isSaResult,
   lowerBounds,
+  shapesArea,
   parseProject,
   resolveY0,
   renderPlanSvg,
@@ -24,6 +25,7 @@ import {
 } from '@lp/core';
 import {
   COMPARE_METHODS,
+  difficultyCells,
   measureMethod,
   TUNING_CONFIGS,
   tuneOne,
@@ -67,6 +69,9 @@ const USAGE = `lp-bench <command>
   bestknown [path...] [--seeds N] [--iters N] [--write-meta] [--force]
                                   long SA runs (default 10 seeds x 2 000 000 evaluations); --write-meta stores
                                   meta.bestKnown = min(existing, best) (knownOptimum only if B = LB1)
+  difficulty [--n 6,10,...,42] [--m N] [--seeds N] [--iters N] [--base instance.json] [--out dir]
+                                  difficulty series: planted rooms generated in-process (seed = n), share of
+                                  runs at the known optimum per method -> results/f6/difficulty.csv
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -759,6 +764,78 @@ function bestknownCommand(args: string[], log: (line: string) => void): number {
   return 0;
 }
 
+const DIFFICULTY_METHODS: readonly Method[] = ['b-inst', 'rs', 'hc', 'sa'];
+
+function difficultyCommand(args: string[], log: (line: string) => void): number {
+  const { values } = parseArgs({
+    args,
+    options: {
+      n: { type: 'string' },
+      m: { type: 'string' },
+      seeds: { type: 'string' },
+      iters: { type: 'string' },
+      base: { type: 'string' },
+      out: { type: 'string' },
+    },
+  });
+  const ns = (values.n ?? '6,10,14,18,22,26,30,34,38,42').split(',').map((x) => Number(x.trim()));
+  if (ns.some((n) => !Number.isInteger(n) || n < 6)) throw new CliError('--n: list of integers');
+  const m = toInt('m', values.m, 3)!;
+  const seeds = toInt('seeds', values.seeds, 20)!;
+  const iters = toInt('iters', values.iters, 200_000)!;
+  if (seeds < 1) throw new CliError('--seeds must be at least 1');
+  const base = loadInstance(values.base ?? 'instances/rect/R1.json');
+  const out = values.out ?? 'results/f6';
+  log(
+    ['n', 'm2', 'segs', 'optimum', ...DIFFICULTY_METHODS.map((x) => x.toUpperCase())]
+      .map(pad)
+      .join(' ') +
+      `   (found/runs at the planted optimum; ${seeds} seeds, ${iters} evaluations; generator seed = n)`,
+  );
+  const csv = ['n,areaM2,segments,optimum,method,runs,found,share,meanB,meanGap,meanMs'];
+  for (const n of ns) {
+    // Deterministic: the generator seed is n, so the series is reproducible without files.
+    const project = generatePlanted(base, { n, m, seed: n });
+    const optimum = project.meta!.knownOptimum!;
+    const ctx = buildContext(project, rowConfigFromSettings(project.settings));
+    const { zone } = ctx;
+    const area = shapesArea(zone.shapes) / 1e6;
+    const cells = difficultyCells(project, DIFFICULTY_METHODS, seeds, iters);
+    for (const c of cells) {
+      csv.push(
+        [
+          n,
+          area.toFixed(2),
+          ctx.layout.segments.length,
+          optimum,
+          c.method,
+          c.runs,
+          c.found,
+          (c.found / c.runs).toFixed(3),
+          c.meanB.toFixed(3),
+          (c.meanB - optimum).toFixed(3),
+          c.meanMs.toFixed(0),
+        ].join(','),
+      );
+    }
+    log(
+      [
+        String(n),
+        fixed(area, 1),
+        String(ctx.layout.segments.length),
+        String(optimum),
+        ...cells.map((c) => `${c.found}/${c.runs} (${fixed(c.meanB - optimum, 2)})`),
+      ]
+        .map(pad)
+        .join(' '),
+    );
+  }
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'difficulty.csv'), `${csv.join('\n')}\n`);
+  log(`-> ${join(out, 'difficulty.csv')} (cell: found/runs (mean B - optimum))`);
+  return 0;
+}
+
 const TUNE_DEFAULT = [
   'instances/planted/P1.json',
   'instances/planted/P2.json',
@@ -819,6 +896,8 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return tuneCommand(rest, log);
       case 'exhaustive':
         return exhaustiveCommand(rest, log);
+      case 'difficulty':
+        return difficultyCommand(rest, log);
       case 'bestknown':
         return bestknownCommand(rest, log);
       case 'baselines':

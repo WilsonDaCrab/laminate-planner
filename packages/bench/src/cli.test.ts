@@ -127,3 +127,29 @@ describe('bench CLI', () => {
     expect(big.out).toContain('larger --step');
   });
 });
+
+describe('bench difficulty', () => {
+  it('generates planted rooms in-process and writes a CSV with found/runs per method', () => {
+    const out = join(tmp, 'difficulty');
+    const lines: string[] = [];
+    const code = main(
+      ['difficulty', '--n', '6,10', '--seeds', '2', '--iters', '300', '--out', out],
+      (l) => lines.push(l),
+    );
+    expect(code).toBe(0);
+    const rows = readFileSync(join(out, 'difficulty.csv'), 'utf8').trim().split('\n');
+    expect(rows[0]).toBe('n,areaM2,segments,optimum,method,runs,found,share,meanB,meanGap,meanMs');
+    // 2 rooms x 4 methods; B-INST is deterministic (1 run), the others run once per seed.
+    expect(rows).toHaveLength(1 + 2 * 4);
+    const cells = rows.slice(1).map((r) => r.split(','));
+    expect(cells.filter((c) => c[4] === 'b-inst').every((c) => c[5] === '1')).toBe(true);
+    expect(cells.filter((c) => c[4] === 'sa').every((c) => c[5] === '2')).toBe(true);
+    expect(cells.map((c) => c[2])).toEqual(['6', '6', '6', '6', '10', '10', '10', '10']);
+    // The planted optimum is B* = LB1, so no method can beat it.
+    expect(cells.every((c) => Number(c[9]) >= -1e-9)).toBe(true);
+  });
+
+  it('rejects a bad n list', () => {
+    expect(main(['difficulty', '--n', '4'], () => undefined)).toBe(2);
+  });
+});
