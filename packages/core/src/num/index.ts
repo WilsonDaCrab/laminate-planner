@@ -4,6 +4,13 @@ export type Mm = number;
 /** Absolute tolerance (mm) for float64 comparisons. */
 export const EPS = 1e-6;
 
+/**
+ * Tolerance (mm) of "a piece fits on a stock". A seam within EPS of a wall is not a seam, so the
+ * piece next to it can be longer than L by up to EPS; `fits` must accept that with float noise to
+ * spare (ADR-023), hence twice EPS.
+ */
+export const FIT_EPS = 2 * EPS;
+
 /** Mathematical modulo: result is always in [0, m), also for tiny negative `a`. */
 export function mod(a: number, m: number): number {
   const r = ((a % m) + m) % m;

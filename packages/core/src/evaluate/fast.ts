@@ -18,7 +18,7 @@ import {
   type LongNeeds,
 } from '../layout/pieces';
 import { MIN_OPEN_LENGTH } from '../layout/neighbors';
-import { EPS, mod } from '../num/index';
+import { EPS, FIT_EPS, mod } from '../num/index';
 import { regularityPenalty } from './evaluate';
 import { defaultWeights, type EvalWeights } from './evaluate';
 import type { Evaluator, QuickEval, UnpairedInfo, UnpairedList } from './evaluator';
@@ -445,7 +445,7 @@ export function createFastEvaluator(
 
   const fits = (i: number, ext: number, wid: number, nf: number): boolean => {
     if ((nf & ~sf[i]!) !== 0) return false;
-    if (sw[i]! < ext - EPS || sh[i]! < wid - EPS) return false;
+    if (sw[i]! < ext - FIT_EPS || sh[i]! < wid - FIT_EPS) return false;
     if ((nf & F_LEFT) !== 0 && (nf & F_RIGHT) !== 0 && sw[i]! - ext > EPS) return false;
     if ((nf & F_LOW) !== 0 && (nf & F_HIGH) !== 0 && sh[i]! - wid > EPS) return false;
     return true;

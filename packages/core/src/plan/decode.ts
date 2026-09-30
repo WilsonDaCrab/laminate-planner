@@ -11,7 +11,7 @@
  * Leftovers carry profile flags (which of their four edges are original board edges).
  */
 
-import { EPS, type Mm } from '../num/index';
+import { EPS, FIT_EPS, type Mm } from '../num/index';
 import type { LongNeeds, ShortNeeds } from '../layout/pieces';
 import { maxPairs, type Item } from './pairing';
 
@@ -176,7 +176,7 @@ function fits(s: Stock, p: DecodePiece, n: Needs): boolean {
   if ((n.left && !s.left) || (n.right && !s.right) || (n.low && !s.low) || (n.high && !s.high)) {
     return false;
   }
-  if (s.w < p.extent - EPS || s.h < p.width - EPS) return false;
+  if (s.w < p.extent - FIT_EPS || s.h < p.width - FIT_EPS) return false;
   // A piece that keeps both original ends (or both original long edges) must span the stock.
   if (n.left && n.right && s.w - p.extent > EPS) return false;
   if (n.low && n.high && s.h - p.width > EPS) return false;

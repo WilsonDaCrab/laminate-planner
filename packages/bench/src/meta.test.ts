@@ -13,9 +13,13 @@ const source = readFileSync(
   fileURLToPath(new URL('../../../instances/rect/R1.json', import.meta.url)),
   'utf8',
 );
+// A copy of R1 without `meta`: the real file carries the proven optimum written by `bestknown`, and
+// these tests need an instance that knows nothing yet.
 const fresh = (name: string): string => {
   const file = join(tmp, name);
-  writeFileSync(file, source);
+  const raw = JSON.parse(source) as { meta?: unknown };
+  raw.meta = { source: 'manual' };
+  writeFileSync(file, `${JSON.stringify(raw, null, 2)}${String.fromCharCode(10)}`);
   return file;
 };
 const metaOf = (file: string) => parseProject(JSON.parse(readFileSync(file, 'utf8'))).meta;

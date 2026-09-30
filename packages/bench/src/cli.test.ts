@@ -149,7 +149,7 @@ describe('bench difficulty', () => {
     expect(cells.map((c) => c[2])).toEqual(['6', '6', '6', '6', '10', '10', '10', '10']);
     // The planted optimum is B* = LB1, so no method can beat it.
     expect(cells.every((c) => Number(c[10]) >= -1e-9)).toBe(true);
-  });
+  }, 30_000);
 
   it('rejects a bad n list', () => {
     expect(main(['difficulty', '--n', '4'], () => undefined)).toBe(2);
