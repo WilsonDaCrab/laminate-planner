@@ -77,6 +77,8 @@
     "timeLimitMs": 3000
   },
   "meta": {
+    "knownOptimum": 49,
+    "bestKnown": 49,
     "source": "manual"
   }
 }

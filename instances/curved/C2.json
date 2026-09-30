@@ -87,6 +87,7 @@
     "timeLimitMs": 3000
   },
   "meta": {
+    "bestKnown": 67,
     "source": "manual"
   }
 }
