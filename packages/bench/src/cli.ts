@@ -620,7 +620,9 @@ function writeMeta(file: string, B: number, proven: boolean): string {
   }
   const previous = typeof meta.bestKnown === 'number' ? meta.bestKnown : Infinity;
   meta.bestKnown = Math.min(previous, B);
-  raw.meta = meta;
+  // Canonical key order of the model schema (a saved project must reproduce the file).
+  const { knownOptimum, bestKnown, source, ...rest } = meta;
+  raw.meta = { knownOptimum, bestKnown, source, ...rest };
   writeFileSync(
     file,
     `${JSON.stringify(raw, null, 2)}

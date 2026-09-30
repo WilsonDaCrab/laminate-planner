@@ -128,6 +128,8 @@ Ievade: visu segmentu gabali ar deskriptoriem. Izvade: dēļi ar gabalu novietoj
 
 Klases pēc garajām malām: `K_full` (both), `K_low`, `K_high`, `K_none`.
 
+**Pilna platuma gabali (ADR-019).** Gabals, kura platums ir vismaz `W − EPS`, pieder `K_full` neatkarīgi no `long`: tam ir abas sava dēļa garās malas, tāpēc `low`/`high` prasība neko nemaina. Tipisks gadījums ir nenogriezta pirmā un pēdējā rinda (`long = high` un `long = low`): to beigu un sākuma gabali pārojas savā starpā kā A posmā. Tas pats noteikums ir `plan/decode.ts` un `evaluate/fast.ts`.
+
 ### 4.1 A posms — pilna platuma gabali (K_full)
 
 - `short = full` → katram viens dēlis (F gab.).

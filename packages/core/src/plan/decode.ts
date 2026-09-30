@@ -284,7 +284,9 @@ export function decode(pieces: readonly DecodePiece[], params: DecodeParams): De
       free.push(p);
       continue;
     }
-    const target = p.long === 'both' ? null : p.long === 'low' ? lowB : highB;
+    // A piece as wide as the board has both long edges of its board whatever it needs, so it is a
+    // full-width piece (stage A): e.g. the first and last row of a room whose rows are not clipped.
+    const target = p.long === 'both' || p.width >= W - EPS ? null : p.long === 'low' ? lowB : highB;
     if (target === null) {
       (p.short === 'full' ? fullA : p.short === 'end' ? endsA : startsA).push(p);
     } else {

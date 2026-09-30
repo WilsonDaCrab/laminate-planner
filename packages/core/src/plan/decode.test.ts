@@ -44,6 +44,43 @@ describe('stage A (full-width pieces)', () => {
   });
 });
 
+describe('full-width pieces that need one long edge (first and last row)', () => {
+  const wide = (short: ShortNeeds, long: LongNeeds, extent: number) =>
+    piece(short, long, extent, W);
+
+  it('a high end and a low start of full width pair like stage A pieces', () => {
+    expect(boardsOf([wide('end', 'high', 500), wide('start', 'low', 1900 - k)]).B).toBe(1);
+    expect(boardsOf([wide('end', 'high', 500), wide('start', 'low', 1900 - k + 1)]).B).toBe(2);
+  });
+
+  it('a full-width one-sided piece is the same as a "both" piece', () => {
+    for (const long of ['low', 'high'] as const) {
+      for (const [short, extent] of [
+        ['full', L],
+        ['end', 700],
+        ['start', 900],
+      ] as const) {
+        const a = boardsOf([
+          wide(short, long, extent),
+          wide('end', 'both', 1000),
+          wide('start', 'both', 1200),
+        ]);
+        const b = boardsOf([
+          wide(short, 'both', extent),
+          wide('end', 'both', 1000),
+          wide('start', 'both', 1200),
+        ]);
+        expect(a.B, `${short} ${long}`).toBe(b.B);
+      }
+    }
+  });
+
+  it('narrower one-sided pieces still go to stage B', () => {
+    // low + high + k = 100 + 100 + 3 > W: two strips need two boards even though each is short.
+    expect(boardsOf([piece('end', 'high', 500, 100), piece('start', 'low', 500, 100)]).B).toBe(2);
+  });
+});
+
 describe('stage B (strips)', () => {
   it('a low and a high strip share a board when wl + wh + k ≤ W', () => {
     expect(boardsOf([piece('full', 'low', L, 50), piece('full', 'high', L, 139)]).B).toBe(1);

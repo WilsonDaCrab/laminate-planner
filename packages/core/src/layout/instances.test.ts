@@ -26,6 +26,10 @@ import { buildProfiles } from './xprofile';
  *  C1 zone y ∈ [10, 2990] (the bay is tangent to the walls): 16 rows.
  *  C2 zone y ∈ [10, 3490]: 19 rows; the column hole (y ≈ 1540…1960) fully splits the row [1728, 1920]
  *     → 19 + 1 = 20 segments.
+ *  T1 (3100×404) zone y ∈ [10, 394]: rows 182 + 192 + 10 → 3 rows.
+ *  T2 (2600×300) zone y ∈ [10, 290]: rows 182 + 98 → 2 rows.
+ *  T3 (L-shape, 404 high) zone y ∈ [10, 394]: 3 rows, the L stays connected → 3 segments.
+ *  T4 (trapezoid, 404 high) zone y ∈ [10, 394]: 3 rows.
  */
 const expectedSegments: Record<string, number> = {
   R1: 21,
@@ -36,6 +40,10 @@ const expectedSegments: Record<string, number> = {
   S2: 11,
   C1: 16,
   C2: 20,
+  T1: 3,
+  T2: 2,
+  T3: 3,
+  T4: 3,
 };
 
 describe('instances/*.json', () => {

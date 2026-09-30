@@ -322,3 +322,19 @@ Secinājumi: (1) izšķirošā ir M4 **slēgšana kopā ar M4 svaru 0,60** — a
 | T4 | 2 | 5 | 6 (nepārtraukts φ, režģis) | 353685 | 5 | 6,00 | 6,00 |
 
 Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir precīzi (veseli mm); T3 un T4 ir augšējās robežas. LB1 = 5 nav sasniedzams precut režīmā, bet on-site B-INST T1, T2, T4 sasniedz 5, t.i., precut ir par 1 dēli sliktāks — ko atskaitē jāizskaidro (precut pieļauj ≤ 1 sākuma un ≤ 1 beigu gabalu uz dēli, on-site atlikumus izmanto brīvāk) vai jāizpēta. `meta.bestKnown` ierakstīts visām četrām, `knownOptimum` nevienai (B ≠ LB1).
+
+## ADR-019 — Pilna platuma gabali vienpusējām garajām malām (dekoderis) (F6) (2026-09-30)
+
+**Konteksts.** `bench exhaustive` uz T1, T2, T4 (ADR-018) rādīja precut optimumu 6, kamēr on-site B-INST dod 5 = LB. Izmeklēšana (T1, φ = [10, 782]): pirmās rindas beigu gabals (500 mm, `long = high`) un pēdējās rindas sākuma gabals (772 mm, `long = low`) ir abi pilna platuma (192 mm = W), bet dekoderis klasificēja pēc `long`: A posms pārāja tikai `both`, B posms tikai vienas klases ietvaros. Tāpēc šie gabali nekad nenonāca vienā dēlī, lai gan 500 + 772 + 3 ≤ 1285.
+
+**Lēmums.** Gabals ar platumu ≥ `W − EPS` pieder pilna platuma klasei (A posms) neatkarīgi no `long`: tam ir abas dēļa garās malas. Noteikums ir `plan/decode.ts` un `evaluate/fast.ts` (abiem jāsakrīt, CLAUDE.md 5. noteikums); aprakstīts ALGORITHM §4. Testi: dekodera vienībtesti (pārošana pāri klasēm; ekvivalence ar `both`; šaurāki gabali paliek B posmā), T1–T4 pievienoti fast pret references īpašību testiem.
+
+**Ietekme (`pnpm bench compare instances --seeds 20 --iters 200000`, `bench planted`; `results/f6/`).**
+
+- T1, T2, T4: precut optimums 6 → **5 = LB1, pierādīts** (`meta.knownOptimum = 5`); T3 paliek 7 (režģis, `bestKnown`).
+- Pārējās 12 instances praktiski nemainās pret ADR-016 tabulu: C1 66/66, C2 67/67, L1 HC 86,60 / SA 86,95, U1 81/81, P1 SA 56, P2 89,00/89,00, P3 121/121, P4 HC 169,00 / SA 169,90 (bija 169,95), R1 49, R2 83, S1 51, S2 HC 36,95 / SA 37,00 (bija 37,00/37,00). Labojums skar tikai telpas ar nenogrieztu pirmo un pēdējo rindu.
+- F5 kritēriji (ADR-017) paliek nemainīgi nepildīti: (a) SA zaudē HC uz L1 (+0,35), P4 (+0,90) un S2 (+0,05), tātad 3 no 16 (12 F5 instances + T1–T4); (b) plantētās 20/20, 0/20, 0/20, 0/20 (P2 bija 1/20 — trokšņa līmenis).
+- Plantēto optimumu B* = LB1 nemaina (LB1 nav atkarīgs no dekodera), un P1–P4 konstrukcijas plāni joprojām sasniedz B*.
+- ADR-016/017 skaitļi paliek vēsturiski derīgi; F6 galīgie skrējieni (`bench all`) ir jāveic jau ar šo dekoderi.
+
+**Piezīme.** `B_onsite ≥ B_precut` joprojām nav garantēts vispārīgi (ALGORITHM §4.2).

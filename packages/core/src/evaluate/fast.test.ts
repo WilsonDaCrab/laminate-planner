@@ -44,7 +44,22 @@ function expectSame(fast: Evaluator, ref: Evaluator, phi: readonly number[], lab
 }
 
 describe('fast evaluator equals the reference (precut)', () => {
-  for (const id of ['R1', 'R2', 'L1', 'U1', 'S1', 'S2', 'C1', 'C2', 'P1', 'P2']) {
+  for (const id of [
+    'R1',
+    'R2',
+    'L1',
+    'U1',
+    'S1',
+    'S2',
+    'C1',
+    'C2',
+    'P1',
+    'P2',
+    'T1',
+    'T2',
+    'T3',
+    'T4',
+  ]) {
     it(`${id}: random phases and phases after moves (property)`, () => {
       const ctx = load(id);
       const space = new PhaseSpace(ctx);

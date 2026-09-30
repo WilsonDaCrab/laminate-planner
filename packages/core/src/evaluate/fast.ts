@@ -628,6 +628,10 @@ export function createFastEvaluator(
     pKey[p] = segRank[seg]! * KEY_STRIDE + role;
     area[p] = ext * wid;
     let cls = classOfPiece(short, long);
+    // A piece as wide as the board is a full-width piece whatever long edge it needs (decode.ts).
+    if (wid >= W - EPS && (long === LOW || long === HIGH) && short !== FREE) {
+      cls = C_FULL_A + (short === FULL ? 0 : short === END ? 1 : 2);
+    }
     if (cls === C_FULL_A && L - (ext + kerf) <= EPS) {
       cls = C_WHOLE;
       segWhole[seg] = segWhole[seg]! + 1;
