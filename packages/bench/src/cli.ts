@@ -796,7 +796,7 @@ function difficultyCommand(args: string[], log: (line: string) => void): number 
       .join(' ') +
       `   (found/runs at the planted optimum; ${seeds} seeds, ${iters} evaluations; generator seed = n)`,
   );
-  const csv = ['n,areaM2,segments,optimum,method,runs,found,share,meanB,meanGap,meanMs'];
+  const csv = ['n,areaM2,segments,optimum,method,runs,found,feasible,share,meanB,meanGap,meanMs'];
   for (const n of ns) {
     // Deterministic: the generator seed is n, so the series is reproducible without files.
     const project = generatePlanted(base, { n, m, seed: n });
@@ -815,9 +815,10 @@ function difficultyCommand(args: string[], log: (line: string) => void): number 
           c.method,
           c.runs,
           c.found,
+          c.feasible,
           (c.found / c.runs).toFixed(3),
-          c.meanB.toFixed(3),
-          (c.meanB - optimum).toFixed(3),
+          c.meanB === undefined ? '' : c.meanB.toFixed(3),
+          c.meanB === undefined ? '' : (c.meanB - optimum).toFixed(3),
           c.meanMs.toFixed(0),
         ].join(','),
       );
@@ -828,7 +829,10 @@ function difficultyCommand(args: string[], log: (line: string) => void): number 
         fixed(area, 1),
         String(ctx.layout.segments.length),
         String(optimum),
-        ...cells.map((c) => `${c.found}/${c.runs} (${fixed(c.meanB - optimum, 2)})`),
+        ...cells.map(
+          (c) =>
+            `${c.found}/${c.runs} (${c.meanB === undefined ? '-' : fixed(c.meanB - optimum, 2)})`,
+        ),
       ]
         .map(pad)
         .join(' '),

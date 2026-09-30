@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -63,6 +63,38 @@ describe('runAll', () => {
     expect(second).toMatchObject({ total: 24, skipped: 24, ran: 0 });
     expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);
     expect(second.rows).toHaveLength(24);
+  });
+
+  it('stamps every row with the commit, warns about rows of other commits, takes meta from the instances', async () => {
+    const dir = join(tmp, 'd');
+    await runAll({ instances, preset, dir, only: ['main'] });
+    const file = rawPath(dir, 'main');
+    const rows = readRows(file);
+    const commit = rows[0]!.commit;
+    expect(rows.every((r) => r.commit === commit)).toBe(true);
+
+    // rows of "another session": same keys, different commit
+    writeFileSync(
+      file,
+      rows.map((r) => `${JSON.stringify({ ...r, commit: 'abcdef0123456789' })}\n`).join(''),
+    );
+    const lines: string[] = [];
+    // the instance files changed meanwhile: bestKnown is read from the instances, not from the rows
+    const edited = instances.map((i) => ({
+      ...i,
+      project: {
+        ...i.project,
+        meta: { ...i.project.meta, source: 'manual' as const, bestKnown: 4 },
+      },
+    }));
+    await runAll({ instances: edited, preset, dir, only: ['main'], log: (l) => lines.push(l) });
+    expect(
+      lines.some((l) => l.startsWith('WARNING: 20 finished rows come from other commits (abcdef0')),
+    ).toBe(true);
+    const cols = readFileSync(join(dir, 'summary.csv'), 'utf8').trim().split('\n');
+    const head = cols[0]!.split(',');
+    const t1 = cols[1]!.split(',');
+    expect(t1[head.indexOf('bestKnown')]).toBe('4');
   });
 
   it('a changed budget is a new matrix: old rows stay in the file but not in the tables', async () => {

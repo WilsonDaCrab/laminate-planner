@@ -33,10 +33,9 @@ const row = (over: Partial<RawRow>): RawRow => ({
   provenOptimal: false,
   mode: 'precut',
   evals: 1000,
-  evalsToBest: 10,
+  evalsToFinalB: 10,
   ms: 100,
-  knownOptimum: null,
-  bestKnown: 11,
+  commit: null,
   trace: [],
   ...over,
 });
@@ -66,13 +65,16 @@ describe('stats', () => {
 
 describe('mainTableCsv', () => {
   it('has one line per instance and the columns of every method', () => {
-    const csv = mainTableCsv([
-      row({ method: 'b-inst', B: 13, seed: 1 }),
-      row({ method: 'sa', B: 11, seed: 1 }),
-      row({ method: 'sa', B: 12, seed: 2 }),
-      row({ instance: 'B', method: 'sa', B: 20, lb: 18, segments: 9 }),
-      row({ experiment: 'aesthetics', instance: 'Z', variant: 'D300' }),
-    ]);
+    const csv = mainTableCsv(
+      [
+        row({ method: 'b-inst', B: 13, seed: 1 }),
+        row({ method: 'sa', B: 11, seed: 1 }),
+        row({ method: 'sa', B: 12, seed: 2 }),
+        row({ instance: 'B', method: 'sa', B: 20, lb: 18, segments: 9 }),
+        row({ experiment: 'aesthetics', instance: 'Z', variant: 'D300' }),
+      ],
+      new Map([['A', { knownOptimum: null, bestKnown: 11 }]]),
+    );
     const [head, a, b, ...rest] = csv.trim().split('\n');
     expect(rest).toEqual([]); // the aesthetics row belongs to another table
     const cols = head!.split(',');

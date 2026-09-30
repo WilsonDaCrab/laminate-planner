@@ -383,3 +383,13 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 - **Atkarības.** `vega` un `vega-lite` kā `devDependencies` tikai `@lp/bench` (SVG renderēšana Node, bez canvas). Tās ir diagrammu, nevis optimizācijas bibliotēkas (CLAUDE.md #1 neierobežo; Vega-Lite ir tehnoloģiju sarakstā); lietotāja apstiprinājums saņemts.
 - **Ārpus `all`:** `outer`, `exhaustive`, `planted`, `difficulty`, `bestknown` paliek atsevišķas komandas (lietotāja lēmums): `bestknown` ir vienreizējs stundām garš skrējiens, un tā rezultāts ir `meta` failos, ko `all` tikai nolasa.
 
+**Labojumi pēc `reviewer` (F6, daļējs pārskats).**
+- Atsākšanas atslēgā tagad ir arī instances satura jaucējkods (`InstanceHash`: projekts bez `meta`, jo `bestknown` pārraksta `meta` un nedrīkst anulēt skrējienus). Labota instance ir jauns darbs.
+- Katra rinda glabā `commit` (ieraksta `runAll`); ja esošas rindas nāk no cita commit, `runAll` brīdina. Koda versija atslēgā netiek likta (tas anulētu visu pie katra commit), tāpēc galīgajam skrējienam `results/raw` jāsāk no tukša.
+- `knownOptimum`/`bestKnown` tabulā nāk no pašreizējiem instanču failiem, nevis no rindām.
+- `env.json` ieraksta `threads`; laika kolonna ir godīga tikai ar `--jobs 1` (atskaitē jānorāda).
+- `evalsToBest` aizstāts ar `evalsToFinalB`: pirmā iterācija, kurā sasniegts galīgais B (iepriekš: pēdējais uzlabojums, arī f uzlabojumi ar to pašu B).
+- Pool: `exit` apstrāde (darbinieks, kas beidzas bez ziņojuma, vairs neaptur rindu uz visiem laikiem). `writeMeta` raksta atomiski (fails + `rename`).
+- `difficulty`/`difficultyCells`: vidējais B un gap tagad tikai pa derīgajiem skrējieniem (kā `summary.csv`), CSV papildināts ar `feasible`. **Piezīme:** `results/f6/difficulty.csv`, kas tika sākts pirms šī labojuma, ir aprēķināts ar veco formulu (vidējais pa visiem skrējieniem) un bez kolonnas `feasible`; `found/runs` no tā nemainās.
+- `knownOptimum` kritērijs ir B = LB = max(LB0, LB1) (abas ir derīgas apakšējās robežas), nevis tikai LB1.
+

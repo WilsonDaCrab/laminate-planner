@@ -53,6 +53,7 @@ export async function allCommand(args: string[], log: (line: string) => void): P
     only,
     log,
     execute: threads > 1 ? executePool(threads, root) : undefined,
+    threads,
   });
   log(
     `done: ${report.ran} runs executed, ${report.skipped} reused; ${dir}/summary.csv and ${dir}/tables/`,

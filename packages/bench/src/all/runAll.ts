@@ -32,6 +32,8 @@ export interface RunAllOptions {
   dir: string;
   only?: readonly ExperimentId[];
   execute?: Execute;
+  /** Worker threads used (recorded in `env.json`: wall times of parallel runs are noisy). */
+  threads?: number;
   log?: (line: string) => void;
   /** Write a progress line every this many finished runs. */
   progressEvery?: number;
@@ -61,13 +63,26 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
   );
 
   mkdirSync(opts.dir, { recursive: true });
-  writeFileSync(join(opts.dir, 'env.json'), `${JSON.stringify(readEnv(), null, 2)}\n`);
+  const env = readEnv();
+  writeFileSync(
+    join(opts.dir, 'env.json'),
+    `${JSON.stringify({ ...env, threads: opts.threads ?? 1 }, null, 2)}\n`,
+  );
+  // Rows of earlier sessions stay in the files; their code may differ from this checkout.
+  const foreign = currentRows(opts.dir, jobs).filter((r) => r.commit !== env.commit);
+  if (foreign.length > 0) {
+    const commits = [...new Set(foreign.map((r) => r.commit?.slice(0, 7) ?? 'unknown'))];
+    log(
+      `WARNING: ${foreign.length} finished rows come from other commits (${commits.join(', ')}; ` +
+        `now ${env.commit?.slice(0, 7) ?? 'unknown'}). Delete results/raw to rerun them with the current code.`,
+    );
+  }
 
   const t0 = performance.now();
   let done = 0;
   const every = opts.progressEvery ?? 100;
   await (opts.execute ?? executeSequential)(todo, opts.instances, (row) => {
-    appendRow(rawPath(opts.dir, row.experiment), row);
+    appendRow(rawPath(opts.dir, row.experiment), { ...row, commit: env.commit });
     done++;
     if (done % every === 0 || done === todo.length) {
       const s = (performance.now() - t0) / 1000;
@@ -77,7 +92,13 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
   });
 
   const rows = currentRows(opts.dir, jobs);
-  writeFileSync(join(opts.dir, 'summary.csv'), mainTableCsv(rows));
+  const known = new Map(
+    opts.instances.map((i) => [
+      i.id,
+      { knownOptimum: i.project.meta?.knownOptimum, bestKnown: i.project.meta?.bestKnown },
+    ]),
+  );
+  writeFileSync(join(opts.dir, 'summary.csv'), mainTableCsv(rows, known));
   mkdirSync(join(opts.dir, 'tables'), { recursive: true });
   writeFileSync(join(opts.dir, 'tables', 'g1_convergence.csv'), convergenceCsv(rows));
   writeFileSync(join(opts.dir, 'tables', 'g2_aesthetics.csv'), aestheticsCsv(rows));

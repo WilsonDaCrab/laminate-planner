@@ -66,14 +66,16 @@ describe('L room: notches and the pipe drill', () => {
 describe('O1: two pipes and a column', () => {
   const { ctx, plan } = planOf('O1');
 
+  // Random phases break the soft seam-offset rule (code 'stagger', the V term of the objective),
+  // so it is filtered out exactly as in integration.test.ts and validate.test.ts; every hard check must pass.
   it('every pipe gets exactly one drill of its diameter and the plan validates', () => {
     const pipes = ctx.room.obstacles.filter((o) => o.kind === 'pipe');
     expect(pipes).toHaveLength(2);
     expect(featuresOf(plan, 'drill')).toHaveLength(2);
     expect(featuresOf(plan, 'drill').every((f) => f.diameter === 16)).toBe(true);
-    expect(
-      validatePlan(ctx.project, plan).violations.filter((x) => x.code !== 'stagger'),
-    ).toEqual([]);
+    expect(validatePlan(ctx.project, plan).violations.filter((x) => x.code !== 'stagger')).toEqual(
+      [],
+    );
   });
 });
 

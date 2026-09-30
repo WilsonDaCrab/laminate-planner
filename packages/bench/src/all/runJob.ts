@@ -32,12 +32,12 @@ export interface RawRow {
   provenOptimal: boolean;
   mode: 'precut' | 'onsite';
   evals: number;
-  /** Evaluation index of the last improvement (0 when the method records no trace). */
-  evalsToBest: number;
+  /** First evaluation at which the final B was reached (0 when the method records no trace). */
+  evalsToFinalB: number;
   /** Wall time of the run in ms (a noisy measure when several runs share the machine). */
   ms: number;
-  knownOptimum: number | null;
-  bestKnown: number | null;
+  /** Commit the row was produced at (set by `runAll`; null outside a git checkout). */
+  commit: string | null;
   /** Best B against the evaluation count; kept only for the SA methods (G1). */
   trace: TracePoint[];
 }
@@ -77,10 +77,9 @@ export function runJob(job: Job, instance: InstanceInfo): RawRow {
     provenOptimal: result.provenOptimal,
     mode: result.mode,
     evals: result.evals,
-    evalsToBest: result.trace.length > 0 ? result.trace[result.trace.length - 1]!.eval : 0,
+    evalsToFinalB: result.trace.find((p) => p.B <= ev.B)?.eval ?? 0,
     ms,
-    knownOptimum: instance.project.meta?.knownOptimum ?? null,
-    bestKnown: instance.project.meta?.bestKnown ?? null,
+    commit: null,
     trace: keepsTrace(job.method) ? result.trace : [],
   };
 }

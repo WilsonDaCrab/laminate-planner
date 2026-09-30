@@ -61,6 +61,8 @@ export interface InstanceInfo {
   /** Directory name under `instances/`, e.g. `rect`. */
   group: string;
   project: Project;
+  /** Hash of the project without `meta` (geometry, product, rules, settings): part of the run key. */
+  hash: string;
 }
 
 export interface Job {
@@ -70,19 +72,29 @@ export interface Job {
   seed: number;
   iters: number;
   variant: Variant | null;
+  /** `InstanceInfo.hash` of the instance at the time the matrix was built. */
+  instanceHash: string;
 }
 
 export const variantLabel = (v: Variant | null): string =>
   v === null ? '-' : v.hDistance === null ? 'Hoff' : `D${v.hDistance}`;
 
 /**
- * Stable identity of a run. The budget is part of it, so rows written with another budget are
- * never mistaken for finished work when a run is resumed.
+ * Stable identity of a run. The budget and the content hash of the instance are part of it, so
+ * rows written with another budget, or for an instance that has since been edited, are never
+ * mistaken for finished work when a run is resumed. (The code version is not: every row records
+ * its commit and `runAll` warns about rows from other commits.)
  */
 export const jobKey = (j: Job): string =>
-  [j.experiment, j.instance, j.method, variantLabel(j.variant), `s${j.seed}`, `i${j.iters}`].join(
-    '|',
-  );
+  [
+    j.experiment,
+    j.instance,
+    j.method,
+    variantLabel(j.variant),
+    `s${j.seed}`,
+    `i${j.iters}`,
+    `h${j.instanceHash}`,
+  ].join('|');
 
 /** The project of a job: a copy with the H-pattern of the variant; the input is not modified. */
 export function applyVariant(project: Project, variant: Variant | null): Project {
@@ -115,6 +127,7 @@ export function buildJobs(
             seed,
             iters: preset.iters,
             variant: null,
+            instanceHash: inst.hash,
           });
         }
       }
@@ -132,6 +145,7 @@ export function buildJobs(
             seed,
             iters: preset.iters,
             variant: { hDistance },
+            instanceHash: inst.hash,
           });
         }
       }

@@ -14,6 +14,7 @@ afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 const R1: InstanceInfo = {
   id: 'R1',
   group: 'rect',
+  hash: 'testhash',
   project: parseProject(
     JSON.parse(
       readFileSync(
@@ -30,6 +31,7 @@ const job = (over: Partial<Job> = {}): Job => ({
   seed: 1,
   iters: 200,
   variant: null,
+  instanceHash: 'testhash',
   ...over,
 });
 
@@ -44,7 +46,9 @@ describe('runJob', () => {
     expect(row.feasible).toBe(true);
     expect(row.evals).toBeGreaterThan(0);
     expect(row.trace.length).toBeGreaterThan(0);
-    expect(row.evalsToBest).toBe(row.trace[row.trace.length - 1]!.eval);
+    // the first trace point that already has the final B
+    expect(row.evalsToFinalB).toBe(row.trace.find((p) => p.B <= row.B)!.eval);
+    expect(row.commit).toBeNull(); // stamped by runAll, not by runJob
     expect(JSON.parse(JSON.stringify(row))).toEqual(row);
   });
 

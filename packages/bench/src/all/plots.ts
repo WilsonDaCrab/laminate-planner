@@ -143,7 +143,9 @@ export function g2Spec(rows: Table): TopLevelSpec {
 /** G3: B of B-INST, SA-onsite and SA per instance, as a percentage of B-INST (negative = better). */
 export function g3Spec(rows: Table): TopLevelSpec {
   const base = new Map(
-    rows.filter((r) => r.method === 'b-inst').map((r) => [r.instance, Number(r.mean)]),
+    rows
+      .filter((r) => r.method === 'b-inst' && r.mean !== null)
+      .map((r) => [r.instance, Number(r.mean)]),
   );
   const data = rows
     .filter((r) => r.mean !== null && base.has(r.instance))

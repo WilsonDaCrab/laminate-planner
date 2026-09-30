@@ -40,33 +40,35 @@ Kombinatoriskais kodols ir globāla gabalu *pārošana*: rindas beigu gabals $e$
 
 *c) Gājieni.* Pieci gājieni pār $phi$: M1 _Reset_ ($phi_s <- U(F_s)$), M2 _Shift_ (nobīde $delta$, kas dilst līdz ar temperatūru), M3 _Swap_ (divu segmentu fāžu apmaiņa), M4 _Pair_ un M5 _Block_ (vienas nobīdes pielikšana 2–6 secīgām joslām). M4 ir mērķtiecīgs: nesapārotam beigu gabalam $e$ tas uzstāda kāda segmenta sākuma gabalu tieši $s^* = C - e$ ($C = L - k$), tātad $e + s + k = L$ un atgriezums ir nulle; paplašinātā versija meklē _slēgtus_ pāru ciklus. Noklusējuma varbūtības M1–M5: 0,05; 0,15; 0,05; *0,60*; 0,15 (ADR-016; sākotnējās 0,15/0,30/0,15/0,30/0,10 ir saglabātas salīdzināšanai).
 
-*d) Simulētā rūdīšana.* Sākums ir B-INST fāzes (derīgas pēc konstrukcijas). Sākuma temperatūra $T_0 = -"median"(Delta^+) / ln p_0$ tiek kalibrēta no 200 izmēģinājuma gājieniem ($p_0 = "0,8"$), beigu temperatūra $T_"end" = 1 slash ln(1 slash p_"end")$ ($p_"end" = "0,001"$: +1 dēli pieņem ar varbūtību 0,001); dzesēšana ģeometriska, $T = T_0 (T_"end" slash T_0)^tau$, kur $tau$ ir iztērētā budžeta daļa. Pieņemšana pēc Metropolisa kritērija $Delta <= 0 or "rnd" < e^(-Delta \/ T)$; atsevišķi tiek glabāts labākais _derīgais_ risinājums, un meklēšana apstājas, tiklīdz $B = "LB"_1$ (pierādīts optimums). Eksperimentos budžets ir iterāciju skaits (nevis laiks), lai rezultāti nebūtu atkarīgi no datora ātruma.
+*d) Simulētā rūdīšana.* Sākums ir B-INST fāzes (derīgas pēc konstrukcijas). Sākuma temperatūra $T_0 = max(-"median"(Delta^+) / ln p_0, T_"end")$ tiek kalibrēta no 200 izmēģinājuma gājieniem (gājieni, kas palielina $V$, netiek ņemti vērā, jo sods nav dēļu skaita solis) ($p_0 = "0,8"$), beigu temperatūra $T_"end" = 1 slash ln(1 slash p_"end")$ ($p_"end" = "0,001"$: +1 dēli pieņem ar varbūtību 0,001); dzesēšana ģeometriska, $T = T_0 (T_"end" slash T_0)^tau$, kur $tau$ ir iztērētā budžeta daļa. Pieņemšana pēc Metropolisa kritērija $Delta <= 0 or "rnd" < e^(-Delta \/ T)$; atsevišķi tiek glabāts labākais _derīgais_ risinājums, un meklēšana apstājas, tiklīdz $B = "LB"_1$ (pierādīts optimums). Eksperimentos budžets ir iterāciju skaits (nevis laiks), lai rezultāti nebūtu atkarīgi no datora ātruma.
 
 #todo("SA pseidokods (ALGORITHM §7) un galīgo skrējienu parametri, ja atšķiras no noklusējuma (ADR-016)")
 
 = Testēšana
 
-*Instanču komplekts* (27 telpas): tiny (T1–T4; pilnā pārlase), planted (P1–P6 ar zināmu optimumu $B^* = "LB"_1$), taisnstūri (R1–R4), L un U telpas (L1–L3, U1), slīpās (S1–S4), ar šķēršļiem (O1, O2) un ar lokiem (C1–C3). *Protokols:* metodes B-NEXT, B-INST, RS, HC, SA (precut) un SA-onsite; 20 sēklas, 200 000 novērtējumu uz skrējienu; $theta$, sākuma puse un $y_0$ fiksēti. Mēra $B$, apakšējo robežu, gap, laiku un derīgumu. Dators un commit ir ierakstīti `results/env.json`.
+*Instanču komplekts* (27 telpas): tiny (T1–T4; pilnā pārlase), planted (P1–P6 ar zināmu optimumu $B^* = "LB"_1$), taisnstūri (R1–R4), L un U telpas (L1–L3, U1), slīpās (S1–S4), ar šķēršļiem (O1, O2) un ar lokiem (C1–C3). *Protokols:* metodes B-NEXT, B-INST, RS, HC, SA (precut) un SA-onsite; 20 sēklas, 200 000 novērtējumu uz skrējienu; $theta$, sākuma puse un $y_0$ fiksēti. Mēra $B$, apakšējo robežu $"LB"$, laiku un derīgumu; tabulā $"gap" = B - "LB"$ var nolasīt no kolonnām, bet vidējie ir tikai pa derīgajiem skrējieniem (kolonna "der." rāda SA derīgo skrējienu daļu). Dators, pavedienu skaits un commit ir ierakstīti `results/env.json`.
 
+#let env = json("/" + res + "/env.json")
 #let rows = csv("/" + res + "/summary.csv", row-type: dictionary)
 #let num(x, d: 1) = if x == "" { "–" } else { str(calc.round(float(x), digits: d)) }
 #let sa(r) = if r.sa_best == "" { "–" } else { r.sa_best + " / " + num(r.sa_mean, d: 2) + " ± " + num(r.sa_std, d: 2) }
 
 #figure(
   table(
-    columns: (auto, auto, auto, auto, auto, auto, auto, auto, 1fr, auto),
-    align: (left, right, right, right, right, right, right, right, right, right),
+    columns: (auto, auto, auto, auto, auto, auto, auto, auto, 1fr, auto, auto),
+    align: (left, right, right, right, right, right, right, right, right, right, right),
     stroke: 0.4pt + luma(160),
     inset: (x: 3pt, y: 2.2pt),
-    table.header[*Instance*][*m²*][*segm.*][*LB*][*B-NEXT*][*B-INST*][*RS*][*HC*][*SA: labākais / vid. ± std*][*SA laiks, s*],
+    table.header[*Instance*][*m²*][*segm.*][*LB*][*B-NEXT*][*B-INST*][*RS*][*HC*][*SA: labākais / vid. ± std*][*der.*][*SA laiks, s*],
     ..rows.map(r => (
       r.instance, num(r.zoneM2), r.segments, r.lb,
       num(r.b_next_mean), num(r.b_inst_mean), num(r.rs_mean), num(r.hc_mean),
       sa(r),
+      if r.sa_feasible == "" { "–" } else { r.sa_feasible },
       if r.sa_ms == "" { "–" } else { num(float(r.sa_ms) / 1000) },
     )).flatten(),
   ),
-  caption: [Galvenā tabula (vidējais $B$ pa derīgajiem skrējieniem; $m^2$ ir uzstādāmās zonas laukums). Avots: `results/summary.csv`.],
+  caption: [Galvenā tabula (vidējais $B$ pa derīgajiem skrējieniem; $m^2$ ir uzstādāmās zonas laukums). Avots: `results/summary.csv`. Laiki mērīti ar #env.threads pavedienu(-iem) uz #env.cpu; ar vairākiem pavedieniem skrējieni dala datoru, tāpēc laiki ir aptuveni.],
 )
 
 #figure(
@@ -84,7 +86,7 @@ Kombinatoriskais kodols ir globāla gabalu *pārošana*: rindas beigu gabals $e$
   caption: [G2. H-rakstura cena: vidējais $B$ atkarībā no šuvju nobīdes attāluma $D$ (mm).],
 )
 
-*Plantētie optimumi un grūtības sērija.* #todo("cik sēklu atrod plantēto optimumu P1–P6 un n = 6…42 (results/f6/difficulty.csv, planted.txt); godīgi: SA ≈ HC uz daļas instanču, P2–P4 nav optimums — ADR-017)")
+*Plantētie optimumi un grūtības sērija.* #todo("cik sēklu atrod plantēto optimumu P1–P6 un n = 6…42 (results/f6/difficulty.csv, planted.txt); godīgi: SA ≈ HC uz daļas instanču un SA neatrod plantēto optimumu P2–P4 — ADR-017)")
 
 *Secinājumi.* #todo("gap pret LB, plantēto optimumu atrašanas daļa, laiks, iepriekšējas griešanas vērtība; pilnā pārlase uz T1–T4 (ADR-018, ADR-019); ierobežojumi")
 

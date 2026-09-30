@@ -70,8 +70,21 @@ const groupBy = <T>(items: readonly T[], key: (t: T) => string): Map<string, T[]
 
 const methodKey = (m: Method): string => m.replace('-', '_');
 
-/** Main table: one line per instance, in the order the instances first appear in the rows. */
-export function mainTableCsv(rows: readonly RawRow[]): string {
+/** `meta` of an instance as it is now (not as it was when a row was written). */
+export interface KnownValues {
+  knownOptimum?: number | null;
+  bestKnown?: number | null;
+}
+
+/**
+ * Main table: one line per instance, in the order the instances first appear in the rows.
+ * `knownOptimum` and `bestKnown` come from `known` (the current instance files), because
+ * `bestknown` may rewrite them while a long run is going on.
+ */
+export function mainTableCsv(
+  rows: readonly RawRow[],
+  known: ReadonlyMap<string, KnownValues> = new Map(),
+): string {
   const main = rows.filter((r) => r.experiment === 'main');
   const head = [
     'instance',
@@ -94,8 +107,8 @@ export function mainTableCsv(rows: readonly RawRow[]): string {
       first.zoneM2,
       first.segments,
       first.lb,
-      first.knownOptimum,
-      first.bestKnown,
+      known.get(instance)?.knownOptimum,
+      known.get(instance)?.bestKnown,
     ];
     for (const m of MAIN_METHODS) {
       const s = stats(list.filter((r) => r.method === m));

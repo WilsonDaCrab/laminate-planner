@@ -395,7 +395,7 @@ Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, lai ārēj
 | multi | M1 dzīvoklis (pēc F13) | LB1 |
 | real | reālas telpas no klājējiem (ja būs) | LB1 |
 
-"Labākais zināmais" ir labākais rezultāts no 10 gariem SA palaidieniem (10× budžets). To ieraksta instances `meta.bestKnown`. Komanda: `pnpm bench bestknown [path...] --seeds 10 --iters 2000000 --write-meta` (instances ar `knownOptimum` izlaiž; `knownOptimum` ieraksta tikai tad, ja B = LB1).
+"Labākais zināmais" ir labākais rezultāts no 10 gariem SA palaidieniem (10× budžets). To ieraksta instances `meta.bestKnown`. Komanda: `pnpm bench bestknown [path...] --seeds 10 --iters 2000000 --write-meta` (instances ar `knownOptimum` izlaiž; `knownOptimum` ieraksta tikai tad, ja B = LB, t.i., max(LB0, LB1)).
 
 ### 13.2 Protokols
 
@@ -420,11 +420,11 @@ Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, lai ārēj
 `pnpm bench all [--jobs N|auto] [--quick] [--only main,aesthetics]` (ADR-022) izveido:
 
 - `results/env.json` — CPU, Node, commit, vai darba koks bija tīrs;
-- `results/raw/main.jsonl`, `results/raw/aesthetics.jsonl` — viena rinda katram skrējienam (instance, metode, sēkla, B, LB, V, H, N, derīgums, iterācijas, `evalsToBest`, laiks, SA trase); atsākams: pabeigtās atslēgas (ar budžetu) tiek izlaistas;
+- `results/raw/main.jsonl`, `results/raw/aesthetics.jsonl` — viena rinda katram skrējienam (instance, metode, sēkla, B, LB, V, H, N, derīgums, iterācijas, `evalsToFinalB`, laiks, commit, SA trase); atsākams: pabeigtās atslēgas (ar budžetu un instances satura jaucējkodu) tiek izlaistas, rindas no cita commit izraisa brīdinājumu;
 - `results/summary.csv` — §13.3 galvenā tabula; `results/tables/g1_convergence.csv`, `g2_aesthetics.csv`, `g3_precut.csv` — grafiku dati;
 - `results/plots/G1.svg`, `G2.svg`, `G3.svg` — grafiki (Vega-Lite).
 
-Eksperimenti: **E1** — visas instances × B-NEXT, B-INST, RS, HC, SA, SA-onsite (G1 un G3 nāk no tām pašām rindām); **E3** — SA ar `hPattern.distance` = 200…500 mm un "H izslēgts" uz R2, L1, S1, O1 (G2; instance tiek mainīta atmiņā, faili netiek aiztikti). Ārējā cilpa, pilnā pārlase un plantētie eksperimenti ir atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`), ne daļa no `all`. Laika kolonna ir godīga tikai ar `--jobs 1`; ar vairākiem pavedieniem skrējieni dala datoru, bet B rezultāti ir identiski (pārbaudīts). `evalsToBest` ir pēdējā uzlabojuma iterācija, nevis sekundes.
+Eksperimenti: **E1** — visas instances × B-NEXT, B-INST, RS, HC, SA, SA-onsite (G1 un G3 nāk no tām pašām rindām); **E3** — SA ar `hPattern.distance` = 200…500 mm un "H izslēgts" uz R2, L1, S1, O1 (G2; instance tiek mainīta atmiņā, faili netiek aiztikti). Ārējā cilpa, pilnā pārlase un plantētie eksperimenti ir atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`), ne daļa no `all`. Laika kolonna ir godīga tikai ar `--jobs 1`; ar vairākiem pavedieniem skrējieni dala datoru, bet B rezultāti ir identiski (pārbaudīts). `evalsToFinalB` ir pirmā iterācija, kurā sasniegts galīgais B (nevis sekundes). `env.json` satur arī pavedienu skaitu.
 
 ## 14. Veiktspēja
 

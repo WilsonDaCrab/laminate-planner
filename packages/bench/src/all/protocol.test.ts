@@ -21,7 +21,7 @@ const project = parseProject(
     ),
   ),
 );
-const inst = (id: string): InstanceInfo => ({ id, group: 'rect', project });
+const inst = (id: string): InstanceInfo => ({ id, group: 'rect', project, hash: `h-${id}` });
 const three = [inst('R2'), inst('L1'), inst('X9')];
 
 describe('buildJobs', () => {
@@ -50,6 +50,12 @@ describe('buildJobs', () => {
     expect(new Set(jobs.map((j) => variantLabel(j.variant)))).toEqual(
       new Set(['D200', 'D300', 'Hoff']),
     );
+  });
+
+  it('the key changes with the content of the instance (an edited room is new work)', () => {
+    const a = buildJobs([inst('R2')], preset, ['main'])[0]!;
+    const b = buildJobs([{ ...inst('R2'), hash: 'other' }], preset, ['main'])[0]!;
+    expect(jobKey(a)).not.toBe(jobKey(b));
   });
 
   it('keys are unique and change with the budget', () => {

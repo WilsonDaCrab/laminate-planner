@@ -118,7 +118,10 @@ export interface DifficultyCell {
   runs: number;
   /** Runs that ended feasible with B equal to the known optimum. */
   found: number;
-  meanB: number;
+  /** Runs that ended feasible (V = 0). */
+  feasible: number;
+  /** Mean B over the feasible runs, as in `summary.csv`; undefined when none was feasible. */
+  meanB: number | undefined;
   meanMs: number;
 }
 
@@ -137,15 +140,25 @@ export function difficultyCells(
   return methods.map((method) => {
     const runs = method === 'b-next' || method === 'b-inst' ? 1 : seeds;
     let found = 0;
+    let feasible = 0;
     let sum = 0;
     let ms = 0;
     for (let seed = 1; seed <= runs; seed++) {
       const t0 = performance.now();
       const { result } = runMethod(project, method, { seed, budget: { iters } });
       ms += performance.now() - t0;
+      if (!result.evaluation.feasible) continue;
+      feasible++;
       sum += result.evaluation.B;
-      if (result.evaluation.feasible && result.evaluation.B === optimum) found++;
+      if (result.evaluation.B === optimum) found++;
     }
-    return { method, runs, found, meanB: sum / runs, meanMs: ms / runs };
+    return {
+      method,
+      runs,
+      found,
+      feasible,
+      meanB: feasible > 0 ? sum / feasible : undefined,
+      meanMs: ms / runs,
+    };
   });
 }

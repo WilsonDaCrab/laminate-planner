@@ -36,11 +36,15 @@ export function executePool(threads: number, root: string): Execute {
     );
     let next = 0;
     let open = count;
+    let finished = false;
     try {
       await new Promise<void>((resolve, reject) => {
         const feed = (w: Worker): void => {
           if (next >= jobs.length) {
-            if (--open === 0) resolve();
+            if (--open === 0) {
+              finished = true;
+              resolve();
+            }
             return;
           }
           const id = next++;
@@ -56,6 +60,12 @@ export function executePool(threads: number, root: string): Execute {
             feed(w);
           });
           w.on('error', reject);
+          // A worker that ends without a message or an error (process.exit, out of memory)
+          // would leave the queue waiting for ever.
+          w.on('exit', (code) => {
+            if (!finished)
+              reject(new Error(`a worker exited with code ${code} before the queue was done`));
+          });
           feed(w);
         }
       });
