@@ -10,7 +10,8 @@ import { PhaseSpace } from '../optimize/phaseSpace';
 import { buildContext } from '../plan/context';
 import { createRng } from '../rng/index';
 import { evaluate } from './evaluate';
-import { createFastEvaluator } from './fast';
+import { mod } from '../num/index';
+import { createFastEvaluator, makeModL } from './fast';
 import { createReferenceEvaluator, type Evaluator } from './evaluator';
 
 const load = (id: string) => {
@@ -205,4 +206,42 @@ describe('fast evaluator on random rectilinear rooms (free pieces, strips, stage
     // The property is only meaningful if stage C really ran.
     expect(freePieces).toBeGreaterThan(20);
   }, 30_000); // 60 random rooms: ~5 s alone, more when several test runs share the CPU
+});
+
+describe('makeModL', () => {
+  const Ls = [1285, 1, 7, 1000, 2 ** 29 + 3, 1285.5];
+
+  it('is bit for bit mod(x, L) on phases, differences, multiples of L and huge values', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...Ls),
+        fc.oneof(
+          fc.double({ min: -5e4, max: 5e4, noNaN: true }),
+          fc.integer({ min: -2_000_000, max: 2_000_000 }),
+          fc
+            .tuple(fc.integer({ min: -3000, max: 3000 }), fc.constantFrom(-1e-9, 0, 1e-9, 0.5))
+            .map(([m, e]) => m * 1285 + e),
+          fc.double({ min: -(2 ** 45), max: 2 ** 45, noNaN: true }),
+          fc.constantFrom(0, -0, 1285, -1285, 2570, 1284.9999999999998, -1284.9999999999998),
+        ),
+        (L, x) => {
+          const modL = makeModL(L);
+          expect(Object.is(modL(x), mod(x, L)), `L=${L} x=${x}`).toBe(true);
+        },
+      ),
+      { numRuns: 20_000 },
+    );
+  });
+
+  it('agrees with mod at multiples of L and their neighbours for every tested L', () => {
+    for (const L of Ls) {
+      const modL = makeModL(L);
+      for (const m of [-1e6, -3, -2, -1, 0, 1, 2, 3, 1e6]) {
+        for (const d of [-1e-9, 0, 1e-9]) {
+          const x = m * L + d;
+          expect(Object.is(modL(x), mod(x, L)), `L=${L} x=${x}`).toBe(true);
+        }
+      }
+    }
+  });
 });

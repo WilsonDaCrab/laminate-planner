@@ -142,22 +142,9 @@ export interface FastEvaluatorOptions {
 }
 
 /**
- * Creates the evaluator, or undefined when the room is outside its scope (a row with 99 or more
- * pieces, where label order and number order differ). `mode` is always `precut`.
+ * `mod(x, L)` as a closure (see the notes inside); exported for the property test that pins it to `mod`.
  */
-export function createFastEvaluator(
-  ctx: PlanContext,
-  opts: FastEvaluatorOptions = {},
-): Evaluator | undefined {
-  const { L, W, project } = ctx;
-  const kerf = project.rules.kerf;
-  const D = project.rules.minStagger;
-  const minLen = project.rules.minPieceLength;
-  const C = L - kerf;
-  const weights = opts.weights ?? defaultWeights(project.rules, project.settings);
-  const segs = ctx.layout.segments;
-  const nSeg = segs.length;
-
+export function makeModL(L: number): (x: number) => number {
   // `mod(x, L)` bit for bit, without the float `%` (a libm call) in the hot path. For |x| < L the
   // first `%` of `mod` is the identity; beyond that and with an integer L, the truncated quotient is
   // an exact integer, `q · L` is exact, and so is `x − q · L` when q is right (the fmod result is
@@ -165,7 +152,7 @@ export function createFastEvaluator(
   // The second `%` works on t = r + L ∈ [0, 2L], where it is t, t − L (exact) or 0.
   const intL = Number.isInteger(L) && L > 0 && L < 2 ** 30;
   const FMOD_LIMIT = 2 ** 40;
-  const modL = (x: number): number => {
+  return (x: number): number => {
     let r = x;
     if (!(x > -L && x < L)) {
       if (!intL || !(x > -FMOD_LIMIT && x < FMOD_LIMIT)) return mod(x, L);
@@ -182,6 +169,26 @@ export function createFastEvaluator(
     const t = r + L;
     return t < L ? t : t < 2 * L ? t - L : 0;
   };
+}
+
+/**
+ * Creates the evaluator, or undefined when the room is outside its scope (a row with 99 or more
+ * pieces, where label order and number order differ). `mode` is always `precut`.
+ */
+export function createFastEvaluator(
+  ctx: PlanContext,
+  opts: FastEvaluatorOptions = {},
+): Evaluator | undefined {
+  const { L, W, project } = ctx;
+  const kerf = project.rules.kerf;
+  const D = project.rules.minStagger;
+  const minLen = project.rules.minPieceLength;
+  const C = L - kerf;
+  const weights = opts.weights ?? defaultWeights(project.rules, project.settings);
+  const segs = ctx.layout.segments;
+  const nSeg = segs.length;
+
+  const modL = makeModL(L);
 
   // ---- static per-segment data ------------------------------------------------------------
   const profiles = segs.map((s) => ctx.profiles[s.id]!);

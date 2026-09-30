@@ -361,3 +361,11 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 **Kas zināms.** Plantētajām B* = LB1. Pārējām jaunajām nav zināms ne optimums, ne `bestKnown` (tos aprēķina `bench bestknown`, 2. solis); tiny `knownOptimum` netiek ierakstīts bez pierādījuma B = LB1.
 
 **Testi.** Instances pievienotas `layout/fixtures/instances.ts` (grupa `obstacles`) un `fixtures/planted.ts`, tāpēc bounds, cutlist, evaluate, fast un validatora testi uz tām darbojas automātiski; `plan/features.test.ts` pārbauda O1 caurules (2 urbumi, plāns derīgs).
+
+## ADR-021 — `modL` ātrajā novērtētājā: īpašību tests (F6) (2026-09-30)
+
+**Konteksts.** ADR-016 zināmais ierobežojums (3): `modL` bija tikai netieši testēts. Tas aizstāj `mod(x, L)` ar aritmētiku bez `%` un apgalvo bitu precīzu sakritību.
+
+**Lēmums.** Slēgums izcelts kā eksportēta `makeModL(L)` (`evaluate/fast.ts`; kods un uzvedība nemainās), un `fast.test.ts` pārbauda `Object.is(modL(x), mod(x, L))` ar fast-check: fāzes un starpības, veseli skaitļi, L daudzkārtņi ± 1e-9, vērtības līdz ±2⁴⁵ (aiz `FMOD_LIMIT`), ±0, L ∈ {1, 7, 1000, 1285, 2²⁹ + 3, 1285,5} (pēdējais nav vesels, tāpēc iet pa `mod` atkāpšanās ceļu). Pretpiemēru nebija (20 000 gadījumu).
+
+**Atvērts paliek:** ierobežojums (4), t.i., P3, P4 nav `fast.test.ts` references salīdzinājumā (laiks).
