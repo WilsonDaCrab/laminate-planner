@@ -312,4 +312,13 @@ Secinājumi: (1) izšķirošā ir M4 **slēgšana kopā ar M4 svaru 0,60** — a
 - Simetrijas samazināšana (M3 klases) netiek lietota: B tā saglabā, bet V/H var mainīties un labākais atradums pazustu.
 - `--write-meta` raksta `knownOptimum` tikai ar pierādījumu B = LB1, citādi `bestKnown` (minimums ar esošo).
 
-**Atvērts.** Instances T1–T4 (`instances/tiny/`) vēl jāizveido; to izmērus izvēlas pirms SA rezultātu apskates.
+**Instances T1–T4** (`instances/tiny/`, bāze R1 noteikumi): T1 3100×404, T2 2600×300 (taisnstūri), T3 L-forma, T4 trapece 3100/2700×404. Izmēri izvēlēti tā, lai segmentu būtu 2–3; T1 izmēru zināju no zondēšanas, kur SA jau bija redzēts, tāpēc "izvēlēti pirms SA" nav tīri. Rezultāts (`--seeds 10 --iters 200000`; T1, T2, T4 soli 1, T3 soli 5):
+
+| instance | segmenti | LB | pārlase | ties | B-INST (on-site) | HC | SA |
+|---|---|---|---|---|---|---|---|
+| T1 | 2 | 5 | 6 | 227052 | 5 | 6,00 | 6,00 |
+| T2 | 2 | 5 | 6 | 157212 | 5 | 6,00 | 6,00 |
+| T3 | 3 | 5 | 7 (režģis) | 318024 | 7 | 7,00 | 7,00 |
+| T4 | 2 | 5 | 6 (nepārtraukts φ, režģis) | 353685 | 5 | 6,00 | 6,00 |
+
+Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir precīzi (veseli mm); T3 un T4 ir augšējās robežas. LB1 = 5 nav sasniedzams precut režīmā, bet on-site B-INST T1, T2, T4 sasniedz 5, t.i., precut ir par 1 dēli sliktāks — ko atskaitē jāizskaidro (precut pieļauj ≤ 1 sākuma un ≤ 1 beigu gabalu uz dēli, on-site atlikumus izmanto brīvāk) vai jāizpēta. `meta.bestKnown` ierakstīts visām četrām, `knownOptimum` nevienai (B ≠ LB1).

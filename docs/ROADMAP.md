@@ -101,7 +101,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 ## F6. Eksperimenti un kursa atskaite (~4–5 d) — **kursa nodevums**
 
 - [ ] `bench generate`: plantētais ģenerators (kāpņu + bloku variants), pierādījuma pārbaude (`B* = LB1`) — kāpņu variants izpildīts F5 (ADR-015, `instances/planted/P1–P4`); bloku variants atlikts
-- [ ] `bench exhaustive`: pilnā pārlase tiny instancēm — komanda un testi gatavi (ADR-018); instances `instances/tiny/T1–T4` vēl jāizveido
+- [x] `bench exhaustive`: pilnā pārlase tiny instancēm (ADR-018; `instances/tiny/T1–T4`)
 - [ ] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown`
 - [ ] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv`
 - [ ] Grafiki G1–G3 (+ G4/G5, ja ir) → `results/plots/*.svg` (Vega-Lite)
