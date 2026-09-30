@@ -31,6 +31,7 @@ import {
 } from './experiments';
 import { DEFAULT_MAX_EVALS, runExhaustive } from './exhaustive';
 import { generatePlanted, PLANTED_PRESETS } from './generate/planted';
+import { writeMeta } from './meta';
 import { measure, PERF_SEGMENTS, PERF_TARGET, tallRoom } from './perf';
 import { parseRunResult, RESULT_VERSION, type RunResult } from './result';
 
@@ -63,6 +64,9 @@ const USAGE = `lp-bench <command>
                                   full enumeration of φ on a grid (default instances/tiny) against
                                   B-INST (on-site), HC and SA; --seeds 0 skips the heuristics;
                                   --write-meta stores knownOptimum (B = LB1) or bestKnown in the file
+  bestknown [path...] [--seeds N] [--iters N] [--write-meta] [--force]
+                                  long SA runs (default 10 seeds x 2 000 000 evaluations); --write-meta stores
+                                  meta.bestKnown = min(existing, best) (knownOptimum only if B = LB1)
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -606,31 +610,6 @@ function compareCommand(args: string[], log: (line: string) => void): number {
 const EXHAUSTIVE_DEFAULT_STEP = 5;
 const EXHAUSTIVE_DEFAULT_ITERS = 200_000;
 
-/** Records the exhaustive result in the instance's `meta`: knownOptimum only when proven (B = LB1). */
-function writeMeta(file: string, B: number, proven: boolean): string {
-  const raw = JSON.parse(readFileSync(file, 'utf8')) as { meta?: Record<string, unknown> };
-  const meta = raw.meta ?? { source: 'manual' };
-  if (proven) {
-    if (typeof meta.knownOptimum === 'number' && meta.knownOptimum !== B) {
-      throw new CliError(
-        `${file}: meta.knownOptimum ${meta.knownOptimum} contradicts proven B = ${B}`,
-      );
-    }
-    meta.knownOptimum = B;
-  }
-  const previous = typeof meta.bestKnown === 'number' ? meta.bestKnown : Infinity;
-  meta.bestKnown = Math.min(previous, B);
-  // Canonical key order of the model schema (a saved project must reproduce the file).
-  const { knownOptimum, bestKnown, source, ...rest } = meta;
-  raw.meta = { knownOptimum, bestKnown, source, ...rest };
-  writeFileSync(
-    file,
-    `${JSON.stringify(raw, null, 2)}
-`,
-  );
-  return proven ? `knownOptimum=${B}` : `bestKnown=${meta.bestKnown}`;
-}
-
 function exhaustiveCommand(args: string[], log: (line: string) => void): number {
   const { values, positionals } = parseArgs({
     args,
@@ -725,6 +704,61 @@ function exhaustiveCommand(args: string[], log: (line: string) => void): number 
   return 0;
 }
 
+const BESTKNOWN_DEFAULT_SEEDS = 10;
+const BESTKNOWN_DEFAULT_ITERS = 2_000_000;
+
+function bestknownCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      seeds: { type: 'string' },
+      iters: { type: 'string' },
+      'write-meta': { type: 'boolean' },
+      force: { type: 'boolean' },
+    },
+  });
+  const seeds = toInt('seeds', values.seeds, BESTKNOWN_DEFAULT_SEEDS)!;
+  const iters = toInt('iters', values.iters, BESTKNOWN_DEFAULT_ITERS)!;
+  if (seeds < 1) throw new CliError('--seeds must be at least 1');
+  const files = collectInstances(positionals.length > 0 ? positionals : ['instances']);
+  if (files.length === 0) throw new CliError('bestknown: no instance files found');
+  log(
+    ['instance', 'LB', 'known', 'SA best', 'SA mean', 'ms'].map(pad).join(' ') +
+      `   (SA, ${seeds} seeds x ${iters} evaluations; instances with knownOptimum are skipped unless --force)`,
+  );
+  for (const file of files) {
+    const project = loadInstance(file);
+    const id = instanceId(file);
+    if (project.meta?.knownOptimum !== undefined && !values.force) {
+      log([id, '-', `opt ${project.meta.knownOptimum}`, 'skipped'].map(pad).join(' '));
+      continue;
+    }
+    const lb = lowerBounds(runMethod(project, 'b-inst').ctx).lb;
+    const t0 = performance.now();
+    const s = measureMethod(project, 'sa', seeds, iters);
+    const ms = performance.now() - t0;
+    if (s.best === undefined) {
+      log([id, String(lb), '-', 'no feasible run'].map(pad).join(' '));
+      continue;
+    }
+    const meta = values['write-meta'] ? writeMeta(file, s.best, s.best === lb) : undefined;
+    log(
+      [
+        id,
+        String(lb),
+        project.meta?.bestKnown === undefined ? '-' : String(project.meta.bestKnown),
+        String(s.best),
+        fixed(s.meanB!, 2),
+        fixed(ms, 0),
+      ]
+        .map(pad)
+        .join(' ') + (meta ? `   -> ${meta}` : ''),
+    );
+  }
+  return 0;
+}
+
 const TUNE_DEFAULT = [
   'instances/planted/P1.json',
   'instances/planted/P2.json',
@@ -785,6 +819,8 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return tuneCommand(rest, log);
       case 'exhaustive':
         return exhaustiveCommand(rest, log);
+      case 'bestknown':
+        return bestknownCommand(rest, log);
       case 'baselines':
         return baselinesCommand(rest, log);
       default:

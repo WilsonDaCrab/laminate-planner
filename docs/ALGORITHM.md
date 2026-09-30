@@ -395,7 +395,7 @@ Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, lai ārēj
 | multi | M1 dzīvoklis (pēc F13) | LB1 |
 | real | reālas telpas no klājējiem (ja būs) | LB1 |
 
-"Labākais zināmais" ir labākais rezultāts no 10 gariem SA palaidieniem (10× budžets). To ieraksta instances `meta.bestKnown`.
+"Labākais zināmais" ir labākais rezultāts no 10 gariem SA palaidieniem (10× budžets). To ieraksta instances `meta.bestKnown`. Komanda: `pnpm bench bestknown [path...] --seeds 10 --iters 2000000 --write-meta` (instances ar `knownOptimum` izlaiž; `knownOptimum` ieraksta tikai tad, ja B = LB1).
 
 ### 13.2 Protokols
 

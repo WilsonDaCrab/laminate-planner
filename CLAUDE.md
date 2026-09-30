@@ -66,6 +66,7 @@ pnpm bench tune                                           # SA parametru režģi
 pnpm bench perf                                           # novērtējumi/s (F5 kritērijs: ≥ 100 000 pie 60 segmentiem)
 pnpm bench generate planted --preset P1                   # plantētā instance ar zināmu optimumu
 pnpm bench exhaustive instances/tiny --step 5             # pilnā pārlase uz φ režģa pret B-INST, HC, SA (F6)
+pnpm bench bestknown instances --seeds 10 --iters 2000000 --write-meta   # meta.bestKnown = labākais no 10 gariem SA (§13.1)
 ```
 
 Vēl nav (parādīsies vēlāk):
