@@ -54,7 +54,13 @@ export function g1Spec(rows: Table): TopLevelSpec {
               scale: { type: 'log' },
               title: 'evaluations',
             },
-            y: { field: 'min', type: 'quantitative', scale: { zero: false }, title: 'B' },
+            y: {
+              field: 'min',
+              type: 'quantitative',
+              scale: { zero: false },
+              title: 'B',
+              axis: { format: '.2~f' },
+            },
             y2: { field: 'max' },
           },
         },
@@ -62,7 +68,12 @@ export function g1Spec(rows: Table): TopLevelSpec {
           mark: { type: 'line' },
           encoding: {
             x: { field: 'eval', type: 'quantitative', scale: { type: 'log' } },
-            y: { field: 'mean', type: 'quantitative', scale: { zero: false } },
+            y: {
+              field: 'mean',
+              type: 'quantitative',
+              scale: { zero: false },
+              axis: { format: '.2~f' },
+            },
           },
         },
       ],
@@ -95,8 +106,20 @@ export function g2Spec(rows: Table): TopLevelSpec {
         {
           mark: { type: 'errorbar' },
           encoding: {
-            x: { field: 'distance', type: 'ordinal', sort: order, title: 'D (mm)' },
-            y: { field: 'lo', type: 'quantitative', scale: { zero: false }, title: 'B' },
+            x: {
+              field: 'distance',
+              type: 'ordinal',
+              sort: order,
+              title: 'D (mm)',
+              axis: { labelAngle: 0 },
+            },
+            y: {
+              field: 'lo',
+              type: 'quantitative',
+              scale: { zero: false },
+              title: 'B',
+              axis: { format: '.2~f' },
+            },
             y2: { field: 'hi' },
           },
         },
@@ -104,7 +127,12 @@ export function g2Spec(rows: Table): TopLevelSpec {
           mark: { type: 'line', point: true },
           encoding: {
             x: { field: 'distance', type: 'ordinal', sort: order },
-            y: { field: 'mean', type: 'quantitative', scale: { zero: false } },
+            y: {
+              field: 'mean',
+              type: 'quantitative',
+              scale: { zero: false },
+              axis: { format: '.2~f' },
+            },
           },
         },
       ],
@@ -133,9 +161,20 @@ export function g3Spec(rows: Table): TopLevelSpec {
     height: 240,
     mark: 'bar',
     encoding: {
-      x: { field: 'instance', type: 'nominal', sort: instances, title: null },
+      x: {
+        field: 'instance',
+        type: 'nominal',
+        sort: instances,
+        title: null,
+        axis: { labelAngle: -90 },
+      },
       xOffset: { field: 'method' },
-      y: { field: 'relative', type: 'quantitative', title: 'B vs B-INST (%)' },
+      y: {
+        field: 'relative',
+        type: 'quantitative',
+        title: 'B vs B-INST (%)',
+        axis: { format: '.1~f' },
+      },
       color: {
         field: 'method',
         type: 'nominal',
