@@ -22,11 +22,17 @@ export interface MethodRun {
   result: SearchResult;
 }
 
+/** Row offset used by `runMethod`: explicit `y0`, else the project's fixed offset, else `goodY0`. */
+export function resolveY0(project: Project, y0?: number): number {
+  const base = rowConfigFromSettings(project.settings);
+  const fixedY0 = project.settings.rowOffset === 'auto' ? undefined : base.y0;
+  return y0 ?? fixedY0 ?? goodY0(project) ?? base.y0;
+}
+
 /** One entry point for all baselines: builds the context and runs the method. */
 export function runMethod(project: Project, method: Method, opts: RunOptions = {}): MethodRun {
   const base = rowConfigFromSettings(project.settings);
-  const fixedY0 = project.settings.rowOffset === 'auto' ? undefined : base.y0;
-  const y0 = opts.y0 ?? fixedY0 ?? goodY0(project) ?? base.y0;
+  const y0 = resolveY0(project, opts.y0);
   const ctx = buildContext(project, { ...base, y0 });
   const seed = opts.seed ?? project.settings.seed;
   const budget = opts.budget ?? {};

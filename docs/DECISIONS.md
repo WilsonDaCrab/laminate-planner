@@ -300,3 +300,16 @@ Secinājumi: (1) izšķirošā ir M4 **slēgšana kopā ar M4 svaru 0,60** — a
 - Atskaitē SA ≈ HC un P2–P4 rezultāti tiek ziņoti godīgi; F6 jāpievieno 20+ sēklas un zīmju tests SA pret HC.
 - Neobligāti pirms galīgajiem skrējieniem: SA + HC pēcapstrāde vai restarti, lai aizvērtu L1/P4 zaudējumu.
 - Atvērtie punkti no ADR-016: `modL` fast-check tests; `fast.test.ts` neietver P3, P4.
+
+## ADR-018 — Pilnā pārlase (`bench exhaustive`) (F6) (2026-09-30)
+
+**Lēmums.** `packages/bench/src/exhaustive.ts` pārlasa φ režģi pēc `better` kārtības ar ātro novērtētāju; kodols nemainās, izņemot `resolveY0` (`optimize/run.ts`), ko lieto arī `runMethod`, lai pārlase un metodes strādātu ar vienādiem segmentiem.
+
+**Pamatojums un ierobežojumi.**
+
+- Pārlase ir precīza tikai ar soli 1 (veseli mm, ADR-013). Ar lielāku soli tā ir augšējā robeža, ko HC/SA var pārspēt; `ties` rāda, cik režģa punktu dod to pašu B.
+- Salīdzina tikai `precut` metodes. B-INST ir `onsite` atsauce un var būt labāks (piemērs: 3100×404 mm, 2 segmenti: LB 5, pārlase ar soli 1 → 6, HC/SA → 6, B-INST → 5).
+- Simetrijas samazināšana (M3 klases) netiek lietota: B tā saglabā, bet V/H var mainīties un labākais atradums pazustu.
+- `--write-meta` raksta `knownOptimum` tikai ar pierādījumu B = LB1, citādi `bestKnown` (minimums ar esošo).
+
+**Atvērts.** Instances T1–T4 (`instances/tiny/`) vēl jāizveido; to izmērus izvēlas pirms SA rezultātu apskates.

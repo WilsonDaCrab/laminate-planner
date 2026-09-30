@@ -9,6 +9,7 @@ import {
   isSaResult,
   lowerBounds,
   parseProject,
+  resolveY0,
   renderPlanSvg,
   rowConfigFromSettings,
   saveProject,
@@ -18,6 +19,7 @@ import {
   type Method,
   type PlanContext,
   type Project,
+  type SaResult,
   type SearchResult,
 } from '@lp/core';
 import {
@@ -27,6 +29,7 @@ import {
   tuneOne,
   type MethodStats,
 } from './experiments';
+import { DEFAULT_MAX_EVALS, runExhaustive } from './exhaustive';
 import { generatePlanted, PLANTED_PRESETS } from './generate/planted';
 import { measure, PERF_SEGMENTS, PERF_TARGET, tallRoom } from './perf';
 import { parseRunResult, RESULT_VERSION, type RunResult } from './result';
@@ -56,6 +59,10 @@ const USAGE = `lp-bench <command>
                                   RS, HC, SA against B-NEXT and B-INST, mean over seeds (F5 criterion)
   tune [path...] [--seeds N] [--iters N]
                                   SA parameter grid (move probabilities, closure, p0)
+  exhaustive [path...] [--step mm] [--seeds N] [--iters N] [--max-evals N] [--out dir] [--write-meta]
+                                  full enumeration of φ on a grid (default instances/tiny) against
+                                  B-INST (on-site), HC and SA; --seeds 0 skips the heuristics;
+                                  --write-meta stores knownOptimum (B = LB1) or bestKnown in the file
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -106,7 +113,7 @@ interface RecordInput {
   project: Project;
   ctx: PlanContext;
   y0: number;
-  result: SearchResult;
+  result: Omit<SearchResult, 'method'> & { method: SearchResult['method'] | 'exhaustive' };
   ms: number;
 }
 
@@ -141,7 +148,9 @@ function makeRecord(input: RecordInput): RunResult {
       provenOptimal: result.provenOptimal,
       trace: result.trace,
     },
-    search: isSaResult(result) ? { stats: result.stats, curve: result.curve } : undefined,
+    search: isSaResult(result as SearchResult)
+      ? { stats: (result as SaResult).stats, curve: (result as SaResult).curve }
+      : undefined,
     project: input.project,
     plan,
   };
@@ -594,6 +603,126 @@ function compareCommand(args: string[], log: (line: string) => void): number {
   return lost === 0 ? 0 : 1;
 }
 
+const EXHAUSTIVE_DEFAULT_STEP = 5;
+const EXHAUSTIVE_DEFAULT_ITERS = 200_000;
+
+/** Records the exhaustive result in the instance's `meta`: knownOptimum only when proven (B = LB1). */
+function writeMeta(file: string, B: number, proven: boolean): string {
+  const raw = JSON.parse(readFileSync(file, 'utf8')) as { meta?: Record<string, unknown> };
+  const meta = raw.meta ?? { source: 'manual' };
+  if (proven) {
+    if (typeof meta.knownOptimum === 'number' && meta.knownOptimum !== B) {
+      throw new CliError(
+        `${file}: meta.knownOptimum ${meta.knownOptimum} contradicts proven B = ${B}`,
+      );
+    }
+    meta.knownOptimum = B;
+  }
+  const previous = typeof meta.bestKnown === 'number' ? meta.bestKnown : Infinity;
+  meta.bestKnown = Math.min(previous, B);
+  raw.meta = meta;
+  writeFileSync(
+    file,
+    `${JSON.stringify(raw, null, 2)}
+`,
+  );
+  return proven ? `knownOptimum=${B}` : `bestKnown=${meta.bestKnown}`;
+}
+
+function exhaustiveCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      step: { type: 'string' },
+      seeds: { type: 'string' },
+      iters: { type: 'string' },
+      'max-evals': { type: 'string' },
+      out: { type: 'string' },
+      'write-meta': { type: 'boolean' },
+    },
+  });
+  const step = toInt('step', values.step, EXHAUSTIVE_DEFAULT_STEP)!;
+  if (step < 1) throw new CliError('--step must be at least 1');
+  const seeds = toInt('seeds', values.seeds, 5)!;
+  const iters = toInt('iters', values.iters, EXHAUSTIVE_DEFAULT_ITERS)!;
+  const maxEvals = toInt('max-evals', values['max-evals'], DEFAULT_MAX_EVALS)!;
+  const out = values.out ?? 'results/f6';
+  const files = collectInstances(positionals.length > 0 ? positionals : ['instances/tiny']);
+  if (files.length === 0) throw new CliError('exhaustive: no instance files found');
+  const heuristics: readonly Method[] = seeds > 0 ? ['b-inst', 'hc', 'sa'] : [];
+  log(
+    [
+      'instance',
+      'segs',
+      'LB',
+      'EXH',
+      'ties',
+      'evals',
+      'ms',
+      'proven',
+      ...heuristics.map((m) => m.toUpperCase()),
+    ]
+      .map(pad)
+      .join(' ') +
+      `   (grid step ${step} mm; B-INST is on-site, the rest precut; mean B over ${seeds} seeds, ${iters} evaluations)`,
+  );
+  mkdirSync(join(out, 'exhaustive'), { recursive: true });
+  for (const file of files) {
+    const project = loadInstance(file);
+    const y0 = resolveY0(project);
+    const ctx = buildContext(project, { ...rowConfigFromSettings(project.settings), y0 });
+    const t0 = performance.now();
+    const r = runExhaustive(ctx, { step, maxEvals });
+    const ms = performance.now() - t0;
+    const id = instanceId(file);
+    const record = makeRecord({
+      id,
+      method: 'exhaustive',
+      seed: 0,
+      iters: null,
+      timeMs: null,
+      project,
+      ctx,
+      y0,
+      result: {
+        method: 'exhaustive',
+        phi: r.phi,
+        mode: r.mode,
+        evaluation: r.evaluation,
+        evals: r.evals,
+        provenOptimal: r.provenOptimal,
+        trace: [],
+      },
+      ms,
+    });
+    writeFileSync(join(out, 'exhaustive', `${id}-step${step}.json`), JSON.stringify(record));
+    const cells = heuristics.map((m) => {
+      const s = measureMethod(project, m, seeds, iters);
+      return s.meanB === undefined ? '-' : `${fixed(s.meanB, 2)}${s.feasibleShare < 1 ? '*' : ''}`;
+    });
+    const meta = values['write-meta']
+      ? writeMeta(file, r.evaluation.B, r.provenOptimal)
+      : undefined;
+    log(
+      [
+        id,
+        String(ctx.layout.segments.length),
+        String(r.lb),
+        r.evaluation.feasible ? String(r.evaluation.B) : `${r.evaluation.B}!`,
+        String(r.ties),
+        String(r.evals),
+        fixed(ms, 0),
+        r.provenOptimal ? 'yes' : 'no',
+        ...cells,
+      ]
+        .map(pad)
+        .join(' ') + (meta ? `   -> ${meta}` : ''),
+    );
+  }
+  return 0;
+}
+
 const TUNE_DEFAULT = [
   'instances/planted/P1.json',
   'instances/planted/P2.json',
@@ -652,6 +781,8 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return compareCommand(rest, log);
       case 'tune':
         return tuneCommand(rest, log);
+      case 'exhaustive':
+        return exhaustiveCommand(rest, log);
       case 'baselines':
         return baselinesCommand(rest, log);
       default:

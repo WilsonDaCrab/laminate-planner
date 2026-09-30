@@ -65,6 +65,7 @@ pnpm bench planted --seeds 20 --iters 200000              # cik sēklu atrod pla
 pnpm bench tune                                           # SA parametru režģis (ADR-016)
 pnpm bench perf                                           # novērtējumi/s (F5 kritērijs: ≥ 100 000 pie 60 segmentiem)
 pnpm bench generate planted --preset P1                   # plantētā instance ar zināmu optimumu
+pnpm bench exhaustive instances/tiny --step 5             # pilnā pārlase uz φ režģa pret B-INST, HC, SA (F6)
 ```
 
 Vēl nav (parādīsies vēlāk):

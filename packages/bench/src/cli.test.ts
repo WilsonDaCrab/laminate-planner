@@ -91,4 +91,39 @@ describe('bench CLI', () => {
     expect(() => parseRunResult({ version: 99 })).toThrow(/version/);
     expect(() => parseRunResult(null)).toThrow();
   });
+
+  it('exhaustive writes a record that validates, and refuses an oversized grid', () => {
+    const project = JSON.parse(readFileSync(instance('rect/R1.json'), 'utf8'));
+    project.rooms[0].outline = [
+      { x: 0, y: 0 },
+      { x: 3100, y: 0 },
+      { x: 3100, y: 404 },
+      { x: 0, y: 404 },
+    ];
+    const small = join(tmp, 'small.json');
+    writeFileSync(small, JSON.stringify(project));
+
+    const r = run('exhaustive', small, '--step', '20', '--seeds', '0', '--out', tmp);
+    expect(r.code).toBe(0);
+    expect(r.out).toMatch(/small\s+2\s+\d+\s+\d+\s+\d+/);
+    const file = join(tmp, 'exhaustive', 'small-step20.json');
+    const result = parseRunResult(JSON.parse(readFileSync(file, 'utf8')));
+    expect(result.method).toBe('exhaustive');
+    expect(run('validate', file).code).toBe(0);
+
+    const big = run(
+      'exhaustive',
+      small,
+      '--step',
+      '1',
+      '--max-evals',
+      '1000',
+      '--seeds',
+      '0',
+      '--out',
+      tmp,
+    );
+    expect(big.code).toBe(2);
+    expect(big.out).toContain('larger --step');
+  });
 });

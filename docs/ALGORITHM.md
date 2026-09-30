@@ -349,8 +349,11 @@ Izvade: `{ boards, violations }`; pārkāpums ir `{ code, message, refs }` ar at
 
 ### 12.1 Pilnā pārlase mazām instancēm
 
-- ≤ 3 segmenti: režģis 5 mm pa F_s; ≤ 4 segmenti: 10 mm.
+- ≤ 2 segmenti: režģis 1 mm (taisnleņķa segmentiem tā ir pilna pārlase pār veseliem mm, ADR-013); ≤ 3 segmenti: 5 mm; ≤ 4 segmenti: 10 mm. Kandidāti segmentam: `a_s + j·solis` (taisnleņķa) vai soļa daudzkārtņi (citiem), kas ietilpst `F_s`, plus visi `F_s` intervālu galapunkti.
 - Rezultāts ir labākais uz režģa, tātad augšējā robeža optimumam. Ja tas sakrīt ar LB, optimums ir pierādīts.
+- **Uzmanību:** ar soli > 1 šuvju pārošana (`e + s + k = L`) prasa precīzas nobīdes, ko režģis var neaizķert, tāpēc HC/SA var uzvarēt pārlasi. Ticams optimums ir tikai ar soli 1; soļi > 1 dod tikai augšējo robežu.
+- Pārlase strādā ar fiksētiem θ un y0 (y0 kā `runMethod`: `resolveY0`) un `precut` režīmu, tāpēc to salīdzina ar HC/SA, nevis ar B-INST (tas ir `onsite`). Aizsargs: režģis lielāks par `--max-evals` (50 M) tiek noraidīts. M3 simetrijas netiek izmantotas, jo mainītos V/H.
+- Komanda: `pnpm bench exhaustive [ceļi] --step 5`; `--write-meta` ieraksta `meta.knownOptimum` (tikai ja B = LB1) vai `meta.bestKnown`.
 
 ### 12.2 Plantētais ģenerators ("kāpņu" telpas)
 
