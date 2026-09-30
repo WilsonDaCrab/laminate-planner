@@ -131,6 +131,8 @@ export function runOuter(project: Project, opts: OuterOptions = {}): OuterResult
   const fixedY0 = project.settings.rowOffset === 'auto' ? undefined : base.y0;
 
   // ---- screening ----------------------------------------------------------------------------
+  const clock0 = opts.budget?.clock;
+  const screenStart = clock0 ? clock0() : 0;
   const screened: Screened[][] = [];
   for (const cfg of candidateConfigs(project, room.id)) {
     const theta = degToRad(cfg.angleDeg);
@@ -178,7 +180,12 @@ export function runOuter(project: Project, opts: OuterOptions = {}): OuterResult
 
   // ---- SA on the best few of each configuration ------------------------------------------------
   const chosen = screened.flatMap((rows) => rows.slice(0, topK));
-  const { iters, timeMs, clock } = opts.budget ?? {};
+  const { iters, clock } = opts.budget ?? {};
+  // The screening above spends part of the time limit; SA gets what is left (at least 1 ms).
+  const timeMs =
+    opts.budget?.timeMs === undefined || !clock
+      ? opts.budget?.timeMs
+      : Math.max(1, opts.budget.timeMs - (clock() - screenStart));
   const share = (x: number | undefined): number | undefined =>
     x === undefined ? undefined : Math.max(1, Math.floor(x / Math.max(1, chosen.length)));
   let best: OuterResult['best'] | undefined;

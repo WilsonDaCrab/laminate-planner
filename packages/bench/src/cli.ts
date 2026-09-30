@@ -572,13 +572,17 @@ function compareCommand(args: string[], log: (line: string) => void): number {
     const sa = stats.find((s) => s.method === 'sa')!;
     const others = stats.filter((s) => s.method !== 'sa' && s.meanB !== undefined);
     const beaten = others.filter((s) => sa.meanB === undefined || s.meanB! < sa.meanB - 1e-9);
-    if (beaten.length > 0) lost++;
+    // SA must be feasible in every run: a mean over the feasible runs alone hides the failures.
+    const incomplete = sa.feasibleShare < 1;
+    if (beaten.length > 0 || incomplete) lost++;
     log(
       [
         instanceId(file),
         String(lb),
         ...stats.map(cell),
-        beaten.length === 0 ? 'yes' : `NO (${beaten.map((s) => s.method).join(', ')})`,
+        beaten.length === 0 && !incomplete
+          ? 'yes'
+          : `NO (${[...beaten.map((s) => s.method), ...(incomplete ? ['sa infeasible'] : [])].join(', ')})`,
       ]
         .map(pad)
         .join(' '),

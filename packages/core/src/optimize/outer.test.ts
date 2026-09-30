@@ -63,10 +63,13 @@ describe('y0 filter', () => {
     expect(validY0s(project, cfg)).toEqual(counts.flatMap((v, y) => (v === 0 ? [y] : [])));
     expect(counts.some((v) => v > 0)).toBe(true); // some offsets do break w_min
     // The row frame is what decides: a mirrored stack has its own answer.
-    const frame = roomToRow(0, 'right');
-    expect(frame).toBeDefined();
     const zone = buildRoomZone(project, project.rooms[0]!.id);
-    expect(transformShape(frame, zone.shapes[0]!).outer.length).toBeGreaterThan(2);
+    const left = transformShape(roomToRow(0, 'left'), zone.shapes[0]!).outer;
+    const right = transformShape(roomToRow(0, 'right'), zone.shapes[0]!).outer;
+    const sorted = (xs: number[]) => xs.slice().sort((a, b) => a - b);
+    // Stacking from the right reflects about the x axis: same x values, y negated.
+    expect(sorted(right.map((p) => p.x))).toEqual(sorted(left.map((p) => p.x)));
+    expect(sorted(right.map((p) => p.y))).toEqual(sorted(left.map((p) => -p.y)));
   });
 });
 
@@ -128,7 +131,7 @@ describe('runOuter', () => {
     const { best } = out;
     const plan = buildPlan(best.ctx, best.result.phi, { mode: best.result.mode });
     expect(plan.stats.boards).toBe(best.result.evaluation.B);
-    const violations = validatePlan(
+    const validation = validatePlan(
       // The result is validated against the project with the chosen row configuration fixed.
       withSettings(project, {
         angleDeg: best.row.angleDeg,
@@ -136,13 +139,27 @@ describe('runOuter', () => {
         rowOffset: best.row.y0,
       }),
       plan,
-    ).violations.filter((v) => v.code !== 'stagger');
-    expect(violations).toEqual([]);
+    );
+    expect(validation.violations.filter((v) => v.code !== 'stagger')).toEqual([]);
+    // Rule 5: evaluator, plan builder and validator agree on the board count.
+    expect(validation.boards).toBe(plan.boards.length);
+    expect(validation.boards).toBe(best.result.evaluation.B);
     // The best SA result is the best of the table.
     const saBest = Math.min(...out.table.flatMap((r) => (r.sa ? [r.sa.B] : [])));
     expect(best.result.evaluation.B).toBe(saBest);
     // ... and never worse than what quick screening found for the same configuration.
     expect(best.result.evaluation.B).toBeLessThanOrEqual(best.row.bInst);
+  });
+
+  it('time mode: screening time is taken off the SA budget (a clock that runs fast leaves 1 ms)', () => {
+    const project = withSettings(load('R1'), { angleDeg: 0, stackSide: 'left', rowOffset: 60 });
+    let t = 0;
+    const clock = () => (t += 1000);
+    const out = runOuter(project, { seed: 1, budget: { timeMs: 500, clock } });
+    // Every clock read costs 1 s, so the limit is used up by the screening: SA still returns a
+    // valid (B-INST-based) result instead of running for the full 500 ms again.
+    expect(out.best.result.evals).toBeGreaterThan(0);
+    expect(out.best.result.evaluation.B).toBeLessThanOrEqual(out.best.row.bInst);
   });
 
   it('respects fixed angle, side and offset', () => {

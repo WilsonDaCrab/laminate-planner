@@ -189,5 +189,5 @@ describe('fast evaluator on random rectilinear rooms (free pieces, strips, stage
     );
     // The property is only meaningful if stage C really ran.
     expect(freePieces).toBeGreaterThan(20);
-  });
+  }, 30_000); // 60 random rooms: ~5 s alone, more when several test runs share the CPU
 });
