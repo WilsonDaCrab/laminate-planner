@@ -55,6 +55,10 @@ describe('runAll', () => {
       expect(existsSync(join(dir, 'tables', `${f}.csv`))).toBe(true);
     }
 
+    for (const g of ['G1', 'G2', 'G3']) {
+      expect(readFileSync(join(dir, 'plots', `${g}.svg`), 'utf8')).toContain('<svg');
+    }
+
     const second = await runAll({ instances, preset, dir });
     expect(second).toMatchObject({ total: 24, skipped: 24, ran: 0 });
     expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);

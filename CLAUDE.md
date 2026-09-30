@@ -71,7 +71,6 @@ pnpm bench bestknown instances --seeds 10 --iters 2000000 --write-meta   # meta.
 pnpm bench all --jobs auto                                # E1 galvenā tabula + E3 estētika → results/raw/*.jsonl (atsākams), summary.csv, tables/ (--quick = sausā palaišana)
 ```
 
-
 TypeScript ir piesprausts uz 6.x, jo `typescript-eslint` vēl neatbalsta 7 (sk. ADR-010).
 
 ## Struktūra

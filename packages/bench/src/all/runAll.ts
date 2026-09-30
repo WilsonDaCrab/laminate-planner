@@ -4,7 +4,8 @@
  *   results/env.json                      machine and commit
  *   results/raw/<experiment>.jsonl        one row per run (resumable)
  *   results/summary.csv                   main table (E1)
- *   results/tables/g1|g2|g3_*.csv         data of the plots (plots.ts turns them into SVG)
+ *   results/tables/g1|g2|g3_*.csv         data of the plots
+ *   results/plots/G1|G2|G3.svg            the plots (plots.ts)
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -19,6 +20,7 @@ import {
   type InstanceInfo,
   type Preset,
 } from './protocol';
+import { writePlots } from './plots';
 import { appendRow, pendingJobs, rawPath, readRows } from './raw';
 import type { RawRow } from './runJob';
 import { aestheticsCsv, convergenceCsv, mainTableCsv, precutCsv } from './summary';
@@ -80,5 +82,6 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
   writeFileSync(join(opts.dir, 'tables', 'g1_convergence.csv'), convergenceCsv(rows));
   writeFileSync(join(opts.dir, 'tables', 'g2_aesthetics.csv'), aestheticsCsv(rows));
   writeFileSync(join(opts.dir, 'tables', 'g3_precut.csv'), precutCsv(rows));
+  await writePlots(opts.dir);
   return { total: jobs.length, skipped: jobs.length - todo.length, ran: todo.length, rows };
 }
