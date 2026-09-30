@@ -281,3 +281,22 @@ Secinājumi: (1) izšķirošā ir M4 **slēgšana kopā ar M4 svaru 0,60** — a
 **Zināmie ierobežojumi ātrajam novērtētājam (gala pārskats).** (1) Paaudžu skaitītāji (`evalGen`, `pairedGen` u.c.) ir `Int32Array`; pēc 2³¹ ierakstiem (~1,5 h nepārtrauktas SA pie 135k/s ar vienu novērtētāja eksemplāru) tie pārpildītos un B klusi kļūtu par lielu. Pašlaik nesasniedzams (novērtētājs tiek radīts katram palaidienam); ja tiks lietots ilgāk, pie 2³⁰ jānotīra masīvi. (2) Nesapārotie gabali paļaujas uz invariantu "segmentā ≤ 1 sākuma un ≤ 1 beigu gabals"; ja `layout/pieces.ts` to mainīs, `fast.ts` jāpārskata. (3) `modL` nav tieša testa, tikai netiešs (salīdzināšana ar atsauci); fast-check tests `Object.is(modL(x), mod(x, L))` ir F6 uzdevums. (4) `fast.test.ts` uz instancēm neietver P3, P4.
 
 **Turpinājums.** F6: mērogošanas sērija P-instancēm; 20+ sēklas un zīmju tests SA pret HC atskaitē; LAHC paliek neobligāts.
+
+## ADR-017 — F5 pieņemta ar daļēji izpildītiem kritērijiem (2026-09-30)
+
+**Konteksts.** F5 kritēriji (a) "SA ≤ visas bāzes metodes visām instancēm" un (b) "P1–P4 optimums ≥ 90 % sēklu" nav izpildīti (skaitļi ADR-016: SA zaudē HC uz L1 par 0,35 un P4 par 0,95 dēļa; P1–P4 optimums 20/20, 1/20, 0/20, 0/20).
+
+**Lēmums.** Lietotājs pieņem F5 kā noslēgtu un sāk F6. Kritēriji (a) un (b) netiek atzīmēti kā izpildīti, un ne P1–P4 instances, ne kritēriju formulējumi netiek mainīti (sk. CLAUDE.md 6. noteikumu un ADR-016).
+
+**Pamatojums.**
+
+- Pret B-INST (klājēja metode) 12 instancēs, 20 sēklas: Σ 980 → 956,85 dēļi (≈ −2,4 %); pārsniegums virs LB1 41 → 17,85 (−56 %); U1 89 → 81, R2 86 → 83.
+- P1: plantētais optimums atrasts 20/20 — optimums pierādīts.
+- SA ≈ HC (Σ 956,85 pret 956,6): SA nav sistemātiski sliktāks, bet neuzvar. Tas ir pētījuma rezultāts, ko atskaitē var godīgi parādīt.
+- Kursa prasības (paša SA implementācija, testi: izpildes laiks un kvalitāte pret optimumu/apakšējo robežu) ir izpildītas; (a) un (b) bija stingrāki paššķirti mērķi.
+
+**Sekas.**
+
+- Atskaitē SA ≈ HC un P2–P4 rezultāti tiek ziņoti godīgi; F6 jāpievieno 20+ sēklas un zīmju tests SA pret HC.
+- Neobligāti pirms galīgajiem skrējieniem: SA + HC pēcapstrāde vai restarti, lai aizvērtu L1/P4 zaudējumu.
+- Atvērtie punkti no ADR-016: `modL` fast-check tests; `fast.test.ts` neietver P3, P4.
