@@ -68,13 +68,9 @@ pnpm bench generate planted --preset P1                   # plantētā instance 
 pnpm bench exhaustive instances/tiny --step 5             # pilnā pārlase uz φ režģa pret B-INST, HC, SA (F6)
 pnpm bench difficulty --n 6,10,14,18,22,26,30,34,38,42 --seeds 20 --iters 200000   # grūtības sērija uz plantētajām (results/f6/difficulty.csv)
 pnpm bench bestknown instances --seeds 10 --iters 2000000 --write-meta   # meta.bestKnown = labākais no 10 gariem SA (§13.1)
+pnpm bench all --jobs auto                                # E1 galvenā tabula + E3 estētika → results/raw/*.jsonl (atsākams), summary.csv, tables/ (--quick = sausā palaišana)
 ```
 
-Vēl nav (parādīsies vēlāk):
-
-```bash
-pnpm bench all                # visi eksperimenti → results/*.csv (F6)
-```
 
 TypeScript ir piesprausts uz 6.x, jo `typescript-eslint` vēl neatbalsta 7 (sk. ADR-010).
 

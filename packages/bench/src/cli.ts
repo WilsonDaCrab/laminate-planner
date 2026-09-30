@@ -33,6 +33,7 @@ import {
 } from './experiments';
 import { DEFAULT_MAX_EVALS, runExhaustive } from './exhaustive';
 import { generatePlanted, PLANTED_PRESETS } from './generate/planted';
+import { allCommand } from './all/cli';
 import { writeMeta } from './meta';
 import { measure, PERF_SEGMENTS, PERF_TARGET, tallRoom } from './perf';
 import { parseRunResult, RESULT_VERSION, type RunResult } from './result';
@@ -72,6 +73,9 @@ const USAGE = `lp-bench <command>
   difficulty [--n 6,10,...,42] [--m N] [--seeds N] [--iters N] [--base instance.json] [--out dir]
                                   difficulty series: planted rooms generated in-process (seed = n), share of
                                   runs at the known optimum per method -> results/f6/difficulty.csv
+  all [--quick] [--only main,aesthetics] [--jobs N|auto] [--seeds N] [--iters N] [--out dir] [--instances dir]
+                                  every experiment of the protocol (20 seeds x 200 000 evaluations) ->
+                                  results/raw/*.jsonl (resumable), summary.csv, tables/; --quick = dry run
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -908,6 +912,20 @@ export function main(argv: string[], log: (line: string) => void = console.log):
     }
   } catch (e) {
     // Usage, I/O, parse and model errors: exit 2, so that 1 stays "the plan has violations".
+    log(`error: ${e instanceof Error ? e.message : String(e)}`);
+    return 2;
+  }
+}
+
+/** Like `main`, plus the asynchronous commands (`all`). */
+export async function mainAsync(
+  argv: string[],
+  log: (line: string) => void = console.log,
+): Promise<number> {
+  if (argv[0] !== 'all') return main(argv, log);
+  try {
+    return await allCommand(argv.slice(1), log);
+  } catch (e) {
     log(`error: ${e instanceof Error ? e.message : String(e)}`);
     return 2;
   }
