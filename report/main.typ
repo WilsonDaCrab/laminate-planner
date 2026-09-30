@@ -27,7 +27,10 @@ Telpa ir daudzstūris (arī ar lokiem un šķēršļiem). To jāsegt ar lamināt
 
 Kombinatoriskais kodols ir globāla gabalu *pārošana*: rindas beigu gabals $e$ un kādas rindas sākuma gabals $s$ var nākt no viena dēļa, ja $e + s + k <= L$. Tas ir cieši saistīts ar _cutting stock_ / _bin packing_ uzdevumu, bet ar papildu ģeometriskiem ierobežojumiem (šuvju nobīde starp blakus rindām).
 
-#todo("viens attēls: izkārtojuma plāns ar krāsotiem pāriem (pnpm bench run ... --svg)")
+#figure(
+  image("/report/figures/plan-L1.svg", width: 52%),
+  caption: [Telpas L1 (L veida dzīvojamā istaba) griešanas plāns, ko atrod SA (30 000 novērtējumu, sēkla 1): $B = 87$, apakšējā robeža $"LB"_1 = 85$. Katra krāsa ir viens dēlis; gabali ar vienu krāsu nāk no viena dēļa (pāris $e + s + k <= L$). Marķējums: rinda, gabals, S = sākuma, B = beigu gabals. Attēls: `bench run instances/lshape/L1.json --method sa --seed 1 --iters 30000 --svg`.],
+)
 
 = Algoritms
 
