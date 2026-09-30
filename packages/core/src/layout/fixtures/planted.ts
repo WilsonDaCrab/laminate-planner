@@ -8,6 +8,8 @@ import P1 from '../../../../../instances/planted/P1.json';
 import P2 from '../../../../../instances/planted/P2.json';
 import P3 from '../../../../../instances/planted/P3.json';
 import P4 from '../../../../../instances/planted/P4.json';
+import P5 from '../../../../../instances/planted/P5.json';
+import P6 from '../../../../../instances/planted/P6.json';
 
 export interface PlantedFile {
   id: string;
@@ -20,4 +22,6 @@ export const plantedFiles: PlantedFile[] = [
   { id: 'P2', raw: P2 },
   { id: 'P3', raw: P3 },
   { id: 'P4', raw: P4 },
+  { id: 'P5', raw: P5 },
+  { id: 'P6', raw: P6 },
 ];

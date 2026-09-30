@@ -338,3 +338,26 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 - ADR-016/017 skaitļi paliek vēsturiski derīgi; F6 galīgie skrējieni (`bench all`) ir jāveic jau ar šo dekoderi.
 
 **Piezīme.** `B_onsite ≥ B_precut` joprojām nav garantēts vispārīgi (ALGORITHM §4.2).
+
+## ADR-020 — Instanču komplekts §13.1: izmēri pēc rakstiskiem kritērijiem (F6) (2026-09-30)
+
+**Konteksts.** F6 prasa pilnu komplektu. Lai izvairītos no instanču "pielāgošanas" SA rezultātiem (ADR-016 princips), izmēri izvēlēti un segmentu skaiti aprēķināti ar roku (`layout/instances.test.ts`) **pirms** jebkāda SA skrējiena uz jaunajām instancēm. Pievienotas 11 instances; `multi` (M1 pēc F13) un `real` netiek veidotas.
+
+**Kritēriji un izmēri.** Visām: jābūt `y0`, pie kura katra horizontālā siena atstāj strēmeles ≥ `minRipWidth` abās pusēs (`goodY0`); produkts 1285×192, `kerf = 3`, sprauga 10, `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, `mode = precut`.
+
+| Instance | Izmērs | Kritērijs |
+|---|---|---|
+| P5, P6 | n = 50, 62 (m = 3; ≈ 49, 61 m²) | n − 2 dalās ar 4; `knownOptimum = LB1` = 200, 248 |
+| R3 | 5200×3600 | zonas garums 5180: `(R + k) mod L = 43 ≤ 50`, t.i., rindas gals gandrīz vienmēr dod īsu gabalu ar ļoti maz pārošanas rezerves |
+| R4 | 10 000×6030 | ≈ 60 m²; 6030, nevis 6000, jo 6000 dotu 38 mm strēmeles rindu (< `minRipWidth`) |
+| L2 | 7000×5250, izgriezums 3000×2000 | liels L; 5250, lai pēdējā rinda nebūtu 6 mm; viens segments uz rindu |
+| L3 | 6500×1500 + 2100×2700 | šaurs pleca garums < 2L: daudz īsu rindu |
+| S3 | 4500×3000 + erkers 2500 plats pie pamatnes, 1700 augšā, 600 dziļš | nelīdzenas sānu malas (nav 45°), izliekta rinda |
+| S4 | astoņstūris 4400×3400, stūri 700×700 (45°) | rindu gali nobīdās par 192 uz rindu |
+| O1 | 5000×4000; kolonna 300×300 (poligons) + 2 caurules Ø16 | kolonnas caurums (320 mm) pilnībā sadala vienu rindu, blakus rindās paliek ≥ 100 mm tilts; caurules dažādās rindās, ne tuvāk par 50 mm rindas malai |
+| O2 | 4500×3700; L veida virtuves bloks 3200×600 + 600×2300 | bloks piekļauts sienām, apakšējās rindas 1280 mm garas (< L); horizontālo sienu atlikumi mod 192 (10, 34, 6, 42) ietilpst logā, tātad `y0` ar strēmelēm ≥ `minRipWidth` eksistē (pirmā versija 4500×3800 / 2400 to neizpildīja: atlikumi 10, 34, 106, 142, un testi to atklāja pirms jebkāda SA skrējiena) |
+| C3 | 4400×3400; četri R600 stūri (bulge tan 22,5°) + V izgriezums augšā | V gals ≈ 100 mm virs rindas robežas, sadala 3 rindas |
+
+**Kas zināms.** Plantētajām B* = LB1. Pārējām jaunajām nav zināms ne optimums, ne `bestKnown` (tos aprēķina `bench bestknown`, 2. solis); tiny `knownOptimum` netiek ierakstīts bez pierādījuma B = LB1.
+
+**Testi.** Instances pievienotas `layout/fixtures/instances.ts` (grupa `obstacles`) un `fixtures/planted.ts`, tāpēc bounds, cutlist, evaluate, fast un validatora testi uz tām darbojas automātiski; `plan/features.test.ts` pārbauda O1 caurules (2 urbumi, plāns derīgs).

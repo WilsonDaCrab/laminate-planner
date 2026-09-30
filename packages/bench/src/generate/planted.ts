@@ -54,6 +54,8 @@ export const PLANTED_PRESETS: Record<string, PlantedParams> = {
   P2: { n: 22, m: 3, seed: 2 }, // ≈ 22 m²
   P3: { n: 30, m: 3, seed: 3 }, // ≈ 30 m²
   P4: { n: 42, m: 3, seed: 4 }, // ≈ 41 m²
+  P5: { n: 50, m: 3, seed: 5 }, // ≈ 49 m²
+  P6: { n: 62, m: 3, seed: 6 }, // ≈ 61 m²
 };
 
 const MAX_ATTEMPTS = 2000;

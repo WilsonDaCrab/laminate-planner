@@ -7,6 +7,7 @@ import { instanceFiles } from '../layout/fixtures/instances';
 import type { PieceFeature, Plan } from '../model/plan';
 import { parseProject } from '../model/index';
 import { createRng } from '../rng/index';
+import { validatePlan } from '../validate/index';
 import { buildPlan } from './build';
 import { buildContext, type PlanContext } from './context';
 
@@ -59,6 +60,20 @@ describe('L room: notches and the pipe drill', () => {
       expect(f.y).toBeGreaterThanOrEqual(-r);
       expect(f.y).toBeLessThanOrEqual(p.boardRect.h + r);
     }
+  });
+});
+
+describe('O1: two pipes and a column', () => {
+  const { ctx, plan } = planOf('O1');
+
+  it('every pipe gets exactly one drill of its diameter and the plan validates', () => {
+    const pipes = ctx.room.obstacles.filter((o) => o.kind === 'pipe');
+    expect(pipes).toHaveLength(2);
+    expect(featuresOf(plan, 'drill')).toHaveLength(2);
+    expect(featuresOf(plan, 'drill').every((f) => f.diameter === 16)).toBe(true);
+    expect(
+      validatePlan(ctx.project, plan).violations.filter((x) => x.code !== 'stagger'),
+    ).toEqual([]);
   });
 });
 

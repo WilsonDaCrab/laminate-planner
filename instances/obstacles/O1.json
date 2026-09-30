@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "name": "O1 kolonna un caurules",
+  "product": {
+    "id": "demo-1285x192",
+    "name": "Demo 1285×192",
+    "boardLength": 1285,
+    "boardWidth": 192,
+    "boardsPerPack": 8
+  },
+  "rules": {
+    "kerf": 3,
+    "minPieceLength": 300,
+    "minStagger": 300,
+    "minRipWidth": 50,
+    "expansionGap": 10,
+    "minGap": 7,
+    "maxGap": 14,
+    "hPattern": {
+      "enabled": true,
+      "distance": 100
+    },
+    "pattern": {
+      "kind": "free"
+    },
+    "reservePercent": 2
+  },
+  "rooms": [
+    {
+      "id": "r1",
+      "name": "Istaba ar kolonnu",
+      "code": "O1",
+      "outline": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 5000,
+          "y": 0
+        },
+        {
+          "x": 5000,
+          "y": 4000
+        },
+        {
+          "x": 0,
+          "y": 4000
+        }
+      ],
+      "edges": [
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        }
+      ],
+      "obstacles": [
+        {
+          "kind": "polygon",
+          "id": "col1",
+          "label": "Kolonna",
+          "points": [
+            {
+              "x": 2350,
+              "y": 1506
+            },
+            {
+              "x": 2650,
+              "y": 1506
+            },
+            {
+              "x": 2650,
+              "y": 1806
+            },
+            {
+              "x": 2350,
+              "y": 1806
+            }
+          ]
+        },
+        {
+          "kind": "pipe",
+          "id": "p1",
+          "center": {
+            "x": 4930,
+            "y": 1000
+          },
+          "diameter": 16
+        },
+        {
+          "kind": "pipe",
+          "id": "p2",
+          "center": {
+            "x": 4930,
+            "y": 1450
+          },
+          "diameter": 16
+        }
+      ]
+    }
+  ],
+  "doorways": [],
+  "settings": {
+    "angleDeg": 0,
+    "stackSide": "left",
+    "rowOffset": "auto",
+    "mode": "precut",
+    "trimMargin": 0,
+    "aesthetics": 0.5,
+    "seed": 1,
+    "timeLimitMs": 3000
+  },
+  "meta": {
+    "source": "manual"
+  }
+}

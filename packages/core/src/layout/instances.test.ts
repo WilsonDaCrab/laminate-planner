@@ -26,6 +26,23 @@ import { buildProfiles } from './xprofile';
  *  C1 zone y ∈ [10, 2990] (the bay is tangent to the walls): 16 rows.
  *  C2 zone y ∈ [10, 3490]: 19 rows; the column hole (y ≈ 1540…1960) fully splits the row [1728, 1920]
  *     → 19 + 1 = 20 segments.
+ *  R3 (5200×3600) zone y ∈ [10, 3590]: 182 + 17·192 + 134 → 19 rows.
+ *  R4 (10000×6030) zone y ∈ [10, 6020]: 182 + 30·192 + 68 → 32 rows (6030, not 6000: 6000 would
+ *     leave a 38 mm sliver row below minRipWidth).
+ *  L2 (7000×5250, notch 3000×2000) zone y ∈ [10, 5240]: 182 + 26·192 + 56 → 28 rows, L stays connected.
+ *  L3 (6500×1500 + 2100×2700) zone y ∈ [10, 4190]: 182 + 20·192 + 158 → 22 rows, connected.
+ *  S3 (bay on the top wall) zone y ∈ [10, 3590]: 182 + 17·192 + 134 → 19 rows, convex per row.
+ *  S4 (octagon, 45° corners) zone y ∈ [10, 3390]: 182 + 16·192 + 126 → 18 rows.
+ *  O1 (5000×4000, column 300×300 at y 1506…1806, hole 1496…1816): like R1 21 rows; the row
+ *     [1536, 1728] lies inside the hole and splits in two; the rows on either side keep a 152 / 104 mm
+ *     bridge → 22 segments. The two pipes do not change the zone.
+ *  O2 (4500×3700, L-shaped kitchen block 3200×600 + 600×2300 along two walls) zone y ∈ [10, 3690]:
+ *     182 + 18·192 + 42 → 20 rows (the 42 mm sliver exists only at y0 = 0; a valid y0 exists because
+ *     the horizontal walls at y = 10, 610, 2310, 3690 have residues 10, 34, 6, 42 mod 192), every
+ *     row stays connected (the block is attached to walls, bottom rows are 1280 wide).
+ *  C3 (4400×3400, four R600 corners, V notch on the top wall) zone y ∈ [10, 3390]: 18 rows; the V
+ *     tip reaches y ≈ 2790, so rows [2880, 3072], [3072, 3264] and [3264, 3390] each split in two:
+ *     18 + 3 = 21 segments.
  *  T1 (3100×404) zone y ∈ [10, 394]: rows 182 + 192 + 10 → 3 rows.
  *  T2 (2600×300) zone y ∈ [10, 290]: rows 182 + 98 → 2 rows.
  *  T3 (L-shape, 404 high) zone y ∈ [10, 394]: 3 rows, the L stays connected → 3 segments.
@@ -40,6 +57,15 @@ const expectedSegments: Record<string, number> = {
   S2: 11,
   C1: 16,
   C2: 20,
+  C3: 21,
+  R3: 19,
+  R4: 32,
+  L2: 28,
+  L3: 22,
+  S3: 19,
+  S4: 18,
+  O1: 22,
+  O2: 20,
   T1: 3,
   T2: 2,
   T3: 3,

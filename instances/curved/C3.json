@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "name": "C3 noapaļoti stūri un V izgriezums",
+  "product": {
+    "id": "demo-1285x192",
+    "name": "Demo 1285×192",
+    "boardLength": 1285,
+    "boardWidth": 192,
+    "boardsPerPack": 8
+  },
+  "rules": {
+    "kerf": 3,
+    "minPieceLength": 300,
+    "minStagger": 300,
+    "minRipWidth": 50,
+    "expansionGap": 10,
+    "minGap": 7,
+    "maxGap": 14,
+    "hPattern": {
+      "enabled": true,
+      "distance": 100
+    },
+    "pattern": {
+      "kind": "free"
+    },
+    "reservePercent": 2
+  },
+  "rooms": [
+    {
+      "id": "r1",
+      "name": "Noapaļota telpa",
+      "code": "C3",
+      "outline": [
+        {
+          "x": 600,
+          "y": 0
+        },
+        {
+          "x": 3800,
+          "y": 0
+        },
+        {
+          "x": 4400,
+          "y": 600
+        },
+        {
+          "x": 4400,
+          "y": 2800
+        },
+        {
+          "x": 3800,
+          "y": 3400
+        },
+        {
+          "x": 2600,
+          "y": 3400
+        },
+        {
+          "x": 2200,
+          "y": 2800
+        },
+        {
+          "x": 1800,
+          "y": 3400
+        },
+        {
+          "x": 600,
+          "y": 3400
+        },
+        {
+          "x": 0,
+          "y": 2800
+        },
+        {
+          "x": 0,
+          "y": 600
+        }
+      ],
+      "edges": [
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall",
+          "bulge": 0.41421356237309503
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall",
+          "bulge": 0.41421356237309503
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall",
+          "bulge": 0.41421356237309503
+        },
+        {
+          "kind": "wall"
+        },
+        {
+          "kind": "wall",
+          "bulge": 0.41421356237309503
+        }
+      ],
+      "obstacles": []
+    }
+  ],
+  "doorways": [],
+  "settings": {
+    "angleDeg": 0,
+    "stackSide": "left",
+    "rowOffset": "auto",
+    "mode": "precut",
+    "trimMargin": 0,
+    "aesthetics": 0.5,
+    "seed": 1,
+    "timeLimitMs": 3000
+  },
+  "meta": {
+    "source": "manual"
+  }
+}
