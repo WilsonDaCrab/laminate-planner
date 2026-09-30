@@ -22,7 +22,7 @@ import { EPS, mod } from '../num/index';
 import { regularityPenalty } from './evaluate';
 import { defaultWeights, type EvalWeights } from './evaluate';
 import type { Evaluator, QuickEval, UnpairedInfo, UnpairedList } from './evaluator';
-import { fastPathApplies, seamPenaltyFast } from './seams';
+import { fastPathApplies } from './seams';
 
 const START = 0;
 const END = 1;
@@ -58,6 +58,85 @@ const MAX_PIECES_PER_ROW = 98;
 const shortCode: Record<ShortNeeds, number> = { start: START, end: END, full: FULL, free: FREE };
 const longCode: Record<LongNeeds, number> = { both: BOTH, low: LOW, high: HIGH, none: NONE };
 
+/** Orders of the stage A lists. */
+const BY_LEN_DESC = 0;
+const BY_LEN_ASC = 1;
+
+/**
+ * BY_LEN_DESC: longer first, ties by larger key; BY_LEN_ASC: shorter first, ties by smaller key.
+ * A strict total order, as keys are unique. Module-level with the arrays as arguments, so that it
+ * does not depend on an evaluator's closure context.
+ */
+function comesBefore(
+  ext: Float64Array,
+  key: Float64Array,
+  u: number,
+  v: number,
+  order: number,
+): boolean {
+  const lu = ext[u]!;
+  const lv = ext[v]!;
+  const desc = order === BY_LEN_DESC;
+  if (lu !== lv) return desc ? lu > lv : lu < lv;
+  return desc ? key[u]! > key[v]! : key[u]! < key[v]!;
+}
+
+/** Bottom-up merge sort of idx[0, n) by `comesBefore` (scratch: tmp). */
+function mergeSort(
+  idx: Int32Array,
+  tmp: Int32Array,
+  n: number,
+  ext: Float64Array,
+  key: Float64Array,
+  order: number,
+): void {
+  let src = idx;
+  let dst = tmp;
+  for (let width = 1; width < n; width *= 2) {
+    for (let lo = 0; lo < n; lo += 2 * width) {
+      const mid = Math.min(lo + width, n);
+      const hi = Math.min(lo + 2 * width, n);
+      let i = lo;
+      let j = mid;
+      let w = lo;
+      while (i < mid && j < hi) {
+        dst[w++] = comesBefore(ext, key, src[j]!, src[i]!, order) ? src[j++]! : src[i++]!;
+      }
+      while (i < mid) dst[w++] = src[i++]!;
+      while (j < hi) dst[w++] = src[j++]!;
+    }
+    const t = src;
+    src = dst;
+    dst = t;
+  }
+  if (src !== idx) idx.set(src.subarray(0, n));
+}
+
+/**
+ * `addStock` on explicit arrays and count (for the hot loops of stage A): appends the leftover when
+ * it is not empty and not smaller than (minW, minH); returns the new count.
+ */
+function pushStock(
+  sw: Float64Array,
+  sh: Float64Array,
+  sf: Uint8Array,
+  n: number,
+  wd: number,
+  ht: number,
+  flags: number,
+  minW: number,
+  minH: number,
+): number {
+  if (wd > EPS && ht > EPS && wd >= minW && ht >= minH) {
+    if (n >= sw.length) throw new RangeError('fast evaluator: stock buffer overflow');
+    sw[n] = wd;
+    sh[n] = ht;
+    sf[n] = flags;
+    return n + 1;
+  }
+  return n;
+}
+
 export interface FastEvaluatorOptions {
   weights?: EvalWeights;
 }
@@ -78,6 +157,31 @@ export function createFastEvaluator(
   const weights = opts.weights ?? defaultWeights(project.rules, project.settings);
   const segs = ctx.layout.segments;
   const nSeg = segs.length;
+
+  // `mod(x, L)` bit for bit, without the float `%` (a libm call) in the hot path. For |x| < L the
+  // first `%` of `mod` is the identity; beyond that and with an integer L, the truncated quotient is
+  // an exact integer, `q · L` is exact, and so is `x − q · L` when q is right (the fmod result is
+  // representable); a wrong q (off by one from rounding x / L) shows as a result out of range.
+  // The second `%` works on t = r + L ∈ [0, 2L], where it is t, t − L (exact) or 0.
+  const intL = Number.isInteger(L) && L > 0 && L < 2 ** 30;
+  const FMOD_LIMIT = 2 ** 40;
+  const modL = (x: number): number => {
+    let r = x;
+    if (!(x > -L && x < L)) {
+      if (!intL || !(x > -FMOD_LIMIT && x < FMOD_LIMIT)) return mod(x, L);
+      let q = Math.trunc(x / L);
+      r = x - q * L;
+      if (x >= 0 ? r < 0 : r > 0) {
+        q += x >= 0 ? -1 : 1;
+        r = x - q * L;
+      } else if (x >= 0 ? r >= L : r <= -L) {
+        q += x >= 0 ? 1 : -1;
+        r = x - q * L;
+      }
+    }
+    const t = r + L;
+    return t < L ? t : t < 2 * L ? t - L : 0;
+  };
 
   // ---- static per-segment data ------------------------------------------------------------
   const profiles = segs.map((s) => ctx.profiles[s.id]!);
@@ -195,6 +299,8 @@ export function createFastEvaluator(
   const tFast = Uint8Array.from(term.fast);
   const tDist = Float64Array.from(term.dist);
   const tVal = new Float64Array(nTerms);
+  /** ⌈|I| / L⌉ of the fast-path terms (the factor `seamPenaltyFast` recomputes each time). */
+  const tCeil = tLen.map((len) => Math.ceil(len / L));
   // Terms touching each segment (CSR): a changed segment refreshes exactly these.
   const termStart = new Int32Array(nSeg + 1);
   for (let k = 0; k < nTerms; k++) {
@@ -216,13 +322,19 @@ export function createFastEvaluator(
   /** Pieces of each segment live in a persistent slot and are regenerated only when φ_s changes. */
   const segPieces = new Int32Array(nSeg);
   const lastPhi = new Float64Array(nSeg).fill(NaN);
-  const dirty = new Uint8Array(nSeg);
+  /** Evaluation in which the slot's segment was last regenerated (all its slots, used or not). */
+  const pStamp = new Int32Array(pieceCap);
+  let evalGen = 0;
   const segWhole = new Int32Array(nSeg);
   /** Sum of the per-segment L_min deficits, re-added (in segment order) only when one changed. */
   let deficitTotal = 0;
   let deficitStale = true;
   /** 1 when the segment has pieces beyond whole boards and whole-width starts/ends (scanned each evaluation). */
   const special = new Uint8Array(nSeg);
+  /** Special segments in rank order, rebuilt when a flag changed. */
+  const specialList = new Int32Array(nSeg);
+  let nSpecial = 0;
+  let specialStale = true;
   const dirtyList = new Int32Array(nSeg);
   let nDirty = 0;
   let wholeTotal = 0;
@@ -523,8 +635,6 @@ export function createFastEvaluator(
     pClass[p] = cls;
   };
 
-  const cntPieces = pieceCap;
-
   const shortShortfall = (have: number): number => (minLen - have > EPS ? minLen - have : 0);
 
   let curDeficit = 0;
@@ -582,7 +692,7 @@ export function createFastEvaluator(
     wholeTotal -= segWhole[i]!;
     segWhole[i] = 0;
     if (rect[i] === 1) {
-      const r = mod(phi - ai, L);
+      const r = modL(phi - ai);
       let x = ai + (r > EPS ? r : L);
       let m = 0;
       while (x < bi - EPS) {
@@ -603,6 +713,7 @@ export function createFastEvaluator(
             addSimple(i, END, extEnd, ROLE_END);
             addSimple(i, START, extStart, ROLE_START);
             wholeTotal += segWhole[i]!;
+            if (special[i] !== 0) specialStale = true;
             special[i] = 0;
             if (segDeficit[i] !== curDeficit) deficitStale = true;
             segDeficit[i] = curDeficit;
@@ -643,6 +754,7 @@ export function createFastEvaluator(
       const c = pClass[pieceBase[i]! + k]!;
       if (c !== C_WHOLE && c !== C_FULL_A + 1 && c !== C_FULL_A + 2) sp = 1;
     }
+    if (special[i] !== sp) specialStale = true;
     special[i] = sp;
   };
 
@@ -698,12 +810,12 @@ export function createFastEvaluator(
       out[n++] = u;
     }
     const np = pairUp(ends, nEnds, starts, nStarts, pExt, pKey, C, pairEnd, pairStart);
-    paired.fill(0, 0, cntPieces);
+    pairedGen++;
     for (let i = 0; i < np; i++) {
       const e = pairEnd[i]!;
       const s = pairStart[i]!;
-      paired[e] = 1;
-      paired[s] = 1;
+      paired[e] = pairedGen;
+      paired[s] = pairedGen;
       const u = nUnits++;
       uWid[u] = Math.max(pWid[e]!, pWid[s]!);
       uKey[u] = pKey[e]!;
@@ -714,7 +826,7 @@ export function createFastEvaluator(
     }
     for (let i = 0; i < nStarts; i++) {
       const p = starts[i]!;
-      if (paired[p] === 1) continue;
+      if (paired[p] === pairedGen) continue;
       const u = nUnits++;
       uWid[u] = pWid[p]!;
       uKey[u] = pKey[p]!;
@@ -725,7 +837,7 @@ export function createFastEvaluator(
     }
     for (let i = 0; i < nEnds; i++) {
       const p = ends[i]!;
-      if (paired[p] === 1) continue;
+      if (paired[p] === pairedGen) continue;
       const u = nUnits++;
       uWid[u] = pWid[p]!;
       uKey[u] = pKey[p]!;
@@ -752,69 +864,80 @@ export function createFastEvaluator(
   // sorted and refreshing them costs O(n) instead of a sort.
   const sortedE = new Int32Array(pieceCap);
   const sortedS = new Int32Array(pieceCap);
+  /**
+   * By segment rank: the slot of the segment's stage A end / start piece, −1 if none (a segment has
+   * at most one start and one end piece), so scanning the ranks gives them in id order.
+   */
+  const aEndByRank = new Int32Array(nSeg).fill(-1);
+  const aStartByRank = new Int32Array(nSeg).fill(-1);
   let nSortedE = 0;
   let nSortedS = 0;
 
-  /** `desc`: longer first, ties by larger key; else shorter first, ties by smaller key. */
-  const comesBefore = (u: number, v: number, desc: boolean): boolean => {
-    const lu = pExt[u]!;
-    const lv = pExt[v]!;
-    if (lu !== lv) return desc ? lu > lv : lu < lv;
-    return desc ? pKey[u]! > pKey[v]! : pKey[u]! < pKey[v]!;
-  };
+  const fresh = new Int32Array(pieceCap);
+  const freshTmp = new Int32Array(pieceCap);
 
-  /** Drops the pieces of changed segments and inserts their new pieces of class `cls`. */
-  const refreshSorted = (sorted: Int32Array, prevN: number, cls: number, desc: boolean): number => {
-    let m = 0;
+  /**
+   * Drops the pieces of changed segments and inserts their new pieces (`byRank`): the new
+   * pieces are sorted on their own, then merged with the kept (sorted) ones from the back, in
+   * place. `comesBefore` is a strict total order (keys are unique), so the result is the same as
+   * sorting everything.
+   */
+  const refreshSorted = (
+    sorted: Int32Array,
+    prevN: number,
+    byRank: Int32Array,
+    order: number,
+  ): number => {
+    // Captured arrays and counters are read into locals: when several evaluators exist, V8 no
+    // longer specialises the closures to their context, and loads in loops are not hoisted.
+    const gen = evalGen;
+    const stamp = pStamp;
+    const ext = pExt;
+    const key = pKey;
+    const fr = fresh;
+    let kept = 0;
     for (let i = 0; i < prevN; i++) {
       const q = sorted[i]!;
-      if (dirty[pSeg[q]!] === 0) sorted[m++] = q;
+      if (stamp[q] !== gen) sorted[kept++] = q;
     }
-    const kept = m;
+    // The new pieces: at most one per changed segment (its stage A end or start piece).
+    let k = 0;
+    const dl = dirtyList;
+    const rank = segRank;
     for (let d = 0; d < nDirty; d++) {
-      const seg = dirtyList[d]!;
-      const end = pieceBase[seg]! + segPieces[seg]!;
-      for (let p = pieceBase[seg]!; p < end; p++) if (pClass[p] === cls) sorted[m++] = p;
+      const p = byRank[rank[dl[d]!]!]!;
+      if (p >= 0) fr[k++] = p;
     }
-    for (let i = kept; i < m; i++) {
-      // Binary search for the place in the already sorted prefix, then shift with one memmove.
-      const v = sorted[i]!;
+    if (k <= 16) {
+      for (let i = 1; i < k; i++) {
+        const v = fr[i]!;
+        let j = i - 1;
+        while (j >= 0 && comesBefore(ext, key, v, fr[j]!, order)) {
+          fr[j + 1] = fr[j]!;
+          j--;
+        }
+        fr[j + 1] = v;
+      }
+    } else mergeSort(fr, freshTmp, k, ext, key, order);
+    // Merge from the back: the place of each new piece among the kept ones by binary search (few
+    // comparisons, the kept pieces between two places are only shifted).
+    const m = kept + k;
+    let hiKept = kept; // kept pieces [0, hiKept) are not placed yet
+    let w = m;
+    for (let j = k - 1; j >= 0; j--) {
+      const v = fr[j]!;
       let lo = 0;
-      let hi = i;
+      let hi = hiKept;
       while (lo < hi) {
         const mid = (lo + hi) >>> 1;
-        if (comesBefore(sorted[mid]!, v, desc)) lo = mid + 1;
+        if (comesBefore(ext, key, sorted[mid]!, v, order)) lo = mid + 1;
         else hi = mid;
       }
-      if (lo < i) {
-        sorted.copyWithin(lo + 1, lo, i);
-        sorted[lo] = v;
-      }
+      for (let i = hiKept - 1; i >= lo; i--) sorted[--w] = sorted[i]!;
+      sorted[--w] = v;
+      hiKept = lo;
     }
     return m;
-  };
-
-  /** Two-pointer maximum pairing of sorted ends and starts (see `pairUp`). */
-  const pairSorted = (
-    ends: Int32Array,
-    nE: number,
-    starts: Int32Array,
-    nS: number,
-    cap: number,
-    outEnd: Int32Array,
-    outStart: Int32Array,
-  ): number => {
-    let j = 0;
-    let n = 0;
-    for (let i = 0; i < nE; i++) {
-      if (j < nS && pExt[ends[i]!]! + pExt[starts[j]!]! <= cap + EPS) {
-        outEnd[n] = ends[i]!;
-        outStart[n] = starts[j]!;
-        n++;
-        j++;
-      }
-    }
-    return n;
   };
 
   // ---- decoder (port of `decode`) ---------------------------------------------------------
@@ -850,65 +973,127 @@ export function createFastEvaluator(
       minStockH = mh - EPS;
     }
     // Stage A: whole-width pieces. Whole boards were counted when the pieces were generated.
+    // (Hot loops read the captured arrays through locals, see `refreshSorted`.)
+    const ext = pExt;
+    const wid = pWid;
+    const mark = paired;
+    const sE = sortedE;
+    const sS = sortedS;
+    const pE = pairEnd;
+    const pS = pairStart;
+    const kf = kerf;
+    const mw = minStockW;
+    const mh = minStockH;
+    const stW = sw;
+    const stH = sh;
+    const stF = sf;
+    let n = ns;
     boards += wholeTotal;
-    for (let i = 0; i < cnt.fullA; i++) {
+    const nFullA = cnt.fullA;
+    for (let i = 0; i < nFullA; i++) {
       const p = lFullA[i]!;
-      boards++;
       // Leftover of a short whole-width piece: to its right, with the original right end.
-      if (stockA) addStock(L - (pExt[p]! + kerf), pWid[p]!, F_RIGHT | F_LOW | F_HIGH);
+      if (stockA)
+        n = pushStock(
+          stW,
+          stH,
+          stF,
+          n,
+          L - (ext[p]! + kf),
+          wid[p]!,
+          F_RIGHT | F_LOW | F_HIGH,
+          mw,
+          mh,
+        );
     }
-    nSortedE = refreshSorted(sortedE, nSortedE, C_FULL_A + 1, true);
-    nSortedS = refreshSorted(sortedS, nSortedS, C_FULL_A + 2, false);
-    const nPairsA = pairSorted(sortedE, nSortedE, sortedS, nSortedS, C, pairEnd, pairStart);
-    pairedGen++;
-    for (let i = 0; i < nPairsA; i++) {
-      const e = pairEnd[i]!;
-      const s = pairStart[i]!;
-      paired[e] = pairedGen;
-      paired[s] = pairedGen;
-      boards++;
-      // Between the two parts of a pair (only when e + s + k < L).
-      if (stockA) {
-        addStock(
-          L - pExt[s]! - kerf - (pExt[e]! + kerf),
-          Math.max(pWid[e]!, pWid[s]!),
+    boards += nFullA;
+    nSortedE = refreshSorted(sE, nSortedE, aEndByRank, BY_LEN_DESC);
+    nSortedS = refreshSorted(sS, nSortedS, aStartByRank, BY_LEN_ASC);
+    // Two-pointer maximum pairing (ALGORITHM §4.1) of the sorted ends and starts (see `pairUp`).
+    let nPairsA = 0;
+    let js = 0;
+    const gen = ++pairedGen;
+    const nE = nSortedE;
+    const nS = nSortedS;
+    const capA = C + EPS;
+    for (let i = 0; i < nE && js < nS; i++) {
+      const e = sE[i]!;
+      const s = sS[js]!;
+      if (ext[e]! + ext[s]! <= capA) {
+        pE[nPairsA] = e;
+        pS[nPairsA] = s;
+        mark[e] = gen;
+        mark[s] = gen;
+        nPairsA++;
+        js++;
+      }
+    }
+    // Unpaired starts, then ends, each in id order (the order in which the reference makes boards).
+    let nUS = 0;
+    let minUS = Infinity;
+    const uS = unpStart;
+    const lS = aStartByRank;
+    for (let r = 0; r < nSeg; r++) {
+      const s = lS[r]!;
+      if (s < 0 || mark[s] === gen) continue;
+      uS[nUS++] = s;
+      if (ext[s]! < minUS) minUS = ext[s]!;
+    }
+    let nUE = 0;
+    let minUE = Infinity;
+    const uE = unpEnd;
+    const lE = aEndByRank;
+    for (let r = 0; r < nSeg; r++) {
+      const e = lE[r]!;
+      if (e < 0 || mark[e] === gen) continue;
+      uE[nUE++] = e;
+      if (ext[e]! < minUE) minUE = ext[e]!;
+    }
+    nUnpStart = nUS;
+    minUnpStart = minUS;
+    nUnpEnd = nUE;
+    minUnpEnd = minUE;
+    boards += nPairsA + nUS + nUE;
+    if (stockA) {
+      for (let i = 0; i < nPairsA; i++) {
+        const e = pE[i]!;
+        const s = pS[i]!;
+        // Between the two parts of a pair (only when e + s + k < L).
+        const w = Math.max(wid[e]!, wid[s]!);
+        n = pushStock(
+          stW,
+          stH,
+          stF,
+          n,
+          L - ext[s]! - kf - (ext[e]! + kf),
+          w,
           F_LOW | F_HIGH,
+          mw,
+          mh,
+        );
+      }
+      for (let i = 0; i < nUS; i++) {
+        const p = uS[i]!;
+        // Left part of the board of a lone start piece: original left end.
+        n = pushStock(stW, stH, stF, n, L - ext[p]! - kf, wid[p]!, F_LEFT | F_LOW | F_HIGH, mw, mh);
+      }
+      for (let i = 0; i < nUE; i++) {
+        const p = uE[i]!;
+        // Right part of the board of a lone end piece: original right end.
+        n = pushStock(
+          stW,
+          stH,
+          stF,
+          n,
+          L - (ext[p]! + kf),
+          wid[p]!,
+          F_RIGHT | F_LOW | F_HIGH,
+          mw,
+          mh,
         );
       }
     }
-    // Unpaired starts, then ends, each in id order (the order in which the reference makes boards):
-    // one pass over the pieces in id order, no sorting.
-    nUnpStart = 0;
-    nUnpEnd = 0;
-    minUnpEnd = Infinity;
-    minUnpStart = Infinity;
-    for (let r = 0; r < nSeg; r++) {
-      const seg = segOrder[r]!;
-      const end = pieceBase[seg]! + segPieces[seg]!;
-      for (let p = pieceBase[seg]!; p < end; p++) {
-        if (paired[p] === pairedGen) continue;
-        const cls = pClass[p];
-        if (cls === C_FULL_A + 2) {
-          unpStart[nUnpStart++] = p;
-          if (pExt[p]! < minUnpStart) minUnpStart = pExt[p]!;
-        } else if (cls === C_FULL_A + 1) {
-          unpEnd[nUnpEnd++] = p;
-          if (pExt[p]! < minUnpEnd) minUnpEnd = pExt[p]!;
-        }
-      }
-    }
-    for (let i = 0; i < nUnpStart; i++) {
-      const p = unpStart[i]!;
-      boards++;
-      // Left part of the board of a lone start piece: original left end.
-      if (stockA) addStock(L - pExt[p]! - kerf, pWid[p]!, F_LEFT | F_LOW | F_HIGH);
-    }
-    for (let i = 0; i < nUnpEnd; i++) {
-      const p = unpEnd[i]!;
-      boards++;
-      // Right part of the board of a lone end piece: original right end.
-      if (stockA) addStock(L - (pExt[p]! + kerf), pWid[p]!, F_RIGHT | F_LOW | F_HIGH);
-    }
+    ns = n;
 
     // B.3: strip pieces into the leftovers of stage A.
     let nStrip = 0;
@@ -1026,25 +1211,47 @@ export function createFastEvaluator(
         throw new RangeError(`phi has ${phi.length} entries for ${nSeg} segments`);
       }
       // Regenerate the pieces of the segments whose phase changed; the rest is reused.
-      nDirty = 0;
+      // (Hot loops read the captured arrays through locals, see `refreshSorted`.)
+      const gen = ++evalGen;
+      const last = lastPhi;
+      const dl = dirtyList;
+      const stamp = pStamp;
+      let nd = 0;
       for (let i = 0; i < nSeg; i++) {
         const v = phi[i]!;
-        if (v !== lastPhi[i]) {
+        if (v !== last[i]) {
+          const base = pieceBase[i]!;
+          for (let p = base + maxSeams[i]! + 1; p >= base; p--) stamp[p] = gen;
           generate(i, v);
-          lastPhi[i] = v;
-          dirty[i] = 1;
-          dirtyList[nDirty++] = i;
-        } else {
-          dirty[i] = 0;
+          let aEnd = -1;
+          let aStart = -1;
+          for (let p = base, end = base + segPieces[i]!; p < end; p++) {
+            const c = pClass[p];
+            if (c === C_FULL_A + 1) aEnd = p;
+            else if (c === C_FULL_A + 2) aStart = p;
+          }
+          aEndByRank[segRank[i]!] = aEnd;
+          aStartByRank[segRank[i]!] = aStart;
+          last[i] = v;
+          dl[nd++] = i;
         }
       }
-      // Class lists in sorted-id order (segments by label rank, pieces in slot order).
+      nDirty = nd;
+      if (specialStale) {
+        nSpecial = 0;
+        for (let r = 0; r < nSeg; r++) {
+          const i = segOrder[r]!;
+          if (special[i] !== 0) specialList[nSpecial++] = i;
+        }
+        specialStale = false;
+      }
+      // Class lists in sorted-id order (segments by label rank, pieces in slot order). Segments that
+      // are not special have only whole boards and whole-width starts/ends: nothing to list.
       cnt.free = cnt.fullA = 0;
       cnt.lowFull = cnt.lowEnds = cnt.lowStarts = 0;
       cnt.highFull = cnt.highEnds = cnt.highStarts = 0;
-      for (let r = 0; r < nSeg; r++) {
-        const i = segOrder[r]!;
-        if (special[i] === 0) continue; // only whole boards and whole-width starts/ends
+      for (let r = 0; r < nSpecial; r++) {
+        const i = specialList[r]!;
         const end = pieceBase[i]! + segPieces[i]!;
         for (let p = pieceBase[i]!; p < end; p++) {
           switch (pClass[p]) {
@@ -1081,21 +1288,34 @@ export function createFastEvaluator(
       }
       const B = decode();
 
-      for (let i = 0; i < nSeg; i++) {
-        if (dirty[i] === 0) continue;
-        for (let q = termStart[i]!; q < termStart[i + 1]!; q++) {
-          const k = termList[q]!;
-          tVal[k] =
-            tFast[k] === 1
-              ? seamPenaltyFast(tLen[k]!, L, phi[tA[k]!]!, phi[tB[k]!]!, D)
-              : seamPen(tA[k]!, tB[k]!, tLo[k]!, tHi[k]!, tDist[k]!);
+      const val = tVal;
+      const ta = tA;
+      const tb = tB;
+      const fastTerm = tFast;
+      const ceil = tCeil;
+      const ts = termStart;
+      const tl = termList;
+      for (let j = 0; j < nd; j++) {
+        const i = dl[j]!;
+        for (let q = ts[i]!, qEnd = ts[i + 1]!; q < qEnd; q++) {
+          const k = tl[q]!;
+          if (fastTerm[k] === 1) {
+            // `seamPenaltyFast` with `circDist` spelled out over `modL` (same operations).
+            if (!(D > 0)) val[k] = 0;
+            else {
+              const d = modL(phi[ta[k]!]! - phi[tb[k]!]!);
+              val[k] = ceil[k]! * (Math.max(0, D - Math.min(d, L - d)) / D);
+            }
+          } else val[k] = seamPen(ta[k]!, tb[k]!, tLo[k]!, tHi[k]!, tDist[k]!);
         }
       }
       // Sums in the order of the reference (links, then second-order pairs).
       let V = 0;
       let H = 0;
-      for (let k = 0; k < vTerms; k++) V += tVal[k]!;
-      for (let k = vTerms; k < nTerms; k++) H += tVal[k]!;
+      const nV = vTerms;
+      const nT = nTerms;
+      for (let k = 0; k < nV; k++) V += val[k]!;
+      for (let k = nV; k < nT; k++) H += val[k]!;
       const R = weights.lambdaR > 0 ? regularityPenalty(ctx, phi, weights.regularityDistance) : 0;
 
       let N = 0;
@@ -1124,8 +1344,9 @@ export function createFastEvaluator(
     },
     unpaired(): UnpairedInfo {
       const toList = (idx: Int32Array, n: number): UnpairedList => {
-        const segment = new Int32Array(n);
-        const len = new Float64Array(n);
+        // Plain arrays: a snapshot is taken per accepted SA move, and typed arrays are costly to allocate.
+        const segment = new Array<number>(n);
+        const len = new Array<number>(n);
         for (let k = 0; k < n; k++) {
           segment[k] = pSeg[idx[k]!]!;
           len[k] = pExt[idx[k]!]!;

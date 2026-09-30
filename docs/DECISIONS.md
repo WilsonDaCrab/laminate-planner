@@ -235,10 +235,10 @@ Bāzes metodes optimumu neatrod nevienā instancē (starpība 1–3 dēļi); tā
 **Izdarītie lēmumi.**
 
 - M4 papildināts ar slēgtu pāru ciklu meklēšanu un noklusējuma gājienu svariem M4 = 0,60 (sk. `ALGORITHM.md` §6, `SPEC_MOVE_WEIGHTS` paliek salīdzināšanai). Režģis: `pnpm bench tune` (`TUNING_CONFIGS`).
-- Temperatūras kalibrācija: T₀ = −median(Δ⁺)/ln p₀, **neņemot vērā gājienus, kas palielina V**. Sods λ_V·V nav dēļu skaita solis un uzpūš T₀ (L1, p₀ = 0,8: T₀ ≈ 27; R2 ≈ 26; P4 ≈ 28 — t.i., +1 dēli tika pieņemts gandrīz vienmēr). Ja tādu gājienu ir < 10, kalibrē pēc visiem.
+- Temperatūras kalibrācija: T₀ = −median(Δ⁺)/ln p₀, **neņemot vērā gājienus, kas palielina V**. Sods λ_V·V nav dēļu skaita solis un uzpūš T₀ (L1, p₀ = 0,8: T₀ ≈ 27; R2 ≈ 26; P4 ≈ 28 — t.i., +1 dēli tika pieņemts gandrīz vienmēr). Ja tādu gājienu ir < 10, kalibrē pēc visiem. Pēc labojuma (p₀ = 0,8, 1 sēkla): L1 T₀ ≈ 2,7, R2 ≈ 4,2, P4 ≈ 2,9.
 - **P1–P4 netiek mainītas.** Instanču atvieglošana pēc rezultāta uzzināšanas apietu CLAUDE.md 6. noteikuma jēgu. Grūtības skala tiks mērīta F6 kā atsevišķa sērija (tās pašas instances ar augošu rindu skaitu).
 
-**Rezultāts ar galīgo kodu (T₀ labojums iekšā).** Komandas: `pnpm bench compare instances --seeds 20 --iters 200000` un `pnpm bench planted --seeds 20 --iters 200000`; izvads `results/f5/`. Vidējais B pa 20 sēklām (RS nevienā instancē netiek līdz derīgam atrisinājumam katrā sēklā):
+**Rezultāts ar galīgo kodu (T₀ labojums iekšā).** Komandas: `pnpm bench compare instances --seeds 20 --iters 200000` un `pnpm bench planted --seeds 20 --iters 200000`; izvads `results/f5/`. Vidējais B pa 20 sēklām (RS nevienā instancē, izņemot S2, netiek līdz derīgam atrisinājumam katrā sēklā):
 
 | instance | LB | B-INST | HC | SA |
 |---|---|---|---|---|
@@ -259,7 +259,7 @@ Plantētās (SA, 20 sēklas, 200 000 nov.): P1 **20/20**, P2 **1/20** (5 %), P3 
 
 Pirms T₀ labojuma (vecā kalibrācija) tas pats `compare` deva tādus pašus zaudējumus L1 un P4 un papildus R2 (HC 83,00 / SA 83,20); P2 bija 88,65 pret 88,95 — atšķirības ir trokšņa līmenī (20 sēklas, nav zīmju testa).
 
-**Kritēriju statuss.** (a) **nav izpildīts**: SA zaudē HC 2 instancēs no 12 — L1 (+0,35 dēļa) un P4 (+0,95); visās pārējās ir ≤ (neizšķirts vai labāks). (b) **nav izpildīts**: 100 % / 5 % / 0 % / 0 % pret prasītajiem 90 %. Hipotēze: optimums prasa vienlaikus saskaņot visus dēļu pārus, un M4 slēgšana labo tikai vietējus ciklus; grūtība aug ļoti strauji ar rindu skaitu (P1 14 → P4 42). (c) ≥ 100 000 nov./s (102–103k) un (d) determinisms ir izpildīti.
+**Kritēriju statuss.** (a) **nav izpildīts**: SA zaudē HC 2 instancēs no 12 — L1 (+0,35 dēļa) un P4 (+0,95); visās pārējās ir ≤ (neizšķirts vai labāks). (b) **nav izpildīts**: 100 % / 5 % / 0 % / 0 % pret prasītajiem 90 %. Hipotēze: optimums prasa vienlaikus saskaņot visus dēļu pārus, un M4 slēgšana labo tikai vietējus ciklus; grūtība aug ļoti strauji ar rindu skaitu (P1 14 → P4 42). (c) ≥ 100 000 nov./s ir izpildīts ar rezervi: pēc `fast.ts` optimizācijas `tall-60` 134–147k/s (`pnpm bench perf`, `results/f5/perf.txt`; pirms tam 84–103k atkarībā no mašīnas stāvokļa un no tā, cik novērtētāju eksemplāru bija izveidots procesā — V8 pārstāj piesaistīt slēgumus, tāpēc karstajās cilpās masīvi tiek nolasīti lokālajos mainīgajos); (d) determinisms ir izpildīts (SA trajektorija nemainījās).
 
 **Parametru režģis** (`pnpm bench tune --seeds 10 --iters 100000`, galīgais kods; vidējais B un [optimuma atrašanas reizes] plantētajām; `results/f5/tune.txt`):
 

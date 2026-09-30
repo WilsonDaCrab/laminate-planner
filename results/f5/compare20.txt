@@ -14,9 +14,3 @@ R2         81         91.00      86.00      -          83.00      83.00      yes
 S1         50         53.00      52.00      53.33*     51.00      51.00      yes       
 S2         34         40.00      37.00      38.20      37.00      37.00      yes       
 criterion: SA <= every baseline on every instance: NOT MET (2 instances)
-[ELIFECYCLE] Command failed with exit code 1.
-Error: [31mERR_PNPM_RECURSIVE_RUN_FIRST_FAIL[0m
-
-  [31m×[0m "pnpm recursive run" failed in D:\laminate-planner\packages\bench
-
-[ELIFECYCLE] Command failed with exit code 1.

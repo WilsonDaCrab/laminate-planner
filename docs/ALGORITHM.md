@@ -267,7 +267,7 @@ SA(inst, cfg, rng, clock):
 | iterāciju budžets (eksperimenti) | 200 000 |
 | gājienu varbūtības | §6 |
 
-**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−median(Δ⁺)/ln p₀, T_end)` (Δ⁺ bez V palielinošiem gājieniem, sk. §6); τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Pārkarsēšana (`reheat`) ir realizēta, bet pēc noklusējuma izslēgta. Novērtētājs: `precut` režīmā tipizēto masīvu versija (§14), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
+**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−median(Δ⁺)/ln p₀, T_end)` (Δ⁺ bez V palielinošiem gājieniem, sk. §7 `calibrate`); τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Pārkarsēšana (`reheat`) ir realizēta, bet pēc noklusējuma izslēgta. Novērtētājs: `precut` režīmā tipizēto masīvu versija (§14), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
 
 ## 8. Ārējā cilpa (θ, sākuma puse, y0)
 
@@ -277,7 +277,7 @@ SA(inst, cfg, rng, clock):
    - Ja neviens y0 neder, ņem to ar mazāko pārkāpumu skaitu un izdod brīdinājumu (G12).
    - Ja skenēšana ir lēna, pārbauda tikai kritiskos y0 (kur kāds strēmeles platums sasniedz 0 vai w_min) un rupju režģi.
 3. **Ātrs vērtējums:** LB1(y0) un B-INST rezultāts. Kārto pēc (B-INST, LB1, pirmās un pēdējās rindas līdzsvara |a − b|).
-4. **SA top-K** (K = 3) katrai konfigurācijai; laika budžetu sadala proporcionāli.
+4. **SA top-K** (K = 3) katrai konfigurācijai; no laika budžeta vispirms atskaita atlases laiku (vismaz 1 ms paliek SA), atlikumu sadala vienādi.
 5. **Rezultāts:** labākais kopumā un salīdzinājuma tabula pa konfigurācijām (UI to rāda kā virzienu salīdzinājumu).
 
 **Realizācija (F5).** `runOuter`: konfigurācijas — `angleDeg = 'auto'` dod taisno sienu (≥ 1000 mm) virzienus mod 180°, katru ar θ un θ + 180°, `stackSide = 'auto'` dod {left, right}; fiksēti iestatījumi (arī `rowOffset`) tiek respektēti. y0 filtrs ir analītisks (`y0Violations`): horizontālo malu augstumi rindu koordinātās uz Clipper režģa, pārkāpums = josla šaurāka par `w_min` (tests salīdzina ar joslu skenēšanu). Ja derīga y0 nav, ņem nobīdes ar mazāko pārkāpumu skaitu (`relaxed`). Skrīninga kandidāti ≤ 24 uz konfigurāciju (derīgo skrējienu gali + vienmērīgs tīkls), kārtoti pēc (derīgums, B-INST, LB1, y0); SA top-K katrai (θ, pusei); kopējais budžets tiek sadalīts vienādi starp SA palaidieniem.

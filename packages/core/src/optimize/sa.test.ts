@@ -73,6 +73,8 @@ describe('runSa behaviour', () => {
     const a = t0(0.8);
     const b = t0(0.2);
     expect(b / a).toBeCloseTo(Math.log(0.8) / Math.log(0.2), 6);
+    // With the V-raising moves in the median T0 was ≈ 26 on R2; without them it is a board step.
+    expect(a).toBeLessThan(10);
   });
 
   it('follows the same trajectory with the fast and the reference evaluator', () => {

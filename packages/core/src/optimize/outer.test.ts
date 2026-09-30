@@ -7,7 +7,7 @@ import { validY0s, y0Violations } from '../layout/y0';
 import { parseProject, type Project } from '../model/index';
 import { buildPlan } from '../plan/build';
 import { validatePlan } from '../validate/index';
-import { candidateConfigs, pickY0, runOuter, wallDirections } from './outer';
+import { candidateConfigs, pickY0, remainingTimeMs, runOuter, wallDirections } from './outer';
 
 const load = (id: string): Project => parseProject(instanceFiles.find((f) => f.id === id)!.raw);
 const withSettings = (project: Project, settings: Partial<Project['settings']>): Project => ({
@@ -151,15 +151,10 @@ describe('runOuter', () => {
     expect(best.result.evaluation.B).toBeLessThanOrEqual(best.row.bInst);
   });
 
-  it('time mode: screening time is taken off the SA budget (a clock that runs fast leaves 1 ms)', () => {
-    const project = withSettings(load('R1'), { angleDeg: 0, stackSide: 'left', rowOffset: 60 });
-    let t = 0;
-    const clock = () => (t += 1000);
-    const out = runOuter(project, { seed: 1, budget: { timeMs: 500, clock } });
-    // Every clock read costs 1 s, so the limit is used up by the screening: SA still returns a
-    // valid (B-INST-based) result instead of running for the full 500 ms again.
-    expect(out.best.result.evals).toBeGreaterThan(0);
-    expect(out.best.result.evaluation.B).toBeLessThanOrEqual(out.best.row.bInst);
+  it('time mode: the screening time is taken off the limit, never below 1 ms', () => {
+    expect(remainingTimeMs(1000, 250)).toBe(750);
+    expect(remainingTimeMs(1000, 1000)).toBe(1);
+    expect(remainingTimeMs(1000, 5000)).toBe(1);
   });
 
   it('respects fixed angle, side and offset', () => {

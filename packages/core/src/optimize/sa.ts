@@ -231,7 +231,13 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
     sinceBest++;
     if (evals % step === 0) sample();
 
-    if (cfg.reheat && total && budget.allows(evals) && sinceBest > REHEAT_FRACTION * total && tau < 0.95) {
+    if (
+      cfg.reheat &&
+      total &&
+      budget.allows(evals) &&
+      sinceBest > REHEAT_FRACTION * total &&
+      tau < 0.95
+    ) {
       // Continue from the best solution with a lower T₀ (ALGORITHM §7, optional).
       phi.splice(0, phi.length, ...best.phi!);
       cur = evaluator.evaluate(phi);

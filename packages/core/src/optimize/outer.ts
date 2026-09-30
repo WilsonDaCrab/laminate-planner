@@ -118,6 +118,11 @@ const rank = (a: ConfigRow, b: ConfigRow): number =>
   a.lb - b.lb ||
   a.y0 - b.y0;
 
+/** What is left of a time limit after `elapsedMs` of screening; SA always gets at least 1 ms. */
+export function remainingTimeMs(limitMs: number, elapsedMs: number): number {
+  return Math.max(1, limitMs - elapsedMs);
+}
+
 export function runOuter(project: Project, opts: OuterOptions = {}): OuterResult {
   const room = opts.roomId ? project.rooms.find((r) => r.id === opts.roomId) : project.rooms[0];
   if (!room) throw new RangeError('runOuter: no such room');
@@ -185,7 +190,7 @@ export function runOuter(project: Project, opts: OuterOptions = {}): OuterResult
   const timeMs =
     opts.budget?.timeMs === undefined || !clock
       ? opts.budget?.timeMs
-      : Math.max(1, opts.budget.timeMs - (clock() - screenStart));
+      : remainingTimeMs(opts.budget.timeMs, clock() - screenStart);
   const share = (x: number | undefined): number | undefined =>
     x === undefined ? undefined : Math.max(1, Math.floor(x / Math.max(1, chosen.length)));
   let best: OuterResult['best'] | undefined;
