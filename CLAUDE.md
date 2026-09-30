@@ -58,12 +58,18 @@ pnpm bench run instances/rect/R2.json --method hc --seed 1 --iters 20000 --svg  
 pnpm bench validate results/f4/R2-hc-s1.json
 pnpm bench lb instances/lshape/L1.json
 pnpm bench baselines instances          # tabula: visas metodes × visas instances
+pnpm bench run instances/rect/R2.json --method sa --seed 1 --iters 200000 --svg   # sa | sa-onsite
+pnpm bench outer instances/rect/R2.json --iters 30000    # θ, sākuma siena un y0, SA labākajiem
+pnpm bench compare instances --seeds 5 --iters 200000    # RS, HC, SA pret B-NEXT/B-INST (F5 kritērijs)
+pnpm bench planted --seeds 20 --iters 200000              # cik sēklu atrod plantēto optimumu
+pnpm bench tune                                           # SA parametru režģis (ADR-016)
+pnpm bench perf                                           # novērtējumi/s (F5 kritērijs: ≥ 100 000 pie 60 segmentiem)
+pnpm bench generate planted --preset P1                   # plantētā instance ar zināmu optimumu
 ```
 
 Vēl nav (parādīsies vēlāk):
 
 ```bash
-pnpm bench run instances/rect/R2.json --method sa --seed 1 --time 2000 --svg   # F5+
 pnpm bench all                # visi eksperimenti → results/*.csv (F6)
 ```
 

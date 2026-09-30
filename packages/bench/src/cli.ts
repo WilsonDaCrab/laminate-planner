@@ -13,10 +13,20 @@ import {
   rowConfigFromSettings,
   saveProject,
   runMethod,
+  runOuter,
   validatePlan,
   type Method,
+  type PlanContext,
   type Project,
+  type SearchResult,
 } from '@lp/core';
+import {
+  COMPARE_METHODS,
+  measureMethod,
+  TUNING_CONFIGS,
+  tuneOne,
+  type MethodStats,
+} from './experiments';
 import { generatePlanted, PLANTED_PRESETS } from './generate/planted';
 import { measure, PERF_SEGMENTS, PERF_TARGET, tallRoom } from './perf';
 import { parseRunResult, RESULT_VERSION, type RunResult } from './result';
@@ -35,11 +45,17 @@ const USAGE = `lp-bench <command>
   lb <instance.json> [--y0 mm]    lower bounds LB0, LB1
   generate planted (--preset P1..P4 | --n N --m M --seed S) [--base instance.json] [--out file]
                                   planted staircase room with known optimum
+  outer <instance.json> [--iters N] [--time ms] [--topk K] [--maxy0 N] [--seed N] [--out dir] [--svg]
+                                  outer loop: direction, starting wall and row offset, SA on the best
   perf [path...] [--evals N] [--rows N]
                                   evaluations per second (reference, typed-array, SA-like) and the
                                   F5 criterion on a rectangular room of --rows (default 60) rows
   planted [path...] [--method sa|hc|rs] [--seeds N] [--iters N]
                                   share of seeds that reach the known optimum of planted instances
+  compare [path...] [--seeds N] [--iters N]
+                                  RS, HC, SA against B-NEXT and B-INST, mean over seeds (F5 criterion)
+  tune [path...] [--seeds N] [--iters N]
+                                  SA parameter grid (move probabilities, closure, p0)
   baselines [path...] [--iters N] [--seed N]
                                   table of all methods over instance files or directories
 `;
@@ -81,6 +97,56 @@ function collectInstances(paths: readonly string[]): string[] {
 
 const fixed = (x: number, digits = 1): string => x.toFixed(digits);
 
+interface RecordInput {
+  id: string;
+  method: RunResult['method'];
+  seed: number;
+  iters: number | null;
+  timeMs: number | null;
+  project: Project;
+  ctx: PlanContext;
+  y0: number;
+  result: SearchResult;
+  ms: number;
+}
+
+/** The self-contained JSON of one run: statistics, phases, project and the plan built from them. */
+function makeRecord(input: RecordInput): RunResult {
+  const { ctx, result } = input;
+  const plan = buildPlan(ctx, result.phi, { mode: result.mode });
+  const bounds = lowerBounds(ctx);
+  const ev = result.evaluation;
+  return {
+    version: RESULT_VERSION,
+    instance: input.id,
+    method: input.method,
+    seed: input.seed,
+    iters: input.iters,
+    timeMs: input.timeMs,
+    y0: input.y0,
+    mode: result.mode,
+    phi: result.phi,
+    stats: {
+      B: ev.B,
+      lb0: bounds.lb0,
+      lb1: bounds.lb1,
+      gap: ev.B - bounds.lb,
+      V: ev.V,
+      H: ev.H,
+      N: ev.N,
+      feasible: ev.feasible,
+      lengthDeficit: ev.lengthDeficit,
+      evals: result.evals,
+      ms: input.ms,
+      provenOptimal: result.provenOptimal,
+      trace: result.trace,
+    },
+    search: isSaResult(result) ? { stats: result.stats, curve: result.curve } : undefined,
+    project: input.project,
+    plan,
+  };
+}
+
 function runCommand(args: string[], log: (line: string) => void): number {
   const { values, positionals } = parseArgs({
     args,
@@ -113,39 +179,22 @@ function runCommand(args: string[], log: (line: string) => void): number {
   const { ctx, y0: usedY0, result } = runMethod(project, method, { seed, budget, y0 });
   const ms = performance.now() - t0;
 
-  const plan = buildPlan(ctx, result.phi, { mode: result.mode });
-  const bounds = lowerBounds(ctx);
-  const ev = result.evaluation;
   const id = instanceId(file);
-  const record: RunResult = {
-    version: RESULT_VERSION,
-    instance: id,
+  const record = makeRecord({
+    id,
     method,
     seed,
     iters: budget.iters ?? null,
     timeMs: timeMs ?? null,
-    y0: usedY0,
-    mode: result.mode,
-    phi: result.phi,
-    stats: {
-      B: ev.B,
-      lb0: bounds.lb0,
-      lb1: bounds.lb1,
-      gap: ev.B - bounds.lb,
-      V: ev.V,
-      H: ev.H,
-      N: ev.N,
-      feasible: ev.feasible,
-      lengthDeficit: ev.lengthDeficit,
-      evals: result.evals,
-      ms,
-      provenOptimal: result.provenOptimal,
-      trace: result.trace,
-    },
-    search: isSaResult(result) ? { stats: result.stats, curve: result.curve } : undefined,
     project,
-    plan,
-  };
+    ctx,
+    y0: usedY0,
+    result,
+    ms,
+  });
+  const plan = record.plan;
+  const bounds = { lb: Math.max(record.stats.lb0, record.stats.lb1) };
+  const ev = result.evaluation;
 
   const out = values.out ?? DEFAULT_OUT;
   mkdirSync(out, { recursive: true });
@@ -260,6 +309,102 @@ function baselinesCommand(args: string[], log: (line: string) => void): number {
 }
 
 const pad = (s: string): string => s.padEnd(10);
+
+function outerCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      seed: { type: 'string' },
+      iters: { type: 'string' },
+      time: { type: 'string' },
+      topk: { type: 'string' },
+      maxy0: { type: 'string' },
+      rows: { type: 'string' },
+      out: { type: 'string' },
+      svg: { type: 'boolean' },
+    },
+  });
+  const [file] = positionals;
+  if (!file) throw new CliError('outer: missing <instance.json>');
+  const project = loadInstance(file);
+  const seed = toInt('seed', values.seed, project.settings.seed)!;
+  const timeMs = toInt('time', values.time);
+  const iters = toInt('iters', values.iters, timeMs === undefined ? 30_000 : undefined);
+  const show = toInt('rows', values.rows, 12)!;
+  const t0 = performance.now();
+  const outer = runOuter(project, {
+    seed,
+    budget: { iters, timeMs, clock: () => performance.now() },
+    topK: toInt('topk', values.topk, 3),
+    maxY0: toInt('maxy0', values.maxy0, 24),
+  });
+  const ms = performance.now() - t0;
+
+  log(
+    ['angle', 'side', 'y0', 'segs', 'LB', 'B-INST', 'SA', 'note'].map(pad).join(' ') +
+      `   (${outer.table.length} configurations screened, best ${show} shown)`,
+  );
+  for (const r of outer.table.slice(0, show)) {
+    const note = [
+      r.sa?.provenOptimal ? 'optimal' : '',
+      r.sa && !r.sa.feasible ? 'V>0' : '',
+      r.relaxed ? 'w_min violated' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    log(
+      [
+        `${r.angleDeg.toFixed(1)}`,
+        r.stackSide,
+        String(r.y0),
+        String(r.segments),
+        String(r.lb),
+        String(r.bInst),
+        r.sa ? String(r.sa.B) : '-',
+        note,
+      ]
+        .map(pad)
+        .join(' '),
+    );
+  }
+
+  // The result is stored with the chosen row configuration fixed, so that it validates by itself.
+  const { row, ctx, result } = outer.best;
+  const fixedProject: Project = {
+    ...project,
+    settings: {
+      ...project.settings,
+      angleDeg: row.angleDeg,
+      stackSide: row.stackSide,
+      rowOffset: row.y0,
+    },
+  };
+  const id = instanceId(file);
+  const record = makeRecord({
+    id,
+    method: 'outer',
+    seed,
+    iters: iters ?? null,
+    timeMs: timeMs ?? null,
+    project: fixedProject,
+    ctx,
+    y0: row.y0,
+    result,
+    ms,
+  });
+  const dir = values.out ?? DEFAULT_OUT;
+  mkdirSync(dir, { recursive: true });
+  const stem = join(dir, `${id}-outer-s${seed}`);
+  writeFileSync(`${stem}.json`, JSON.stringify(record));
+  if (values.svg) writeFileSync(`${stem}.svg`, renderPlanSvg(fixedProject, record.plan));
+  log(
+    `best: angle ${row.angleDeg.toFixed(1)}° ${row.stackSide} y0=${row.y0}: B=${result.evaluation.B} ` +
+      `LB=${row.lb} B-INST=${row.bInst} feasible=${result.evaluation.feasible} ${fixed(ms, 0)} ms ` +
+      `-> ${stem}.json${values.svg ? ' + .svg' : ''}`,
+  );
+  return 0;
+}
 
 function generateCommand(args: string[], log: (line: string) => void): number {
   const [kind, ...rest] = args;
@@ -401,6 +546,85 @@ function plantedCommand(args: string[], log: (line: string) => void): number {
   return 0;
 }
 
+function compareCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { seeds: { type: 'string' }, iters: { type: 'string' } },
+  });
+  const seeds = toInt('seeds', values.seeds, 5)!;
+  const iters = toInt('iters', values.iters, 20_000)!;
+  const files = collectInstances(positionals.length > 0 ? positionals : ['instances']);
+  if (files.length === 0) throw new CliError('compare: no instance files found');
+  log(
+    ['instance', 'LB', ...COMPARE_METHODS.map((m) => m.toUpperCase()), 'SA <= all?']
+      .map(pad)
+      .join(' ') +
+      `   (mean B of feasible runs over ${seeds} seeds, ${iters} evaluations; * = not all runs feasible, - = none)`,
+  );
+  let lost = 0;
+  for (const file of files) {
+    const project = loadInstance(file);
+    const lb = lowerBounds(runMethod(project, 'b-inst').ctx).lb;
+    const stats = COMPARE_METHODS.map((m) => measureMethod(project, m, seeds, iters));
+    const cell = (s: MethodStats): string =>
+      s.meanB === undefined ? '-' : `${fixed(s.meanB, 2)}${s.feasibleShare < 1 ? '*' : ''}`;
+    const sa = stats.find((s) => s.method === 'sa')!;
+    const others = stats.filter((s) => s.method !== 'sa' && s.meanB !== undefined);
+    const beaten = others.filter((s) => sa.meanB === undefined || s.meanB! < sa.meanB - 1e-9);
+    if (beaten.length > 0) lost++;
+    log(
+      [
+        instanceId(file),
+        String(lb),
+        ...stats.map(cell),
+        beaten.length === 0 ? 'yes' : `NO (${beaten.map((s) => s.method).join(', ')})`,
+      ]
+        .map(pad)
+        .join(' '),
+    );
+  }
+  log(
+    `criterion: SA <= every baseline on every instance: ${lost === 0 ? 'MET' : `NOT MET (${lost} instances)`}`,
+  );
+  return lost === 0 ? 0 : 1;
+}
+
+const TUNE_DEFAULT = [
+  'instances/planted/P1.json',
+  'instances/planted/P2.json',
+  'instances/planted/P3.json',
+  'instances/rect/R2.json',
+  'instances/lshape/L1.json',
+  'instances/slanted/S1.json',
+];
+
+function tuneCommand(args: string[], log: (line: string) => void): number {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { seeds: { type: 'string' }, iters: { type: 'string' } },
+  });
+  const seeds = toInt('seeds', values.seeds, 5)!;
+  const iters = toInt('iters', values.iters, 50_000)!;
+  const files = positionals.length > 0 ? collectInstances(positionals) : TUNE_DEFAULT;
+  const projects = files.map((f) => ({ id: instanceId(f), project: loadInstance(f) }));
+  log(
+    ['configuration', ...projects.map((p) => p.id)].map((c) => c.padEnd(22)).join(' ') +
+      `   (mean B [runs that hit the known optimum], ${seeds} seeds, ${iters} evaluations)`,
+  );
+  for (const config of TUNING_CONFIGS) {
+    const cells = projects.map(({ project }) => {
+      const cell = tuneOne(project, config, seeds, iters);
+      return project.meta?.knownOptimum === undefined
+        ? fixed(cell.meanB, 2)
+        : `${fixed(cell.meanB, 2)} [${cell.found}/${cell.runs}]`;
+    });
+    log([config.name, ...cells].map((c) => c.padEnd(22)).join(' '));
+  }
+  return 0;
+}
+
 /** Runs a command line (without `node script`); returns the exit code. */
 export function main(argv: string[], log: (line: string) => void = console.log): number {
   const [command, ...rest] = argv;
@@ -418,6 +642,12 @@ export function main(argv: string[], log: (line: string) => void = console.log):
         return perfCommand(rest, log);
       case 'planted':
         return plantedCommand(rest, log);
+      case 'outer':
+        return outerCommand(rest, log);
+      case 'compare':
+        return compareCommand(rest, log);
+      case 'tune':
+        return tuneCommand(rest, log);
       case 'baselines':
         return baselinesCommand(rest, log);
       default:

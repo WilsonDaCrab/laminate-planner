@@ -31,13 +31,19 @@ export interface PlanContext {
 }
 
 /** Room, zone, bands, neighbours, profiles and F_s for one row configuration. */
-export function buildContext(project: Project, cfg?: RowConfig, roomId?: string): PlanContext {
+export function buildContext(
+  project: Project,
+  cfg?: RowConfig,
+  roomId?: string,
+  /** The zone of the room if already built (it does not depend on the row configuration). */
+  precomputedZone?: ZoneResult,
+): PlanContext {
   const room = roomId ? project.rooms.find((r) => r.id === roomId) : project.rooms[0];
   if (!room) throw new RangeError('buildContext: project has no such room');
   const L = project.product.boardLength;
   const W = project.product.boardWidth;
   const rowCfg = cfg ?? rowConfigFromSettings(project.settings);
-  const zone = buildRoomZone(project, room.id);
+  const zone = precomputedZone ?? buildRoomZone(project, room.id);
   const layout = buildBands(zone.shapes, rowCfg, W);
   const graph = buildNeighbors(layout);
   const profiles = buildProfiles(layout.segments, graph);

@@ -83,11 +83,11 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F5. SA un ārējā cilpa (~4–5 d)
 
-- [ ] `optimize/moves`: M1–M5, gājienu statistika. **Ņemt vērā (ADR-013):** taisnleņķa segmentiem φ jāturas pie veseliem mm (citādi griešanas saraksts zaudē līdz `k` mm uz gabalu); `optimize/outer` y0 filtrs ir obligāts, jo plānotājs y0 nefiltrē
-- [ ] `optimize/sa`: kalibrācija, grafiks (iterāciju un laika režīms), labākais derīgais, apstāšanās pie LB, neobligātā pārkarsēšana
-- [ ] `optimize/outer`: θ kandidāti, sākuma puse, y0 skenēšana ar filtru, top-K, budžeta sadale, salīdzinājuma tabula
-- [ ] Parametru pielāgošana nelielā eksperimentā (p0, gājienu varbūtības); rezultātu pieraksta `DECISIONS.md`
-- [ ] (Neobl.) LAHC ar tiem pašiem gājieniem
+- [x] `optimize/moves`: M1–M5, gājienu statistika. **Ņemt vērā (ADR-013):** taisnleņķa segmentiem φ jāturas pie veseliem mm (citādi griešanas saraksts zaudē līdz `k` mm uz gabalu); `optimize/outer` y0 filtrs ir obligāts, jo plānotājs y0 nefiltrē
+- [x] `optimize/sa`: kalibrācija, grafiks (iterāciju un laika režīms), labākais derīgais, apstāšanās pie LB, neobligātā pārkarsēšana
+- [x] `optimize/outer`: θ kandidāti, sākuma puse, y0 skenēšana ar filtru, top-K, budžeta sadale, salīdzinājuma tabula
+- [x] Parametru pielāgošana nelielā eksperimentā (p0, gājienu varbūtības); rezultātu pieraksta `DECISIONS.md` (ADR-016; `pnpm bench tune`)
+- [ ] (Neobl.) LAHC ar tiem pašiem gājieniem — atlikts (nav vajadzīgs kursa kritērijiem)
 
 **Kritēriji:**
 
@@ -98,7 +98,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F6. Eksperimenti un kursa atskaite (~4–5 d) — **kursa nodevums**
 
-- [ ] `bench generate`: plantētais ģenerators (kāpņu + bloku variants), pierādījuma pārbaude (`B* = LB1`)
+- [ ] `bench generate`: plantētais ģenerators (kāpņu + bloku variants), pierādījuma pārbaude (`B* = LB1`) — kāpņu variants izpildīts F5 (ADR-015, `instances/planted/P1–P4`); bloku variants atlikts
 - [ ] `bench exhaustive`: pilnā pārlase tiny instancēm
 - [ ] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown`
 - [ ] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv`

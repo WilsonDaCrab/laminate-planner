@@ -1,5 +1,5 @@
 import { lowerBounds } from '../../bounds/bounds';
-import { evaluate } from '../../evaluate/evaluate';
+import { createEvaluator } from '../../evaluate/evaluator';
 import type { PlanContext } from '../../plan/context';
 import type { DecodeMode } from '../../plan/run';
 import type { Rng } from '../../rng/index';
@@ -35,7 +35,8 @@ export function runHillClimb(
   const lb = lowerBounds(ctx).lb;
   const b = new Budget(budget, DEFAULT_ITERS);
   const best = new Incumbent();
-  const evalAt = (phi: number[]) => evaluate(ctx, phi, { mode: opts.mode });
+  const evaluator = createEvaluator(ctx, opts.mode ?? ctx.project.settings.mode);
+  const evalAt = (phi: number[]) => evaluator.evaluate(phi);
   const space = new PhaseSpace(ctx);
   const randomPhi = () => segs.map((_, i) => space.sample(i, rng));
 

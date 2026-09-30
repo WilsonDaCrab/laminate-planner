@@ -1,5 +1,5 @@
 import { lowerBounds } from '../../bounds/bounds';
-import { evaluate } from '../../evaluate/evaluate';
+import { createEvaluator } from '../../evaluate/evaluator';
 import type { PlanContext } from '../../plan/context';
 import type { DecodeMode } from '../../plan/run';
 import type { Rng } from '../../rng/index';
@@ -20,11 +20,12 @@ export function runRandomSearch(
   const b = new Budget(budget, DEFAULT_ITERS);
   const best = new Incumbent();
   const space = new PhaseSpace(ctx);
+  const evaluator = createEvaluator(ctx, mode ?? ctx.project.settings.mode);
   let evals = 0;
   let proven = false;
   while (!proven && b.allows(evals)) {
     const phi = ctx.layout.segments.map((_, i) => space.sample(i, rng));
-    const ev = evaluate(ctx, phi, { mode });
+    const ev = evaluator.evaluate(phi);
     evals++;
     best.offer(phi, ev, evals);
     proven = best.evaluation!.feasible && best.evaluation!.B === lb;

@@ -31,7 +31,7 @@ export interface RunStats {
 export interface RunResult {
   version: number;
   instance: string;
-  method: Method;
+  method: Method | 'outer';
   seed: number;
   iters: number | null;
   timeMs: number | null;

@@ -226,6 +226,10 @@ M4 ir vienīgais gājiens, kas precīzi trāpa nepārtrauktā telpā šaurajos p
 
 `proj_{F_s}` ir tuvākais F_s punkts (cirkulāri).
 
+**Realizācija (F5).** Gājiens atgriež tikai mainītos φ_s un tur tos F_s iekšienē (`PhaseSpace.place`); taisnleņķa segmentiem φ − a tiek noapaļots uz veselu mm (ADR-013), pārējiem φ paliek nepārtraukts. M2: Δ = max(20, (L/2)·T/T₀). M3 klase: taisnstūra segmenti ar vienādu `a mod L`, garumu `b − a`, atvērto malu karogiem un platumiem; pārējie segmenti ir atsevišķas klases. M5: 2–6 secīgas joslas, viens δ visiem to segmentiem, katrs projicēts uz F_s.
+
+**M4 papildinājums (ADR-016).** Precīzs optimums prasa *slēgtus* pāru ciklus: e_r + s_{r+2} = C un e_{r+2} + s_r = C vienlaikus. Tāpēc M4: (a) avots var būt jebkura rinda (varbūtība 0,5), ne tikai nesapārots gabals; (b) partneri izvēlas pēc *slēgšanas*: rindai j uzstāda gabalu C − e_i, un tiek meklēta tāda j, kuras otrais gabals e_j' tad precīzi papildina rindas i otro gabalu (e_j' + s_i = C). Viena izmaiņa tad dod divus precīzus pārus. Slēgšana ir statiska īpašība (κ_i + κ_j ≡ 2C (mod L), κ = rindas garums mod L); taisnstūra telpā tādu partneru nav, un M4 seko oriģinālajam aprakstam (0,7 nesapārotie, līdz 3 mēģinājumi), citādi M2. Noklusējuma varbūtības: M1 0,05, M2 0,15, M3 0,05, **M4 0,60**, M5 0,15 (oriģinālās 0,15/0,30/0,15/0,30/0,10 ir `SPEC_MOVE_WEIGHTS`).
+
 ## 7. Simulētā rūdīšana
 
 ```
@@ -263,6 +267,8 @@ SA(inst, cfg, rng, clock):
 | iterāciju budžets (eksperimenti) | 200 000 |
 | gājienu varbūtības | §6 |
 
+**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−mean(Δ⁺)/ln p₀, T_end)`; τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Pārkarsēšana (`reheat`) ir realizēta, bet pēc noklusējuma izslēgta. Novērtētājs: `precut` režīmā tipizēto masīvu versija (§14), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
+
 ## 8. Ārējā cilpa (θ, sākuma puse, y0)
 
 1. **Konfigurācijas.** Ja `angleDeg = 'auto'`, θ kandidāti ir virzieni, kas paralēli malām ≥ 1000 mm (unikāli mod 180°). Katram θ pārbauda {θ, θ + 180°} × {left, right}, tātad sākuma sienu un klāšanas virzienu rindā. Parasti lietotājs θ fiksē (estētika), un automātiski salīdzina tikai sākuma pusi.
@@ -273,6 +279,8 @@ SA(inst, cfg, rng, clock):
 3. **Ātrs vērtējums:** LB1(y0) un B-INST rezultāts. Kārto pēc (B-INST, LB1, pirmās un pēdējās rindas līdzsvara |a − b|).
 4. **SA top-K** (K = 3) katrai konfigurācijai; laika budžetu sadala proporcionāli.
 5. **Rezultāts:** labākais kopumā un salīdzinājuma tabula pa konfigurācijām (UI to rāda kā virzienu salīdzinājumu).
+
+**Realizācija (F5).** `runOuter`: konfigurācijas — `angleDeg = 'auto'` dod taisno sienu (≥ 1000 mm) virzienus mod 180°, katru ar θ un θ + 180°, `stackSide = 'auto'` dod {left, right}; fiksēti iestatījumi (arī `rowOffset`) tiek respektēti. y0 filtrs ir analītisks (`y0Violations`): horizontālo malu augstumi rindu koordinātās uz Clipper režģa, pārkāpums = josla šaurāka par `w_min` (tests salīdzina ar joslu skenēšanu). Ja derīga y0 nav, ņem nobīdes ar mazāko pārkāpumu skaitu (`relaxed`). Skrīninga kandidāti ≤ 24 uz konfigurāciju (derīgo skrējienu gali + vienmērīgs tīkls), kārtoti pēc (derīgums, B-INST, LB1, y0); SA top-K katrai (θ, pusei); kopējais budžets tiek sadalīts vienādi starp SA palaidieniem.
 
 ## 9. Bāzes metodes
 
@@ -416,6 +424,8 @@ Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, lai ārēj
   - inkrementāla atjaunināšana: gājiens maina 1–6 segmentus, tāpēc atjauno tikai to gabalus un sakārtotos masīvus (binārā ievietošana, O(n)); V un H pārrēķina tikai skartajiem kaimiņu pāriem.
 - Inkrementālo versiju raksta tikai pēc tam, kad vienkāršā versija ir pareiza un nomērīta. Tās rezultātiem jāsakrīt ar vienkāršo (īpašību tests).
 - `pnpm bench perf` — mikrobenchmark.
+
+**Realizācija (F5, ADR-016).** `evaluate/fast.ts` ir `precut` dekodera tipizēto masīvu versija: leftover ir (w, h, profilu karogi) un radīšanas secība (pozīcijas nav vajadzīgas); atlikumi, kurus neviena strēmele vairs nevar izmantot, netiek veidoti; gabalu `byId` secība tiek atveidota ar skaitlisku atslēgu (segmenta etiķetes rangs, loma `NN` < `B` < `S`). Gabali dzīvo katra segmenta pastāvīgā slotā un tiek pārrēķināti tikai, ja φ_s mainījās; veselie dēļi vidējiem "vienkāršiem" rindas gabaliem tiek tikai skaitīti; A posma gali un sākumi tiek uzturēti sakārtoti starp novērtējumiem; V un H locekļi tiek pārrēķināti tikai skartajiem segmentu pāriem (summas tajā pašā secībā kā atsauces versijā). Tests salīdzina B, V, H, N, f, `lengthDeficit` un nesapārotos gabalus ar `evaluate` uz visām instancēm, uz nejaušām taisnleņķa telpām (brīvie gabali, C posms) un garām gājienu virknēm ar vienu un to pašu novērtētāju.
 
 ## 15. Statistika un žurnāls
 
