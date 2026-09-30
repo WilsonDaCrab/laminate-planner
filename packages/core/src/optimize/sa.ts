@@ -25,7 +25,7 @@ import { PhaseSpace } from './phaseSpace';
 import type { SearchResult } from './types';
 
 export interface SaConfig {
-  /** Probability of accepting the average uphill move at the start (calibration target). */
+  /** Probability of accepting the median uphill move (not raising V) at the start (calibration target). */
   p0?: number;
   /** Probability of accepting +1 board at the end. */
   pEnd?: number;
@@ -101,6 +101,8 @@ function undo(phi: number[], changes: readonly PhaseChange[], old: readonly numb
   for (let k = changes.length - 1; k >= 0; k--) phi[changes[k]!.index] = old[k]!;
 }
 
+const MIN_CALIBRATION_STEPS = 10;
+
 export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult {
   const p0 = cfg.p0 ?? 0.8;
   const pEnd = cfg.pEnd ?? 0.001;
@@ -137,10 +139,12 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
   let msToBest: number | undefined = clock ? clock() - t0Clock : undefined;
   let evalsToBest = evals;
 
-  // Calibration: uphill Δ of random moves from the start (none accepted), T₀ = −mean(Δ⁺)/ln p₀.
+  // Calibration: uphill Δ of random moves from the start (none accepted), T₀ = −median(Δ⁺)/ln p₀.
+  // Moves that raise V are left out: their λ_V·V penalty is not a board-count step and inflates T₀
+  // by an order of magnitude (L1 at p₀ = 0.8: T₀ ≈ 27); they are the fallback only.
   const samples = cfg.calibrationSamples ?? 200;
-  let sum = 0;
-  let count = 0;
+  const uphill: number[] = [];
+  const uphillAll: number[] = [];
   let calibrationEvals = 0;
   for (let n = 0; n < samples && !proven && budget.allows(evals); n++) {
     const proposal = moves.propose(phi, rng, 1, unpaired);
@@ -149,11 +153,15 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
     evals++;
     calibrationEvals++;
     if (ev.f > cur.f) {
-      sum += ev.f - cur.f;
-      count++;
+      uphillAll.push(ev.f - cur.f);
+      if (ev.V <= cur.V) uphill.push(ev.f - cur.f);
     }
     // A calibration move may already beat the start; offer it before undoing (φ is its vector).
-    if (best.offer(phi, ev, evals) && ev.feasible && ev.B === lb) proven = true;
+    if (best.offer(phi, ev, evals)) {
+      evalsToBest = evals;
+      msToBest = clock ? clock() - t0Clock : undefined;
+      if (ev.feasible && ev.B === lb) proven = true;
+    }
     undo(phi, proposal.changes, old);
   }
   // The evaluator's "last evaluated" state is a calibration move, not the start.
@@ -164,7 +172,10 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
     unpaired = usesPairing ? evaluator.unpaired() : undefined;
   }
   const Tend = 1 / Math.log(1 / pEnd);
-  const T0 = Math.max(count > 0 ? -(sum / count) / Math.log(p0) : 1, Tend);
+  const steps = uphill.length >= MIN_CALIBRATION_STEPS ? uphill : uphillAll;
+  steps.sort((a, b) => a - b);
+  const median = steps.length > 0 ? steps[steps.length >> 1]! : 0;
+  const T0 = Math.max(median > 0 ? -median / Math.log(p0) : 1, Tend);
 
   const curve: CurvePoint[] = [];
   const points = cfg.curvePoints ?? 200;
@@ -220,7 +231,7 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
     sinceBest++;
     if (evals % step === 0) sample();
 
-    if (cfg.reheat && total && sinceBest > REHEAT_FRACTION * total && tau < 0.95) {
+    if (cfg.reheat && total && budget.allows(evals) && sinceBest > REHEAT_FRACTION * total && tau < 0.95) {
       // Continue from the best solution with a lower T₀ (ALGORITHM §7, optional).
       phi.splice(0, phi.length, ...best.phi!);
       cur = evaluator.evaluate(phi);

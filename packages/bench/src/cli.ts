@@ -45,7 +45,7 @@ const USAGE = `lp-bench <command>
   lb <instance.json> [--y0 mm]    lower bounds LB0, LB1
   generate planted (--preset P1..P4 | --n N --m M --seed S) [--base instance.json] [--out file]
                                   planted staircase room with known optimum
-  outer <instance.json> [--iters N] [--time ms] [--topk K] [--maxy0 N] [--seed N] [--out dir] [--svg]
+  outer <instance.json> [--iters N] [--time ms] [--topk K] [--maxy0 N] [--rows N] [--seed N] [--out dir] [--svg]
                                   outer loop: direction, starting wall and row offset, SA on the best
   perf [path...] [--evals N] [--rows N]
                                   evaluations per second (reference, typed-array, SA-like) and the

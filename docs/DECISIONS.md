@@ -227,3 +227,55 @@ B-INST ≤ B-NEXT visām 8 instancēm (C1, C2, U1, R1 vienādi). RS gandrīz nek
 Bāzes metodes optimumu neatrod nevienā instancē (starpība 1–3 dēļi); tātad instances tiešām nosaka meklēšanas kvalitāti. Ģenerators atgriež arī konstrukcijas φ (`generatePlantedInstance`), un tests pārbauda, ka tie dod `B = knownOptimum` ar tīru validētāju.
 
 **Zināmie ierobežojumi.** Instances ir gandrīz taisnstūra (rindu garumi atšķiras līdz ~180 mm), nevis "īsti kāpņu"; reālistiskāki daudzstūri (bloku variants ar dažādiem R) paliek F6. Tikai `precut` dekoderis.
+
+## ADR-016 — SA parametri, M4 slēgšana un F5 kritēriju rezultāts (F5) (2026-09-30)
+
+**Konteksts.** F5 kritēriji: (a) SA ≤ visas bāzes metodes visām instancēm, (b) P1–P4 optimums ≥ 90 % sēklu pie 200 000 novērtējumiem.
+
+**Izdarītie lēmumi.**
+
+- M4 papildināts ar slēgtu pāru ciklu meklēšanu un noklusējuma gājienu svariem M4 = 0,60 (sk. `ALGORITHM.md` §6, `SPEC_MOVE_WEIGHTS` paliek salīdzināšanai). Režģis: `pnpm bench tune` (`TUNING_CONFIGS`).
+- Temperatūras kalibrācija: T₀ = −median(Δ⁺)/ln p₀, **neņemot vērā gājienus, kas palielina V**. Sods λ_V·V nav dēļu skaita solis un uzpūš T₀ (L1, p₀ = 0,8: T₀ ≈ 27; R2 ≈ 26; P4 ≈ 28 — t.i., +1 dēli tika pieņemts gandrīz vienmēr). Ja tādu gājienu ir < 10, kalibrē pēc visiem.
+- **P1–P4 netiek mainītas.** Instanču atvieglošana pēc rezultāta uzzināšanas apietu CLAUDE.md 6. noteikuma jēgu. Grūtības skala tiks mērīta F6 kā atsevišķa sērija (tās pašas instances ar augošu rindu skaitu).
+
+**Rezultāts ar galīgo kodu (T₀ labojums iekšā).** Komandas: `pnpm bench compare instances --seeds 20 --iters 200000` un `pnpm bench planted --seeds 20 --iters 200000`; izvads `results/f5/`. Vidējais B pa 20 sēklām (RS nevienā instancē netiek līdz derīgam atrisinājumam katrā sēklā):
+
+| instance | LB | B-INST | HC | SA |
+|---|---|---|---|---|
+| C1 | 64 | 68 | 66,00 | 66,00 |
+| C2 | 66 | 68 | 67,00 | 67,00 |
+| L1 | 85 | 89 | **86,60** | 86,95 |
+| U1 | 78 | 89 | 81,00 | 81,00 |
+| P1 | 56 | 58 | 57,00 | **56,00** |
+| P2 | 88 | 90 | 89,00 | 88,95 |
+| P3 | 120 | 123 | 121,00 | 121,00 |
+| P4 | 168 | 171 | **169,00** | 169,95 |
+| R1 | 49 | 49 | 49,00 | 49,00 |
+| R2 | 81 | 86 | 83,00 | 83,00 |
+| S1 | 50 | 52 | 51,00 | 51,00 |
+| S2 | 34 | 37 | 37,00 | 37,00 |
+
+Plantētās (SA, 20 sēklas, 200 000 nov.): P1 **20/20**, P2 **1/20** (5 %), P3 **0/20**, P4 **0/20**.
+
+Pirms T₀ labojuma (vecā kalibrācija) tas pats `compare` deva tādus pašus zaudējumus L1 un P4 un papildus R2 (HC 83,00 / SA 83,20); P2 bija 88,65 pret 88,95 — atšķirības ir trokšņa līmenī (20 sēklas, nav zīmju testa).
+
+**Kritēriju statuss.** (a) **nav izpildīts**: SA zaudē HC 2 instancēs no 12 — L1 (+0,35 dēļa) un P4 (+0,95); visās pārējās ir ≤ (neizšķirts vai labāks). (b) **nav izpildīts**: 100 % / 5 % / 0 % / 0 % pret prasītajiem 90 %. Hipotēze: optimums prasa vienlaikus saskaņot visus dēļu pārus, un M4 slēgšana labo tikai vietējus ciklus; grūtība aug ļoti strauji ar rindu skaitu (P1 14 → P4 42). (c) ≥ 100 000 nov./s (102–103k) un (d) determinisms ir izpildīti.
+
+**Parametru režģis** (`pnpm bench tune --seeds 10 --iters 100000`, galīgais kods; vidējais B un [optimuma atrašanas reizes] plantētajām; `results/f5/tune.txt`):
+
+| konfigurācija | P1 | P2 | P3 | R2 | L1 | S1 |
+|---|---|---|---|---|---|---|
+| spec (§6/§7) | 57,00 [0/10] | 89,00 [0/10] | 121,00 [0/10] | 83,10 | 87,00 | 51,00 |
+| spec + slēgšana | 56,40 [6/10] | 89,00 [0/10] | 121,00 [0/10] | 83,00 | 87,00 | 51,00 |
+| M4 60 %, bez slēgšanas | 57,00 [0/10] | 89,00 [0/10] | 121,00 [0/10] | 83,10 | 86,90 | 51,00 |
+| **tuned (noklusējums, p₀ = 0,8)** | **56,00 [10/10]** | 88,90 [1/10] | 121,00 [0/10] | 83,00 | 87,00 | 51,00 |
+| p₀ = 0,5 | 56,00 [10/10] | 89,00 [0/10] | 121,00 [0/10] | 83,00 | 87,00 | 51,00 |
+| p₀ = 0,2 | 56,40 [6/10] | 89,00 [0/10] | 120,90 [1/10] | 83,00 | 86,90 | 51,00 |
+| p₀ = 0,1 | 56,80 [2/10] | 89,00 [0/10] | 121,00 [0/10] | 83,00 | 87,00 | 51,00 |
+| p₀ = 0,05 | 57,00 [0/10] | 89,00 [0/10] | 121,00 [0/10] | 83,00 | 87,00 | 51,00 |
+
+Secinājumi: (1) izšķirošā ir M4 **slēgšana kopā ar M4 svaru 0,60** — atsevišķi katra P1 neatrod; (2) zemāks p₀ **nepalīdz**, P1 pat pasliktinās (0,05 → 0/10), tāpēc noklusējums paliek p₀ = 0,8; (3) uz R2, L1, S1 visas konfigurācijas atšķiras ≤ 0,2 dēļa (troksnis); (4) P3 un P4 netiek atrisinātas nevienā konfigurācijā.
+
+**Nepārbaudīts.** Konsultanta ad hoc mērījumi (gājienu svaru un nobīdes amplitūdas maiņa, 5–20 restarti, L1 pie 100 000 paliek 87) nav reproducējami kā `bench` komanda; tie nav pamats lēmumiem un atskaitē nav jāpiemin kā rezultāts.
+
+**Turpinājums.** F6: mērogošanas sērija P-instancēm; 20+ sēklas un zīmju tests SA pret HC atskaitē; LAHC paliek neobligāts.

@@ -254,7 +254,7 @@ SA(inst, cfg, rng, clock):
   return bestFeas ?? best
 ```
 
-- `calibrate`: no x izpilda `samples` nejaušus gājienus (tos nepieņem), savāc Δ > 0 un aprēķina `T0 = −mean(Δ⁺)/ln(p0)`. Ja Δ⁺ nav, `T0 = 1`.
+- `calibrate`: no x izpilda `samples` nejaušus gājienus (tos nepieņem), savāc Δ > 0 un aprēķina `T0 = −median(Δ⁺)/ln(p0)` (ADR-016). Gājienus, kas palielina V, neņem vērā: sods λ_V·V nav dēļu skaita solis un uzpūš T₀ par kārtu (L1, p₀ = 0,8: ≈ 27). Ja tādu Δ⁺ ir < 10, izmanto visus; ja Δ⁺ nav, `T0 = 1`.
 - **Budžets:** eksperimentos — iterāciju skaits N (`τ = it/N`), lai rezultāti nebūtu atkarīgi no datora ātruma; laiku tikai mēra. Lietotnē — laika limits (`τ = elapsed/limit`); `clock()` izsauc ik pēc 256 iterācijām.
 - **Pārkarsēšana (neobligāti):** ja labākais derīgais nav uzlabojies 25 % budžeta, turpina no tā ar `T0/2`.
 - **Vairāki starti:** lietotnē katrā Web Worker ir neatkarīgs SA ar sēklu `hash(seed, i)`; eksperimentos katra sēkla ir atsevišķs palaidiens.
@@ -267,7 +267,7 @@ SA(inst, cfg, rng, clock):
 | iterāciju budžets (eksperimenti) | 200 000 |
 | gājienu varbūtības | §6 |
 
-**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−mean(Δ⁺)/ln p₀, T_end)`; τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Pārkarsēšana (`reheat`) ir realizēta, bet pēc noklusējuma izslēgta. Novērtētājs: `precut` režīmā tipizēto masīvu versija (§14), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
+**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−median(Δ⁺)/ln p₀, T_end)` (Δ⁺ bez V palielinošiem gājieniem, sk. §6); τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Pārkarsēšana (`reheat`) ir realizēta, bet pēc noklusējuma izslēgta. Novērtētājs: `precut` režīmā tipizēto masīvu versija (§14), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
 
 ## 8. Ārējā cilpa (θ, sākuma puse, y0)
 

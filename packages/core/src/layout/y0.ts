@@ -60,8 +60,8 @@ export function y0Violations(
         const b = ring[(k + 1) % ring.length]!;
         // Heights on the Clipper grid, as `buildBands` sees them (a wall exactly w_min from a band
         // line must not fail on rounding noise).
-        if (Math.abs(a.y - b.y) <= 1e-6)
-          heights.push(Math.round(a.y * CLIPPER_SCALE) / CLIPPER_SCALE);
+        const ha = Math.round(a.y * CLIPPER_SCALE);
+        if (ha === Math.round(b.y * CLIPPER_SCALE)) heights.push(ha / CLIPPER_SCALE);
       });
     }
   }

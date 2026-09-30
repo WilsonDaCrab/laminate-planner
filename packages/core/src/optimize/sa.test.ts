@@ -67,6 +67,14 @@ describe('runSa behaviour', () => {
     expect(run(6).stats).not.toEqual(a.stats);
   });
 
+  it('calibrates T0 from the median uphill step: T0 scales with -1 / ln p0 for one seed', () => {
+    const { ctx } = load('R2');
+    const t0 = (p0: number) => runSa(ctx, createRng(3), { iters: 600, p0 }).stats.T0;
+    const a = t0(0.8);
+    const b = t0(0.2);
+    expect(b / a).toBeCloseTo(Math.log(0.8) / Math.log(0.2), 6);
+  });
+
   it('follows the same trajectory with the fast and the reference evaluator', () => {
     for (const id of ['R2', 'P1']) {
       const { ctx } = load(id);

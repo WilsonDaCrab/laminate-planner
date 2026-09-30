@@ -91,10 +91,10 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 **Kritēriji:**
 
-- SA ≤ visas bāzes metodes visām instancēm (vidēji pa sēklām);
-- plantētajām instancēm P1–P4 SA atrod optimumu ≥ 90 % sēklu ar 200 000 iterāciju budžetu;
-- novērtētājs ≥ 100 000 novērtējumu/s pie 60 segmentiem (`pnpm bench perf`);
-- viena sēkla → identisks rezultāts (determinisms iterāciju režīmā).
+- [ ] SA ≤ visas bāzes metodes visām instancēm (vidēji pa sēklām) — **nav izpildīts**: L1 un P4 zaudē HC par 0,35 un 0,95 dēļa, pārējās 10 instances ≤ (ADR-016);
+- [ ] plantētajām instancēm P1–P4 SA atrod optimumu ≥ 90 % sēklu ar 200 000 iterāciju budžetu — **nav izpildīts** (P1 20/20, P2 1/20, P3 0/20, P4 0/20; ADR-016);
+- [x] novērtētājs ≥ 100 000 novērtējumu/s pie 60 segmentiem (`pnpm bench perf`);
+- [x] viena sēkla → identisks rezultāts (determinisms iterāciju režīmā).
 
 ## F6. Eksperimenti un kursa atskaite (~4–5 d) — **kursa nodevums**
 
