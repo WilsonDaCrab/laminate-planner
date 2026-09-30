@@ -369,3 +369,17 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 **Lēmums.** Slēgums izcelts kā eksportēta `makeModL(L)` (`evaluate/fast.ts`; kods un uzvedība nemainās), un `fast.test.ts` pārbauda `Object.is(modL(x), mod(x, L))` ar fast-check: fāzes un starpības, veseli skaitļi, L daudzkārtņi ± 1e-9, vērtības līdz ±2⁴⁵ (aiz `FMOD_LIMIT`), ±0, L ∈ {1, 7, 1000, 1285, 2²⁹ + 3, 1285,5} (pēdējais nav vesels, tāpēc iet pa `mod` atkāpšanās ceļu). Pretpiemēru nebija (20 000 gadījumu).
 
 **Atvērts paliek:** ierobežojums (4), t.i., P3, P4 nav `fast.test.ts` references salīdzinājumā (laiks).
+
+## ADR-022 — `bench all`: sadalījums, atsākšana, pavedieni, Vega-Lite (F6) (2026-09-30)
+
+**Konteksts.** §13.4 prasa, lai viena komanda no tīra klona atkārto tabulas. Pilnais E1 (27 instances × 4 stohastiskās metodes × 20 sēklas × 200 000 novērtējumu) ir ~2,7 h ar vienu pavedienu.
+
+**Lēmumi.**
+- **Sadalījums** (`packages/bench/src/all/`): `protocol.ts` (tīra matrica: skrējieni, atslēgas, varianti), `runJob.ts` (viens skrējiens → plakana `RawRow`), `raw.ts` (JSONL, atsākšana, bojātas pēdējās rindas labošana), `summary.ts` (CSV tabulas), `plots.ts` (SVG), `execute.ts`/`worker.ts`/`worker.mjs` (izpilde), `runAll.ts`, `cli.ts`. Protokola testi skaita skrējienus ar roku.
+- **Atsākšana.** Atslēga = eksperiments|instance|metode|variants|sēkla|budžets. Budžets ir atslēgā, tāpēc cits iterāciju skaits nekad netiek uzskatīts par pabeigtu darbu; tabulās iet tikai pašreizējās matricas rindas.
+- **Pavedieni.** `--jobs N|auto` izmanto `worker_threads` (viens rakstītājs galvenajā pavedienā). `worker.mjs` reģistrē `tsx`, citādi darbinieks neatrod importus bez paplašinājuma. Rezultāti pēc sēklas ir identiski secīgajai izpildei (pārbaudīts uz `--quick`); laiki ir troksnaini, tāpēc laika kolonnai jāizmanto `--jobs 1`.
+- **E3 (G2)** maina `hPattern.distance` atmiņā (`applyVariant`), nevis raksta instanču kopijas failos: faili paliek vienīgais patiesības avots, un variants ir redzams atslēgā.
+- **`evalsToBest`** (iterācija, nevis sekundes): pēdējā uzlabojuma iterācija no SA trases; nosaukums apzināti nesola "laiku līdz labākajam".
+- **Atkarības.** `vega` un `vega-lite` kā `devDependencies` tikai `@lp/bench` (SVG renderēšana Node, bez canvas). Tās ir diagrammu, nevis optimizācijas bibliotēkas (CLAUDE.md #1 neierobežo; Vega-Lite ir tehnoloģiju sarakstā); lietotāja apstiprinājums saņemts.
+- **Ārpus `all`:** `outer`, `exhaustive`, `planted`, `difficulty`, `bestknown` paliek atsevišķas komandas (lietotāja lēmums): `bestknown` ir vienreizējs stundām garš skrējiens, un tā rezultāts ir `meta` failos, ko `all` tikai nolasa.
+

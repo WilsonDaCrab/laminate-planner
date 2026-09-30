@@ -102,10 +102,10 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 - [ ] `bench generate`: plantētais ģenerators (kāpņu + bloku variants), pierādījuma pārbaude (`B* = LB1`) — kāpņu variants izpildīts F5 (ADR-015, `instances/planted/P1–P4`); bloku variants atlikts
 - [x] `bench exhaustive`: pilnā pārlase tiny instancēm (ADR-018; `instances/tiny/T1–T4`)
-- [ ] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown`
-- [ ] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv`
-- [ ] Grafiki G1–G3 (+ G4/G5, ja ir) → `results/plots/*.svg` (Vega-Lite)
-- [ ] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF
+- [ ] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown` — instances P5–P6, R3–R4, L2–L3, S3–S4, O1–O2, C3 gatavas (ADR-020); `bench bestknown` skrējiens (10 sēklas × 2 M) notiek; `multi`, `real` netiek veidotas (M1 pēc F13)
+- [ ] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv` — kods un testi gatavi (ADR-022); galīgais skrējiens vēl jāveic; ārējā cilpa, pārlase un plantētie paliek atsevišķas komandas
+- [ ] Grafiki G1–G3 (+ G4/G5, ja ir) → `results/plots/*.svg` (Vega-Lite) — G1–G3 realizēti (`bench all`); G4/G5 nav
+- [ ] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — karkass `report/main.typ` (tabula un attēli no `results/`, 1.–2. sadaļa uzrakstīta); teksti pēc skrējieniem atzīmēti "JĀPABEIDZ"
 - [ ] Publisks GitHub repozitorijs; git tag `v0.1-kurss`
 
 **Kritēriji:** `pnpm bench all` no tīra klona atkārto visas tabulas; PDF satur visas četras prasītās sadaļas un saiti uz repozitoriju.

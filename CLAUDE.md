@@ -96,7 +96,7 @@ laminate-planner/
 │   │       ├── cutlist/      # griešanas instrukcijas, secība, marķējumi
 │   │       ├── survey/       # mērījumu saskaņošana, loki, ordinātas
 │   │       └── render/       # SVG kā teksts (bench un drukai)
-│   └── bench/                # @lp/bench — Node CLI: run, generate, exhaustive, experiments
+│   └── bench/                # @lp/bench — Node CLI: run, generate, exhaustive, experiments; all/ (protocol, runJob, raw, summary, plots, worker pool), meta
 ├── apps/web/                 # @lp/web — React PWA
 │   └── src/  (editor/, panels/, results/, print/, onsite/, state/, workers/, i18n/)
 ├── instances/                # testa telpas: tiny/ planted/ rect/ lshape/ slanted/ obstacles/ multi/
