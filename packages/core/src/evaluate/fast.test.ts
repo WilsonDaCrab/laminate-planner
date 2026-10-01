@@ -44,82 +44,84 @@ function expectSame(fast: Evaluator, ref: Evaluator, phi: readonly number[], lab
   expect(plain(fast.unpaired()), `${label} unpaired`).toEqual(plain(ref.unpaired()));
 }
 
-describe('fast evaluator equals the reference (precut)', () => {
-  for (const id of [
-    'R1',
-    'R2',
-    'L1',
-    'U1',
-    'S1',
-    'S2',
-    'C1',
-    'C2',
-    'P1',
-    'P2',
-    'P3',
-    'P4',
-    'T1',
-    'T2',
-    'T3',
-    'T4',
-  ]) {
-    it(`${id}: random phases and phases after moves (property)`, () => {
-      const ctx = load(id);
-      const space = new PhaseSpace(ctx);
-      const moves = new MoveSet(ctx, space);
-      const fast = createFastEvaluator(ctx)!;
-      expect(fast).toBeDefined();
-      const ref = createReferenceEvaluator(ctx, { mode: 'precut' });
-      fc.assert(
-        fc.property(fc.integer({ min: 1, max: 2 ** 30 }), (seed) => {
-          const rng = createRng(seed);
-          const phi = Array.from({ length: space.size }, (_, i) => space.sample(i, rng));
-          expectSame(fast, ref, phi, `${id} random ${seed}`);
-          // A walk of moves (M4 needs the unpaired pieces of the current state), some undone,
-          // some replaced by a wholesale new vector: the fast state has to follow all of it.
-          for (let n = 0; n < 25; n++) {
-            expectSame(fast, ref, phi, `${id} ${seed} state ${n}`);
-            const p = moves.propose(phi, rng, rng.next(), ref.unpaired());
-            const old = p.changes.map((c) => phi[c.index]!);
-            for (const c of p.changes) phi[c.index] = c.value;
-            expectSame(fast, ref, phi, `${id} ${seed} after ${p.kind}`);
-            const roll = rng.next();
-            if (roll < 0.3) {
-              p.changes.forEach((c, k) => (phi[c.index] = old[k]!)); // rejected: undo
-            } else if (roll < 0.35) {
-              for (let i = 0; i < space.size; i++) phi[i] = space.sample(i, rng);
+for (const mode of ['precut', 'onsite'] as const) {
+  describe(`fast evaluator equals the reference (${mode})`, () => {
+    for (const id of [
+      'R1',
+      'R2',
+      'L1',
+      'U1',
+      'S1',
+      'S2',
+      'C1',
+      'C2',
+      'P1',
+      'P2',
+      'P3',
+      'P4',
+      'T1',
+      'T2',
+      'T3',
+      'T4',
+    ]) {
+      it(`${id}: random phases and phases after moves (property)`, () => {
+        const ctx = load(id);
+        const space = new PhaseSpace(ctx);
+        const moves = new MoveSet(ctx, space);
+        const fast = createFastEvaluator(ctx, { mode })!;
+        expect(fast).toBeDefined();
+        const ref = createReferenceEvaluator(ctx, { mode });
+        fc.assert(
+          fc.property(fc.integer({ min: 1, max: 2 ** 30 }), (seed) => {
+            const rng = createRng(seed);
+            const phi = Array.from({ length: space.size }, (_, i) => space.sample(i, rng));
+            expectSame(fast, ref, phi, `${id} random ${seed}`);
+            // A walk of moves (M4 needs the unpaired pieces of the current state), some undone,
+            // some replaced by a wholesale new vector: the fast state has to follow all of it.
+            for (let n = 0; n < 25; n++) {
+              expectSame(fast, ref, phi, `${id} ${seed} state ${n}`);
+              const p = moves.propose(phi, rng, rng.next(), ref.unpaired());
+              const old = p.changes.map((c) => phi[c.index]!);
+              for (const c of p.changes) phi[c.index] = c.value;
+              expectSame(fast, ref, phi, `${id} ${seed} after ${p.kind}`);
+              const roll = rng.next();
+              if (roll < 0.3) {
+                p.changes.forEach((c, k) => (phi[c.index] = old[k]!)); // rejected: undo
+              } else if (roll < 0.35) {
+                for (let i = 0; i < space.size; i++) phi[i] = space.sample(i, rng);
+              }
             }
-          }
-        }),
-        { numRuns: 8 },
-      );
-    }, 60_000); // ~1.5 s each alone for P3 and P4; generous for a loaded machine
-  }
+          }),
+          { numRuns: 8 },
+        );
+      }, 60_000); // ~1.5 s each alone for P3 and P4; generous for a loaded machine
+    }
 
-  it('rejects a phase vector of the wrong length', () => {
-    const ctx = load('R1');
-    expect(() => createFastEvaluator(ctx)!.evaluate([1, 2])).toThrow(/entries/);
-  });
+    it('rejects a phase vector of the wrong length', () => {
+      const ctx = load('R1');
+      expect(() => createFastEvaluator(ctx, { mode })!.evaluate([1, 2])).toThrow(/entries/);
+    });
 
-  it('agrees with a custom weight set', () => {
-    const ctx = load('R2');
-    const weights = {
-      lambdaV: 3,
-      lambdaH: 0.9,
-      lambdaR: 0.5,
-      epsilon: 0.1,
-      regularityDistance: 120,
-    };
-    const fast = createFastEvaluator(ctx, { weights })!;
-    const space = new PhaseSpace(ctx);
-    const rng = createRng(4);
-    const phi = Array.from({ length: space.size }, (_, i) => space.sample(i, rng));
-    const r = evaluate(ctx, phi, { mode: 'precut', weights });
-    const f = fast.evaluate(phi);
-    expect(close(f.f, r.f)).toBe(true);
-    expect(close(f.R, r.R)).toBe(true);
+    it('agrees with a custom weight set', () => {
+      const ctx = load('R2');
+      const weights = {
+        lambdaV: 3,
+        lambdaH: 0.9,
+        lambdaR: 0.5,
+        epsilon: 0.1,
+        regularityDistance: 120,
+      };
+      const fast = createFastEvaluator(ctx, { weights, mode })!;
+      const space = new PhaseSpace(ctx);
+      const rng = createRng(4);
+      const phi = Array.from({ length: space.size }, (_, i) => space.sample(i, rng));
+      const r = evaluate(ctx, phi, { mode, weights });
+      const f = fast.evaluate(phi);
+      expect(close(f.f, r.f)).toBe(true);
+      expect(close(f.R, r.R)).toBe(true);
+    });
   });
-});
+}
 
 /** Random rectilinear "histogram" rooms (as in the F3 integration test): narrow bars give free pieces (stage C). */
 const histogramRoom = fc
@@ -155,60 +157,62 @@ const products = [
   { id: 'c', name: 'c', boardLength: 2200, boardWidth: 240, boardsPerPack: 6 },
 ];
 
-describe('fast evaluator on random rectilinear rooms (free pieces, strips, stage C)', () => {
-  it('follows the reference through walks of moves', () => {
-    let freePieces = 0;
-    fc.assert(
-      fc.property(
-        histogramRoom,
-        fc.constantFrom(...products),
-        fc.integer({ min: 0, max: 150 }),
-        fc.integer({ min: 1, max: 100000 }),
-        (outline, product, y0, seed) => {
-          const project = createProject({
-            product,
-            rules: {
-              kerf: product.boardLength === 1000 ? 2 : 3,
-              minPieceLength: 250,
-              minStagger: 250,
-            },
-            rooms: [
-              {
-                id: 'r1',
-                name: 'Random',
-                code: 'X',
-                outline,
-                edges: outline.map(() => ({ kind: 'wall' as const })),
-                obstacles: [],
+for (const mode of ['precut', 'onsite'] as const) {
+  describe(`fast evaluator on random rectilinear rooms (free pieces, strips, stage C) (${mode})`, () => {
+    it('follows the reference through walks of moves', () => {
+      let freePieces = 0;
+      fc.assert(
+        fc.property(
+          histogramRoom,
+          fc.constantFrom(...products),
+          fc.integer({ min: 0, max: 150 }),
+          fc.integer({ min: 1, max: 100000 }),
+          (outline, product, y0, seed) => {
+            const project = createProject({
+              product,
+              rules: {
+                kerf: product.boardLength === 1000 ? 2 : 3,
+                minPieceLength: 250,
+                minStagger: 250,
               },
-            ],
-            settings: { angleDeg: 0, stackSide: 'left', rowOffset: y0 },
-          });
-          const ctx = buildContext(project, { ...rowConfigFromSettings(project.settings), y0 });
-          const space = new PhaseSpace(ctx);
-          const moves = new MoveSet(ctx, space);
-          const fast = createFastEvaluator(ctx)!;
-          const ref = createReferenceEvaluator(ctx, { mode: 'precut' });
-          const rng = createRng(seed);
-          const phi = Array.from({ length: space.size }, (_, i) => space.sample(i, rng));
-          for (let n = 0; n < 12; n++) {
-            expectSame(fast, ref, phi, `room seed ${seed} state ${n}`);
-            const dec = evaluate(ctx, phi, { mode: 'precut' }).decode;
-            if (dec.BC > 0) freePieces++;
-            const p = moves.propose(phi, rng, rng.next(), ref.unpaired());
-            const old = p.changes.map((c) => phi[c.index]!);
-            for (const c of p.changes) phi[c.index] = c.value;
-            expectSame(fast, ref, phi, `room seed ${seed} after ${p.kind}`);
-            if (rng.next() < 0.3) p.changes.forEach((c, k) => (phi[c.index] = old[k]!));
-          }
-        },
-      ),
-      { numRuns: 60 },
-    );
-    // The property is only meaningful if stage C really ran.
-    expect(freePieces).toBeGreaterThan(20);
-  }, 30_000); // 60 random rooms: ~5 s alone, more when several test runs share the CPU
-});
+              rooms: [
+                {
+                  id: 'r1',
+                  name: 'Random',
+                  code: 'X',
+                  outline,
+                  edges: outline.map(() => ({ kind: 'wall' as const })),
+                  obstacles: [],
+                },
+              ],
+              settings: { angleDeg: 0, stackSide: 'left', rowOffset: y0 },
+            });
+            const ctx = buildContext(project, { ...rowConfigFromSettings(project.settings), y0 });
+            const space = new PhaseSpace(ctx);
+            const moves = new MoveSet(ctx, space);
+            const fast = createFastEvaluator(ctx, { mode })!;
+            const ref = createReferenceEvaluator(ctx, { mode });
+            const rng = createRng(seed);
+            const phi = Array.from({ length: space.size }, (_, i) => space.sample(i, rng));
+            for (let n = 0; n < 12; n++) {
+              expectSame(fast, ref, phi, `room seed ${seed} state ${n}`);
+              const dec = evaluate(ctx, phi, { mode: 'precut' }).decode;
+              if (dec.BC > 0) freePieces++;
+              const p = moves.propose(phi, rng, rng.next(), ref.unpaired());
+              const old = p.changes.map((c) => phi[c.index]!);
+              for (const c of p.changes) phi[c.index] = c.value;
+              expectSame(fast, ref, phi, `room seed ${seed} after ${p.kind}`);
+              if (rng.next() < 0.3) p.changes.forEach((c, k) => (phi[c.index] = old[k]!));
+            }
+          },
+        ),
+        { numRuns: 60 },
+      );
+      // The property is only meaningful if stage C really ran.
+      expect(freePieces).toBeGreaterThan(20);
+    }, 30_000); // 60 random rooms: ~5 s alone, more when several test runs share the CPU
+  });
+}
 
 describe('makeModL', () => {
   const Ls = [1285, 1, 7, 1000, 2 ** 29 + 3, 1285.5];

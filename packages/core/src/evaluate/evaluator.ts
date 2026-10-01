@@ -70,12 +70,9 @@ export function createReferenceEvaluator(ctx: PlanContext, opts: EvaluateOptions
 }
 
 /**
- * The fastest evaluator that is valid for `mode`: the typed-array one for `precut` (when the room is
- * within its scope), otherwise the reference. Both give the same results (tests).
+ * The fastest evaluator for `mode`: the typed-array one (both `precut` and `onsite`, ADR-025) when the
+ * room is within its scope, otherwise the reference. Both give the same results (tests).
  */
 export function createEvaluator(ctx: PlanContext, mode: DecodeMode): Evaluator {
-  return (
-    (mode === 'precut' ? createFastEvaluator(ctx) : undefined) ??
-    createReferenceEvaluator(ctx, { mode })
-  );
+  return createFastEvaluator(ctx, { mode }) ?? createReferenceEvaluator(ctx, { mode });
 }

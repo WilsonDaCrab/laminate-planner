@@ -139,6 +139,11 @@ function pushStock(
 
 export interface FastEvaluatorOptions {
   weights?: EvalWeights;
+  /**
+   * Decoder: `precut` (default, ALGORITHM §4) or `onsite` (sequential best fit in laying order, §4.5;
+   * ADR-025). The pieces, the penalties V, H, R and the L_min deficit are the same for both.
+   */
+  mode?: 'precut' | 'onsite';
 }
 
 /**
@@ -173,7 +178,7 @@ export function makeModL(L: number): (x: number) => number {
 
 /**
  * Creates the evaluator, or undefined when the room is outside its scope (a row with 99 or more
- * pieces, where label order and number order differ). `mode` is always `precut`.
+ * pieces, where label order and number order differ). Both decoders are supported (`opts.mode`).
  */
 export function createFastEvaluator(
   ctx: PlanContext,
@@ -189,6 +194,7 @@ export function createFastEvaluator(
   const nSeg = segs.length;
 
   const modL = makeModL(L);
+  const onsite = opts.mode === 'onsite';
 
   // ---- static per-segment data ------------------------------------------------------------
   const profiles = segs.map((s) => ctx.profiles[s.id]!);
@@ -664,6 +670,8 @@ export function createFastEvaluator(
     pExt[p] = ext;
     pWid[p] = wBoth[i]!;
     pKey[p] = segRank[i]! * KEY_STRIDE + role;
+    pShort[p] = short; // the sequential decoder places these pieces one by one
+    pLong[p] = BOTH;
     pClass[p] = short === END ? C_FULL_A + 1 : C_FULL_A + 2;
   };
 
@@ -1217,6 +1225,60 @@ export function createFastEvaluator(
     return boards;
   };
 
+  /** Places piece `p` best fit, as `placeBestFit` of the reference; whole boards are only counted. */
+  const placeSeq = (p: number): number => {
+    if (pClass[p] === C_WHOLE) return 0; // counted in `wholeTotal`: it needs a fresh board and leaves nothing
+    const nf = needs(pShort[p]!, pLong[p]!);
+    const e = pExt[p]!;
+    const w = pWid[p]!;
+    let at = findStock(e, w, nf);
+    let opened = 0;
+    if (at < 0) {
+      opened = 1;
+      const before = ns;
+      addStock(L, W, F_LEFT | F_RIGHT | F_LOW | F_HIGH);
+      at = ns - 1;
+      if (ns === before || !fits(at, e, w, nf)) {
+        throw new RangeError('fast evaluator: a piece does not fit on a board');
+      }
+    }
+    cutFrom(at, e, w, nf);
+    return opened;
+  };
+
+  /**
+   * On-site decoder (`decodeSequential`): pieces in laying order (segments in layout order, inside a
+   * segment start piece, middle pieces, end piece), each cut from the best-fitting leftover of an
+   * earlier piece or from a new board. Slots hold [middle pieces…, end, start] (see `generate`).
+   */
+  const decodeSeq = (): number => {
+    ns = 0;
+    let boards = wholeTotal;
+    // Leftovers smaller than every piece are never chosen: skip them.
+    let mw = Infinity;
+    let mh = Infinity;
+    for (let i = 0; i < nSeg; i++) {
+      for (let p = pieceBase[i]!, end = p + segPieces[i]!; p < end; p++) {
+        if (pClass[p] === C_WHOLE) continue;
+        if (pExt[p]! < mw) mw = pExt[p]!;
+        if (pWid[p]! < mh) mh = pWid[p]!;
+      }
+    }
+    minStockW = mw - FIT_EPS;
+    minStockH = mh - FIT_EPS;
+    for (let i = 0; i < nSeg; i++) {
+      const base = pieceBase[i]!;
+      const n = segPieces[i]!;
+      if (n === 1) boards += placeSeq(base);
+      else {
+        boards += placeSeq(base + n - 1); // start
+        for (let k = 0; k < n - 2; k++) boards += placeSeq(base + k);
+        boards += placeSeq(base + n - 2); // end
+      }
+    }
+    return boards;
+  };
+
   const evaluator: Evaluator = {
     evaluate(phi: readonly number[]): QuickEval {
       if (phi.length !== nSeg) {
@@ -1262,7 +1324,7 @@ export function createFastEvaluator(
       cnt.free = cnt.fullA = 0;
       cnt.lowFull = cnt.lowEnds = cnt.lowStarts = 0;
       cnt.highFull = cnt.highEnds = cnt.highStarts = 0;
-      for (let r = 0; r < nSpecial; r++) {
+      for (let r = 0, nList = onsite ? 0 : nSpecial; r < nList; r++) {
         const i = specialList[r]!;
         const end = pieceBase[i]! + segPieces[i]!;
         for (let p = pieceBase[i]!; p < end; p++) {
@@ -1298,7 +1360,7 @@ export function createFastEvaluator(
           }
         }
       }
-      const B = decode();
+      const B = onsite ? decodeSeq() : decode();
 
       const val = tVal;
       const ta = tA;

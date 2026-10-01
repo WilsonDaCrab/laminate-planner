@@ -437,6 +437,8 @@ Eksperimenti: **E1** — visas instances × B-NEXT, B-INST, RS, HC, SA, SA-onsit
 - Inkrementālo versiju raksta tikai pēc tam, kad vienkāršā versija ir pareiza un nomērīta. Tās rezultātiem jāsakrīt ar vienkāršo (īpašību tests).
 - `pnpm bench perf` — mikrobenchmark.
 
+**Realizācija (F6 turpinājums, ADR-025).** `createFastEvaluator(ctx, { mode: 'onsite' })` ir tā pati tipizēto masīvu versija ar sekvenciālo dekoderi (`decodeSeq`); SA-onsite R2 uz 200 000 novērtējumu 69,6 s → 4,5 s ar identisku trajektoriju.
+
 **Realizācija (F5, ADR-016).** `evaluate/fast.ts` ir `precut` dekodera tipizēto masīvu versija: leftover ir (w, h, profilu karogi) un radīšanas secība (pozīcijas nav vajadzīgas); atlikumi, kurus neviena strēmele vairs nevar izmantot, netiek veidoti; gabalu `byId` secība tiek atveidota ar skaitlisku atslēgu (segmenta etiķetes rangs, loma `NN` < `B` < `S`). Gabali dzīvo katra segmenta pastāvīgā slotā un tiek pārrēķināti tikai, ja φ_s mainījās; veselie dēļi vidējiem "vienkāršiem" rindas gabaliem tiek tikai skaitīti; A posma gali un sākumi tiek uzturēti sakārtoti starp novērtējumiem; V un H locekļi tiek pārrēķināti tikai skartajiem segmentu pāriem (summas tajā pašā secībā kā atsauces versijā). Tests salīdzina B, V, H, N, f, `lengthDeficit` un nesapārotos gabalus ar `evaluate` uz 10 instancēm no 12 (P3, P4 netiek iekļautas), uz nejaušām taisnleņķa telpām (brīvie gabali, C posms) un garām gājienu virknēm ar vienu un to pašu novērtētāju.
 
 ## 15. Statistika un žurnāls
