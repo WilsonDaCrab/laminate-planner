@@ -84,8 +84,9 @@ export interface KnownValues {
 export function mainTableCsv(
   rows: readonly RawRow[],
   known: ReadonlyMap<string, KnownValues> = new Map(),
+  experiment: 'main' | 'bonly' = 'main',
 ): string {
-  const main = rows.filter((r) => r.experiment === 'main');
+  const main = rows.filter((r) => r.experiment === experiment);
   const head = [
     'instance',
     'group',

@@ -58,6 +58,15 @@ describe('buildJobs', () => {
     expect(jobKey(a)).not.toBe(jobKey(b));
   });
 
+  it('E4: HC, SA and SA-onsite with the H pattern off on every instance', () => {
+    const jobs = buildJobs(three, preset, ['bonly']);
+    // by hand: 3 instances x 3 methods x 3 seeds
+    expect(jobs).toHaveLength(27);
+    expect(new Set(jobs.map((j) => j.method))).toEqual(new Set(['hc', 'sa', 'sa-onsite']));
+    expect(jobs.every((j) => j.variant?.hDistance === null && j.experiment === 'bonly')).toBe(true);
+    expect(applyVariant(project, jobs[0]!.variant).rules.hPattern.enabled).toBe(false);
+  });
+
   it('keys are unique and change with the budget', () => {
     const jobs = buildJobs(three, preset);
     expect(new Set(jobs.map(jobKey)).size).toBe(jobs.length);
@@ -67,10 +76,12 @@ describe('buildJobs', () => {
 
   it('is deterministic, and the presets have the documented size', () => {
     expect(buildJobs(three, preset)).toEqual(buildJobs(three, preset));
-    // quick: 2 instances x (2 + 4·2) = 20 main runs; R2 x 2 variants x 2 seeds = 4 E3 runs
-    expect(buildJobs([inst('R2'), inst('L1'), inst('M')], QUICK_PRESET)).toHaveLength(24);
-    // full: one instance = 2 + 4·20 = 82 main runs; R2 = 8 distances x 20 seeds = 160 E3 runs
-    expect(buildJobs([inst('R2')], FULL_PRESET)).toHaveLength(82 + 160);
+    // quick: 2 instances x (2 + 4·2) = 20 main runs; R2 x 2 variants x 2 seeds = 4 E3 runs;
+    // 2 instances x 3 methods x 2 seeds = 12 E4 runs
+    expect(buildJobs([inst('R2'), inst('L1'), inst('M')], QUICK_PRESET)).toHaveLength(36);
+    // full: one instance = 2 + 4·20 = 82 main runs; R2 = 8 distances x 20 seeds = 160 E3 runs;
+    // 3 methods x 20 seeds = 60 E4 runs
+    expect(buildJobs([inst('R2')], FULL_PRESET)).toHaveLength(82 + 160 + 60);
   });
 });
 

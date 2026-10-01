@@ -5,18 +5,27 @@
  *
  * E1 "main"       — every instance × every method × seeds; feeds the main table, G1 (SA traces)
  *                   and G3 (B-INST vs SA-onsite vs SA, all read from the same rows).
+ * E4 "bonly"      — HC, SA and SA-onsite with the H pattern off on every instance: the comparison of
+ *                   the search methods on the board count alone (ADR-026).
  * E3 "aesthetics" — SA under `hPattern.distance` D = 200…500 mm and with the pattern off (G2).
  *                   The instance is varied in memory; the files in `instances/` are never touched.
  */
 
 import type { Method, Project } from '@lp/core';
 
-export type ExperimentId = 'main' | 'aesthetics';
+export type ExperimentId = 'main' | 'aesthetics' | 'bonly';
 
-export const EXPERIMENTS: readonly ExperimentId[] = ['main', 'aesthetics'];
+export const EXPERIMENTS: readonly ExperimentId[] = ['main', 'aesthetics', 'bonly'];
 
 /** Methods of E1; B-NEXT and B-INST are deterministic (one run), the rest run once per seed. */
 export const MAIN_METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc', 'sa', 'sa-onsite'];
+
+/**
+ * Methods of E4 "bonly": the pure board-count problem (H pattern off), where the objective f is B
+ * plus soft penalties that vanish, so the methods are compared on what the lower bound and the planted
+ * optima measure (ADR-026).
+ */
+export const BONLY_METHODS: readonly Method[] = ['hc', 'sa', 'sa-onsite'];
 
 export const isDeterministic = (method: Method): boolean =>
   method === 'b-next' || method === 'b-inst';
@@ -127,6 +136,25 @@ export function buildJobs(
             seed,
             iters: preset.iters,
             variant: null,
+            instanceHash: inst.hash,
+          });
+        }
+      }
+    }
+  }
+  if (only.includes('bonly')) {
+    const used =
+      preset.maxInstances === undefined ? instances : instances.slice(0, preset.maxInstances);
+    for (const inst of used) {
+      for (const method of BONLY_METHODS) {
+        for (let seed = 1; seed <= preset.seeds; seed++) {
+          jobs.push({
+            experiment: 'bonly',
+            instance: inst.id,
+            method,
+            seed,
+            iters: preset.iters,
+            variant: { hDistance: null },
             instanceHash: inst.hash,
           });
         }

@@ -4,6 +4,7 @@
  *   results/env.json                      machine and commit
  *   results/raw/<experiment>.jsonl        one row per run (resumable)
  *   results/summary.csv                   main table (E1)
+ *   results/summary_bonly.csv             the same table for E4 (H pattern off)
  *   results/tables/g1|g2|g3_*.csv         data of the plots
  *   results/plots/G1|G2|G3.svg            the plots (plots.ts)
  */
@@ -99,6 +100,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
     ]),
   );
   writeFileSync(join(opts.dir, 'summary.csv'), mainTableCsv(rows, known));
+  writeFileSync(join(opts.dir, 'summary_bonly.csv'), mainTableCsv(rows, known, 'bonly'));
   mkdirSync(join(opts.dir, 'tables'), { recursive: true });
   writeFileSync(join(opts.dir, 'tables', 'g1_convergence.csv'), convergenceCsv(rows));
   writeFileSync(join(opts.dir, 'tables', 'g2_aesthetics.csv'), aestheticsCsv(rows));

@@ -432,3 +432,13 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 **Pārbaude.** Esošie "fast = reference" īpašību testi (`fast.test.ts`: B, V, H, R, N, f, deficīts un nesapārotie gabali pēc gājienu virknēm; 16 instances ieskaitot slīpas un ar lokiem, P1–P4 un 60 nejaušas taisnleņķa telpas ar brīvajiem gabaliem) tagad skrien abiem režīmiem; visi iet. Papildus: tā pati sēkla R2 dod identisku SA trasi (B = 84, 9 no 9 trases punktiem sakrīt).
 
 **Ātrums** (R2, 200 000 novērtējumu, viens pavediens, tīrs CPU): SA-onsite 69,6 s → 4,5 s (~15×); SA 2,5 s. SA-onsite tagad ~1,8× lēnāks par SA (palicis kopīgais dekodēšanas darbs, kurā atlikumu meklēšana ir O(atlikumu skaits)).
+
+## ADR-026 — Plantētie optimumi un mērķa funkcija: H sods maskēja SA (2026-10-01)
+
+**Konteksts.** F5/F6 rezultāti (ADR-017, ADR-024) rādīja, ka SA neatrod plantētos optimumus (P2–P6: vienmēr B* + 1) un nav labāks par HC. Meklējot SA uzlabojumus, pārbaudīju P2 un P3: plantētā plāna mērķa funkcija f = B + λ_V·V + λ_H·H + ε·N ir **augstāka** par SA atrasto risinājumu (P2: plantētais B = 88, H = 39,4, f = 99,8; SA labākais B = 89, H = 0, f = 89,1; λ_H = 0,3). Plantētais optimums B* = LB1 ir tīras dēļu minimizēšanas optimums (ADR-015), bet noklusējuma noteikumos H raksts ir ieslēgts, un SA **pareizi** apmaina vienu dēli pret nulles H sodu. Tātad F5 kritērijs (b) un SA/HC salīdzinājums plantētajās instancēs mērīja ne to, ko bija paredzēts.
+
+**Lēmums.**
+- Plantētās instances (`generatePlanted`, `instances/planted/P1–P6.json`) tiek ģenerētas ar `rules.hPattern.enabled = false`: tās ir tīri B minimizēšanas uzdevumi, kuru optimums ir pierādīts. Faili pārģenerēti (mainījies tikai šis lauks).
+- Jauns eksperiments **E4 "bonly"** (`bench all`): HC, SA un SA-onsite ar izslēgtu H uz visām 27 instancēm, 20 sēklas, 200 000 novērtējumu; `results/summary_bonly.csv`. Galvenā tabula (E1) paliek ar produkta mērķi (H ieslēgts), jo tas ir lietotnes noklusējums.
+
+**Pirmie E4 rezultāti.** SA atrod plantēto optimumu P1 (20/20), P2 (20/20) un P3 (vidējais 120,25), HC nekad (vienmēr B* + 1); P4–P6 abiem B* + 1. Pārējās instancēs HC un SA sakrīt 17 no 23, bet SA ir sliktāks par HC uz L1 (86,70 pret 86,00) un L3 (64,45 pret 64,00). **F5 kritēriji tiek pārvērtēti** ar E4 (SA uzlabojumi, ADR-027).

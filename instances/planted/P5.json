@@ -17,7 +17,7 @@
     "minGap": 7,
     "maxGap": 14,
     "hPattern": {
-      "enabled": true,
+      "enabled": false,
       "distance": 100
     },
     "pattern": {

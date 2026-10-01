@@ -41,11 +41,14 @@ describe('runAll', () => {
     const dir = join(tmp, 'a');
     const lines: string[] = [];
     const first = await runAll({ instances, preset, dir, log: (l) => lines.push(l) });
-    // by hand: main 2 instances x (2 + 4·2) = 20; aesthetics T1 x 2 variants x 2 seeds = 4
-    expect(first).toMatchObject({ total: 24, skipped: 0, ran: 24 });
-    expect(lines[0]).toContain('24 runs in the matrix, 0 already done, 24 to run');
+    // by hand: main 2 instances x (2 + 4·2) = 20; aesthetics T1 x 2 variants x 2 seeds = 4;
+    // bonly 2 instances x 3 methods x 2 seeds = 12
+    expect(first).toMatchObject({ total: 36, skipped: 0, ran: 36 });
+    expect(lines[0]).toContain('36 runs in the matrix, 0 already done, 36 to run');
     expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);
     expect(readRows(rawPath(dir, 'aesthetics'))).toHaveLength(4);
+    expect(readRows(rawPath(dir, 'bonly'))).toHaveLength(12);
+    expect(existsSync(join(dir, 'summary_bonly.csv'))).toBe(true);
     expect(JSON.parse(readFileSync(join(dir, 'env.json'), 'utf8'))).toMatchObject({
       node: process.version,
     });
@@ -60,9 +63,9 @@ describe('runAll', () => {
     }
 
     const second = await runAll({ instances, preset, dir });
-    expect(second).toMatchObject({ total: 24, skipped: 24, ran: 0 });
+    expect(second).toMatchObject({ total: 36, skipped: 36, ran: 0 });
     expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);
-    expect(second.rows).toHaveLength(24);
+    expect(second.rows).toHaveLength(36);
   });
 
   it('stamps every row with the commit, warns about rows of other commits, takes meta from the instances', async () => {

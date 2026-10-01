@@ -74,12 +74,11 @@ describe('runJob', () => {
 
 describe('raw rows', () => {
   it('appends, reads back, and resumes: finished keys are not pending', () => {
-    const jobs = buildJobs([R1], {
-      seeds: 2,
-      iters: 100,
-      aestheticsInstances: [],
-      aestheticsDistances: [],
-    });
+    const jobs = buildJobs(
+      [R1],
+      { seeds: 2, iters: 100, aestheticsInstances: [], aestheticsDistances: [] },
+      ['main'],
+    );
     expect(jobs).toHaveLength(10); // 2 + 4·2
     const file = rawPath(tmp, 'main');
     for (const j of jobs.slice(0, 4)) appendRow(file, runJob(j, R1));
