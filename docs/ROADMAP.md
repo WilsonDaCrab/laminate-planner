@@ -100,15 +100,17 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 ## F6. Eksperimenti un kursa atskaite (~4–5 d) — **kursa nodevums**
 
-- [ ] `bench generate`: plantētais ģenerators (kāpņu + bloku variants), pierādījuma pārbaude (`B* = LB1`) — kāpņu variants izpildīts F5 (ADR-015, `instances/planted/P1–P4`); bloku variants atlikts
+- [ ] `bench generate`: plantētais ģenerators (kāpņu + bloku variants), pierādījuma pārbaude (`B* = LB1`) — kāpņu variants izpildīts (ADR-015; `instances/planted/P1–P6`, ADR-020); **bloku variants atlikts** (nav vajadzīgs kursa kritērijiem)
 - [x] `bench exhaustive`: pilnā pārlase tiny instancēm (ADR-018; `instances/tiny/T1–T4`)
-- [ ] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown` — instances P5–P6, R3–R4, L2–L3, S3–S4, O1–O2, C3 gatavas (ADR-020); `bench bestknown` skrējiens (10 sēklas × 2 M) notiek; `multi`, `real` netiek veidotas (M1 pēc F13)
-- [ ] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv` — kods un testi gatavi (ADR-022); galīgais skrējiens vēl jāveic; ārējā cilpa, pārlase un plantētie paliek atsevišķas komandas
-- [ ] Grafiki G1–G3 (+ G4/G5, ja ir) → `results/plots/*.svg` (Vega-Lite) — G1–G3 realizēti (`bench all`); G4/G5 nav
-- [ ] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — karkass `report/main.typ` (tabula un attēli no `results/`, 1.–2. sadaļa uzrakstīta); teksti pēc skrējieniem atzīmēti "JĀPABEIDZ"
-- [ ] Publisks GitHub repozitorijs; git tag `v0.1-kurss`
+- [x] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown` — 27 instances (ADR-020); `bestKnown` no 10 × 2 M SA 21 instancei (`results/f6/bestknown.txt`); `knownOptimum` P1–P6 (plantētās) un pierādīts B = LB: T1, T2, T4, R1, L3, O2; `multi` (M1 pēc F13) un `real` netiek veidotas
+- [x] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv` — palaists pilnā apjomā (2854 skrējieni, 2 h 41 min, commit `c318900`; ADR-022, ADR-023, ADR-024); ārējā cilpa, pārlase un plantētie paliek atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`)
+- [x] Grafiki G1–G3 → `results/plots/*.svg` (Vega-Lite); G4/G5 (neobligāti) nav
+- [ ] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — `report/main.typ` gatava 3 lpp. ar tabulu, G1–G3, secinājumiem un ierobežojumiem; **trūkst tikai saites uz repozitoriju** (sarkanais "JĀPABEIDZ" 4. sadaļā)
+- [ ] Publisks GitHub repozitorijs; git tag `v0.1-kurss` — **atstāts lietotājam kā pēdējais solis** (ārēja darbība; vajag apstiprinājumu)
 
 **Kritēriji:** `pnpm bench all` no tīra klona atkārto visas tabulas; PDF satur visas četras prasītās sadaļas un saiti uz repozitoriju.
+
+**Statuss (2026-10-01):** izpildīts viss, izņemot repozitorija publicēšanu, tagu un saiti atskaitē. Kritērijs "no tīra klona" nav pārbaudīts burtiski: skrējiens (2 h 41 min) palaists uz darba koka ar nekomitētām izmaiņām, kas rezultātus neietekmē (ADR-024). **F5 kritēriji (a) un (b) paliek neizpildīti** (SA nav būtiski labāks par HC; plantētos optimumus P2–P6 neatrod; ADR-017, ADR-024) un atskaitē ziņoti godīgi.
 
 ### Kursa atskaites struktūra
 

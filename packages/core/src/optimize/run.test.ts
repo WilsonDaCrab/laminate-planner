@@ -49,7 +49,8 @@ describe('baselines on instances/*', () => {
           // HC starts from B-INST and may legitimately return it unchanged for any seed.
           if (m === 'rs') expect(run(3)).not.toEqual(run(4));
         }
-      });
+        // six runMethod calls, each rebuilding the context and scanning y0: ~3 s on the curved rooms
+      }, 30_000);
 
       it('hc is never worse than its B-INST start (same decoder)', () => {
         const { ctx } = runMethod(project, 'b-inst');

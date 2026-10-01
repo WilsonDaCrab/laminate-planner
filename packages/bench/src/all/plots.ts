@@ -32,18 +32,28 @@ export function parseCsv(text: string): Table {
 
 const COMMON = { background: 'white', config: { font: 'sans-serif' } } as const;
 
+/**
+ * G1 shows one mid-sized room of every family (27 panels would be unreadable); the CSV keeps all.
+ * Without any of these (a quick run, tests) every instance is drawn.
+ */
+export const G1_INSTANCES = ['P4', 'R2', 'L1', 'S1', 'O1', 'C1'] as const;
+
 /** G1: best B so far against the evaluations (log axis): mean line, min–max band, per instance. */
-export function g1Spec(rows: Table): TopLevelSpec {
+export function g1Spec(all: Table): TopLevelSpec {
+  const chosen = all.filter((r) =>
+    (G1_INSTANCES as readonly string[]).includes(String(r.instance)),
+  );
+  const rows = chosen.length > 0 ? chosen : all;
   return {
     ...COMMON,
     title: 'G1 Convergence of SA: best B so far (mean, min–max over the seeds)',
     data: { values: rows },
     facet: { field: 'instance', type: 'nominal', title: null },
-    columns: 4,
+    columns: 3,
     resolve: { scale: { y: 'independent' } },
     spec: {
-      width: 170,
-      height: 120,
+      width: 220,
+      height: 140,
       layer: [
         {
           mark: { type: 'area', opacity: 0.25 },

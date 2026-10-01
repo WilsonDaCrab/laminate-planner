@@ -1,0 +1,34 @@
+$ pnpm -F @lp/bench bench "all" "--jobs" "auto"
+$ tsx src/index.ts "all" "--jobs" "auto"
+bench all: 27 instances, 20 seeds, 200000 evaluations, 15 threads, output results
+2854 runs in the matrix, 0 already done, 2854 to run
+100/2854 runs, 2 s elapsed, about 57 s left
+200/2854 runs, 13 s elapsed, about 178 s left
+300/2854 runs, 40 s elapsed, about 339 s left
+400/2854 runs, 355 s elapsed, about 2180 s left
+500/2854 runs, 1061 s elapsed, about 4996 s left
+600/2854 runs, 1999 s elapsed, about 7510 s left
+700/2854 runs, 3092 s elapsed, about 9515 s left
+800/2854 runs, 4383 s elapsed, about 11252 s left
+900/2854 runs, 5206 s elapsed, about 11304 s left
+1000/2854 runs, 5472 s elapsed, about 10145 s left
+1100/2854 runs, 5686 s elapsed, about 9067 s left
+1200/2854 runs, 6044 s elapsed, about 8331 s left
+1300/2854 runs, 6426 s elapsed, about 7682 s left
+1400/2854 runs, 6620 s elapsed, about 6876 s left
+1500/2854 runs, 6954 s elapsed, about 6277 s left
+1600/2854 runs, 7350 s elapsed, about 5761 s left
+1700/2854 runs, 7612 s elapsed, about 5167 s left
+1800/2854 runs, 7953 s elapsed, about 4657 s left
+1900/2854 runs, 8180 s elapsed, about 4107 s left
+2000/2854 runs, 8490 s elapsed, about 3625 s left
+2100/2854 runs, 8861 s elapsed, about 3182 s left
+2200/2854 runs, 9334 s elapsed, about 2775 s left
+2300/2854 runs, 9375 s elapsed, about 2258 s left
+2400/2854 runs, 9416 s elapsed, about 1781 s left
+2500/2854 runs, 9450 s elapsed, about 1338 s left
+2600/2854 runs, 9519 s elapsed, about 930 s left
+2700/2854 runs, 9593 s elapsed, about 547 s left
+2800/2854 runs, 9621 s elapsed, about 186 s left
+2854/2854 runs, 9635 s elapsed, about 0 s left
+done: 2854 runs executed, 0 reused; results/summary.csv and results/tables/

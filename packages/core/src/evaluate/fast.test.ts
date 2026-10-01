@@ -56,6 +56,8 @@ describe('fast evaluator equals the reference (precut)', () => {
     'C2',
     'P1',
     'P2',
+    'P3',
+    'P4',
     'T1',
     'T2',
     'T3',
@@ -91,7 +93,7 @@ describe('fast evaluator equals the reference (precut)', () => {
         }),
         { numRuns: 8 },
       );
-    });
+    }, 60_000); // ~1.5 s each alone for P3 and P4; generous for a loaded machine
   }
 
   it('rejects a phase vector of the wrong length', () => {

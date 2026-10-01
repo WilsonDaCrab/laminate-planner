@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { g2Spec, g3Spec, parseCsv, renderSvg, writePlots } from './plots';
+import { g1Spec, g2Spec, g3Spec, parseCsv, renderSvg, writePlots } from './plots';
 
 const tmp = mkdtempSync(join(tmpdir(), 'lp-plots-'));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
@@ -18,6 +18,15 @@ describe('parseCsv', () => {
 });
 
 describe('specs', () => {
+  it('G1 draws the representative instances when present, else everything', () => {
+    const head = 'instance,method,eval,mean,min,max,seeds';
+    const csv = [head, 'P4,sa,1,20,19,21,2', 'P5,sa,1,30,29,31,2', 'R2,sa,1,40,39,41,2'].join('\n');
+    const values = (s: unknown) => (s as { data: { values: { instance: string }[] } }).data.values;
+    expect(values(g1Spec(parseCsv(csv))).map((r) => r.instance)).toEqual(['P4', 'R2']);
+    const other = [head, 'A,sa,1,20,19,21,2', 'B,sa,1,30,29,31,2'].join('\n');
+    expect(values(g1Spec(parseCsv(other))).map((r) => r.instance)).toEqual(['A', 'B']);
+  });
+
   it('G3 turns the means into percentages of B-INST', () => {
     const spec = g3Spec(
       parseCsv(

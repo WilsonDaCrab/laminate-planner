@@ -980,8 +980,9 @@ export function createFastEvaluator(
         mw = Math.min(mw, pExt[lHigh.starts[i]!]!);
         mh = Math.min(mh, pWid[lHigh.starts[i]!]!);
       }
-      minStockW = mw - EPS;
-      minStockH = mh - EPS;
+      // Same tolerance as `fits` (ADR-023): a leftover that a piece could still fit into is kept.
+      minStockW = mw - FIT_EPS;
+      minStockH = mh - FIT_EPS;
     }
     // Stage A: whole-width pieces. Whole boards were counted when the pieces were generated.
     // (Hot loops read the captured arrays through locals, see `refreshSorted`.)

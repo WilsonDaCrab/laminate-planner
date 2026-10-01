@@ -8,3 +8,4 @@ report/*.pdf
 .claude/settings.local.json
 results/f3/
 results/f4/
+results/**/raw/

@@ -368,7 +368,7 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 
 **Lēmums.** Slēgums izcelts kā eksportēta `makeModL(L)` (`evaluate/fast.ts`; kods un uzvedība nemainās), un `fast.test.ts` pārbauda `Object.is(modL(x), mod(x, L))` ar fast-check: fāzes un starpības, veseli skaitļi, L daudzkārtņi ± 1e-9, vērtības līdz ±2⁴⁵ (aiz `FMOD_LIMIT`), ±0, L ∈ {1, 7, 1000, 1285, 2²⁹ + 3, 1285,5} (pēdējais nav vesels, tāpēc iet pa `mod` atkāpšanās ceļu). Pretpiemēru nebija (20 000 gadījumu).
 
-**Atvērts paliek:** ierobežojums (4), t.i., P3, P4 nav `fast.test.ts` references salīdzinājumā (laiks).
+**Aizvērts F6 beigās:** ierobežojums (4): P3 un P4 pievienoti `fast.test.ts` references salīdzinājumam (30 un 42 segmenti, ~1,5 s katrs; pretpiemēru nebija).
 
 ## ADR-022 — `bench all`: sadalījums, atsākšana, pavedieni, Vega-Lite (F6) (2026-09-30)
 
@@ -390,7 +390,7 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 - `env.json` ieraksta `threads`; laika kolonna ir godīga tikai ar `--jobs 1` (atskaitē jānorāda).
 - `evalsToBest` aizstāts ar `evalsToFinalB`: pirmā iterācija, kurā sasniegts galīgais B (iepriekš: pēdējais uzlabojums, arī f uzlabojumi ar to pašu B).
 - Pool: `exit` apstrāde (darbinieks, kas beidzas bez ziņojuma, vairs neaptur rindu uz visiem laikiem). `writeMeta` raksta atomiski (fails + `rename`).
-- `difficulty`/`difficultyCells`: vidējais B un gap tagad tikai pa derīgajiem skrējieniem (kā `summary.csv`), CSV papildināts ar `feasible`. **Piezīme:** `results/f6/difficulty.csv`, kas tika sākts pirms šī labojuma, ir aprēķināts ar veco formulu (vidējais pa visiem skrējieniem) un bez kolonnas `feasible`; `found/runs` no tā nemainās.
+- `difficulty`/`difficultyCells`: vidējais B un gap tagad tikai pa derīgajiem skrējieniem (kā `summary.csv`), CSV papildināts ar `feasible`. **Piezīme:** `results/f6/difficulty.csv` pirmā versija (sākta pirms šī labojuma) bija aprēķināta ar veco formulu; F6 beigās sērija pārrēķināta ar labotu kodu (3 paralēli procesi pa n apakškopām, CSV apvienots): `found/runs` sakrīt visās 40 šūnās, vidējie un gap tagad ir pa derīgajiem skrējieniem. RS: derīgi 20/20 pie n = 6 un 10, 10/20 pie 14, 0/20 pie n ≥ 18.
 - `knownOptimum` kritērijs ir B = LB = max(LB0, LB1) (abas ir derīgas apakšējās robežas), nevis tikai LB1.
 
 ## ADR-023 — Dekodera `fits` pielaide gabaliem pie sienas (F6) (2026-10-01)
@@ -402,3 +402,23 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 **Tests.** `plan/seamTolerance.test.ts` izmanto tieši to φ (P1, segments 6a) abos režīmos: bez labojuma on-site tests krīt ar to pašu izņēmumu, ar labojumu iet; pārbauda, ka novērtētājs, plāns un validators dod vienādu B un nav cieto pārkāpumu.
 
 **Sekas.** Skrējieni, kas neizmeta izņēmumu, nemainās (pielaide ietekmē tikai gabalus, kas ir 1e-6…2e-6 garāki par krājumu). `results/raw` no pirmā mēģinājuma izmests, galīgais skrējiens sākts no jauna. Vispārīgs secinājums: šādi float robežgadījumi parādās tikai tad, ja SA uzdur φ tieši uz F_s malu, tāpēc garie skrējieni (`bench all`, `bestknown`) ir noderīgs tests.
+
+## ADR-024 — F6 galīgie rezultāti (2026-10-01)
+
+**Konteksts.** `pnpm bench all` (ADR-022) izpildīts pilnā apjomā uz commit `c318900` (ar ADR-023 labojumu): 27 instances, 20 sēklas, 200 000 novērtējumu, 2854 skrējieni, 15 pavedieni, 2 h 41 min (`results/env.json`, `results/summary.csv`, `results/tables/`, `results/plots/G1–G3.svg`). Laika apakškopa ar vienu pavedienu: `results/timing/` (R1–R4, 3 sēklas, 12 min).
+
+**Rezultāti.**
+- SA visos 540 skrējienos beidzas derīgs. RS 408 no 540 skrējieniem ir nederīgi (V > 0).
+- SA uzlabo B-INST (on-site) vidēji par 1,9 % (līdz 9,0 %, U1) un B-NEXT par 4,3 % (līdz 9,3 %, R3) uz 23 netriviālām instancēm (vidējie B pa 20 sēklām; pret labākajiem rezultātiem 2,1 % un 4,5 %).
+- SA labākais rezultāts pret LB = max(LB0, LB1): vidēji +1,4 dēļi (3,1 %); 7 no 27 sakrīt ar LB (T1, T2, T4, P1, R1, L3, O2). Lielākās atšķirības: R4 +7 (2,8 %), T3 (LB 5, pārlase 7).
+- **SA pret HC: nav būtiskas atšķirības.** Vidējais B pa 20 sēklām sakrīt 16 no 23 telpām, SA labāks 3 (P1, L2, L3), HC labāks 4 (P4, P5, L1, S2); zīmju tests p = 1,0. **F5 kritēriji (a) un (b) paliek neizpildīti** (ADR-017, ADR-019); atskaitē tas ziņots godīgi.
+- Plantētās P2–P6: SA vienmēr atrod B* + 1 (labākais 89, 121, 169, 201, 249 pret 88, 120, 168, 200, 248); tikai P1 atrod B* (20/20).
+- Grūtības sērija (n = 6…42): SA atrod B* 20/20 pie n = 6, 8/20 pie 10, 14/20 pie 14, 5/20 pie 18, 1/20 pie 26, nekad pie 22 un n ≥ 30; B-INST un RS nekad; HC tikai n = 6. Sērija nav monotona, jo katram n ir cita instance.
+- SA (200 000) labākais sakrīt ar `bestKnown` (10 × 2 M) visās 21 instancē, kurām tas ir ierakstīts, tātad labākais rezultāts 10× lielākā budžetā nemainījās; vidējais gan uzlabojās par ≤ 0,7 dēļiem (L1, L2, L3), un sešās no tām (T1, T2, T4, R1, L3, O2) sakritība ir triviāla, jo LB ir sasniegta.
+- SA-onsite vidēji nekad nav labāks par SA (precut) (starpība 0…1,3 dēļi); B-INST nav labāks ne par vienu. Tas ir novērojums pie vienāda budžeta, ne pierādījums, ka precut ir vienmēr labāks (B_onsite ≥ B_precut nav garantēts, ALGORITHM §4.2).
+- G2: H-raksta attālums D = 200…500 mm maina vidējo B tikai L1 (86,7 bez H pret 87,0–87,5, t.i., līdz +0,8 dēļiem) un R2 (≤ 0,05); S1 un O1 tas nemainās. Atlikušais H pārkāpums aug līdz ar D (R2: 4,7 → 22,3).
+- Laiks (1 pavediens, 200 000 novērtējumu): B-NEXT/B-INST 5–40 ms, HC 0,9–1,4 s, SA 2,1–2,9 s, RS 4,6–10 s, SA-onsite 37–110 s (18–38× lēnāks par SA: nav ātrā novērtētāja).
+
+**Piezīme par reproducējamību.** `results/env.json` un `results/timing/env.json` ir `dirty: true`: darba kokā bija nekomitētas izmaiņas (grafiku kods, testi, dokumenti), kas rezultātus neietekmē; visas 2214 + 640 rindas ir uz commit `c318900`. `runAll` pārraksta `env.json` katrā atsākšanā.
+
+**Ierobežojumi un atvērtie jautājumi.** Laika kolonna `summary.csv` ir no 15 pavedienu skrējiena (aptuvena); `bestKnown` nav pierādīts optimums; LB nav šaura; SA joprojām nav pārāks par HC, un tā iemesli (gājieni, temperatūra, budžets) nav izmeklēti: tas ir nākamais darbs, ja kurss to prasa (F5 punkti: restarti, HC pēcapstrāde). Pilna matrica nav atkārtota ar `--jobs 1` (9 h).
