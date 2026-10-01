@@ -25,9 +25,9 @@ import { PhaseSpace } from './phaseSpace';
 import type { SearchResult } from './types';
 
 export interface SaConfig {
-  /** Probability of accepting the median uphill move (not raising V) at the start (calibration target). */
+  /** Probability of accepting the median uphill move (not raising V) at the start (default 0.3, ADR-027). */
   p0?: number;
-  /** Probability of accepting +1 board at the end. */
+  /** Probability of accepting +1 board at the end (default 1e-8, ADR-027). */
   pEnd?: number;
   /** Number of objective evaluations, calibration included (deterministic budget). */
   iters?: number;
@@ -37,8 +37,12 @@ export interface SaConfig {
   weights?: MoveWeights;
   /** How M4 chooses its source and partner (default: `DEFAULT_PAIRING`). */
   pairing?: PairingOptions;
-  /** Restart from the best solution at T₀/2 after 25 % of the budget without a new best. */
+  /** Restart from the best solution at a lower T₀ after `reheatFraction` of the budget without a new best (default on). */
   reheat?: boolean;
+  /** Share of the budget without a new best that triggers a reheat (default 0.005). */
+  reheatFraction?: number;
+  /** T₀ of a reheat as a share of the calibrated T₀ (default 0.5). */
+  reheatFactor?: number;
   /** Decoder for B; default: the project's mode (`onsite` gives SA-onsite). */
   mode?: DecodeMode;
   /** Objective evaluator; default: the typed-array one for `precut`, else the reference. */
@@ -86,7 +90,11 @@ export interface SaResult extends SearchResult {
 
 export const SA_DEFAULT_ITERS = 200_000;
 const CHECK_EVERY = 256;
-const REHEAT_FRACTION = 0.25;
+// Tuned on the board-count objective (ADR-027): frequent short restarts from the best solution.
+const SA_P0 = 0.3;
+const SA_P_END = 1e-8;
+const REHEAT_FRACTION = 0.005;
+const REHEAT_FACTOR = 0.5;
 
 const emptyStat = (): MoveStat => ({ proposed: 0, accepted: 0, downhill: 0, newBest: 0 });
 
@@ -104,8 +112,11 @@ function undo(phi: number[], changes: readonly PhaseChange[], old: readonly numb
 const MIN_CALIBRATION_STEPS = 10;
 
 export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult {
-  const p0 = cfg.p0 ?? 0.8;
-  const pEnd = cfg.pEnd ?? 0.001;
+  const p0 = cfg.p0 ?? SA_P0;
+  const pEnd = cfg.pEnd ?? SA_P_END;
+  const reheatOn = cfg.reheat ?? true;
+  const reheatFraction = cfg.reheatFraction ?? REHEAT_FRACTION;
+  const reheatFactor = cfg.reheatFactor ?? REHEAT_FACTOR;
   const timed = cfg.timeMs !== undefined;
   if (timed && !cfg.clock) throw new RangeError('runSa: timeMs needs a clock');
   const mode = cfg.mode ?? ctx.project.settings.mode;
@@ -189,6 +200,7 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
   let tauBase = 0;
   let T0eff = T0;
   let sinceBest = 0;
+  let tauBest = 0; // progress at the last new best: the reheat trigger of time-limited runs
   let reheats = 0;
   let accepted = 0;
   let iterations = 0;
@@ -223,6 +235,7 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
         evalsToBest = evals;
         msToBest = clock ? clock() - t0Clock : undefined;
         sinceBest = 0;
+        tauBest = tau;
         if (ev.feasible && ev.B === lb) proven = true;
       }
     } else {
@@ -232,10 +245,9 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
     if (evals % step === 0) sample();
 
     if (
-      cfg.reheat &&
-      total &&
+      reheatOn &&
       budget.allows(evals) &&
-      sinceBest > REHEAT_FRACTION * total &&
+      (total ? sinceBest > reheatFraction * total : tau - tauBest > reheatFraction) &&
       tau < 0.95
     ) {
       // Continue from the best solution with a lower T₀ (ALGORITHM §7, optional).
@@ -243,9 +255,10 @@ export function runSa(ctx: PlanContext, rng: Rng, cfg: SaConfig = {}): SaResult 
       cur = evaluator.evaluate(phi);
       evals++;
       if (usesPairing) unpaired = evaluator.unpaired();
-      T0eff = Math.max(T0 / 2, Tend);
+      T0eff = Math.max(T0 * reheatFactor, Tend);
       tauBase = tau;
       sinceBest = 0;
+      tauBest = tau;
       reheats++;
     }
   }

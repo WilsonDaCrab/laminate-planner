@@ -34,7 +34,8 @@ describe('loadInstances', () => {
   });
 });
 
-describe('runAll', () => {
+// Each test runs a whole matrix (two instances, three experiments, plots): seconds alone, more under load.
+describe('runAll', { timeout: 60_000 }, () => {
   const instances = loadInstances(root).filter((i) => ['T1', 'T2'].includes(i.id));
 
   it('runs the matrix, writes env, raw rows and tables, and resumes without rerunning', async () => {

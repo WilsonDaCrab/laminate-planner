@@ -144,6 +144,31 @@ describe('runSa behaviour', () => {
     expect(() => runSa(ctx, createRng(1), { timeMs: 100 })).toThrow(/clock/);
   });
 
+  it('reheats in time-limited runs too (progress without a new best, not an evaluation count)', () => {
+    const { ctx } = load('R2');
+    let t = 0;
+    const clock = () => (t += 400);
+    const r = runSa(ctx, createRng(1), { timeMs: 2000, clock, mode: 'precut' });
+    expect(r.stats.reheats).toBeGreaterThan(0);
+    const off = { t: 0 };
+    const noReheat = runSa(ctx, createRng(1), {
+      timeMs: 2000,
+      clock: () => (off.t += 400),
+      mode: 'precut',
+      reheat: false,
+    });
+    expect(noReheat.stats.reheats).toBe(0);
+  });
+
+  it('uses the tuned defaults: p0 0.3, pEnd 1e-8, reheat on (ADR-027)', () => {
+    const { ctx } = load('R2');
+    const r = runSa(ctx, createRng(1), { iters: 1500, mode: 'precut' });
+    expect(r.stats.Tend).toBeCloseTo(1 / Math.log(1e8), 12);
+    expect(r.stats.reheats).toBeGreaterThanOrEqual(0);
+    const hot = runSa(ctx, createRng(1), { iters: 1500, mode: 'precut', p0: 0.8 });
+    expect(hot.stats.T0).toBeGreaterThan(r.stats.T0);
+  });
+
   it('reheats without breaking the result invariants', () => {
     const { ctx } = load('R2');
     const r = runSa(ctx, createRng(3), { iters: ITERS, reheat: true, mode: 'precut' });

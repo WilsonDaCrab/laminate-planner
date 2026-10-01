@@ -442,3 +442,24 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 - Jauns eksperiments **E4 "bonly"** (`bench all`): HC, SA un SA-onsite ar izslēgtu H uz visām 27 instancēm, 20 sēklas, 200 000 novērtējumu; `results/summary_bonly.csv`. Galvenā tabula (E1) paliek ar produkta mērķi (H ieslēgts), jo tas ir lietotnes noklusējums.
 
 **Pirmie E4 rezultāti.** SA atrod plantēto optimumu P1 (20/20), P2 (20/20) un P3 (vidējais 120,25), HC nekad (vienmēr B* + 1); P4–P6 abiem B* + 1. Pārējās instancēs HC un SA sakrīt 17 no 23, bet SA ir sliktāks par HC uz L1 (86,70 pret 86,00) un L3 (64,45 pret 64,00). **F5 kritēriji tiek pārvērtēti** ar E4 (SA uzlabojumi, ADR-027).
+
+## ADR-027 — SA noklusējuma parametri un biežā atjaunošana (2026-10-01)
+
+**Konteksts.** ADR-026 parādīja, ka ar tīru B mērķi SA atrod P1–P3 optimumus, bet P4–P6 un L veida telpās (L1, L3) zaudē vienkāršam HC. Sākuma temperatūra no ADR-016 (`p0 = 0,8`, kalibrēta ar ieslēgtu H) ar B mērķi dod T₀ ≈ 4,5 (+1 dēlis tiek pieņemts ar ~80 % varbūtību), tāpēc liela daļa no 200 000 novērtējumiem tiek iztērēta pārāk karstā režīmā.
+
+**Eksperiments.** Parametru režģis uz 9 instancēm (L1, L2, L3, P3, P4, P5, R2, S2, U1), H izslēgts, 10 sēklas, 200 000 novērtējumu, 4 kārtas (34 varianti; pagaidu skripts `bench/tune2.ts`, nav palicis repozitorijā). Rādītājs: vidējo B summa un skrējieni, kas sasniedz labāko zināmo/plantēto optimumu (no 90).
+
+| Variants | summa | trāpījumi |
+|---|---|---|
+| ADR-016 noklusējums (p0 0,8, pEnd 1e-3) | 971,8 | 52/90 |
+| p0 0,3, pEnd 1e-6 | 970,2 | 68/90 |
+| + atjaunošana ik pēc 25 % bez uzlabojuma | 969,4 | 76/90 |
+| + atjaunošana ik pēc 5 % | 968,9 | 81/90 |
+| + atjaunošana ik pēc 1 % | 968,4 | 85/90 |
+| **p0 0,3, pEnd 1e-8, atjaunošana ik pēc 0,5 %** | **968,2** | **88/90** |
+
+Trends: zemāks p0 un pEnd palīdz, un jo biežāk SA restartē no labākā risinājuma ar zemāku T₀ (`reheatFactor` 0,5), jo labāk; pie 0,25–1 % rezultāti ir plato (atšķirības trokšņa līmenī pie 10 sēklām). P4 optimums 168: 0/10 → 10/10; P5 200: 0/10 → 8/10. Vienā S2 sēklā atrasts B = 36 (iepriekšējais `bestKnown` 37 bija ar H ieslēgtu).
+
+**Lēmums.** Noklusējumi: `p0 = 0,3`, `pEnd = 1e-8`, `reheat = true`, `reheatFraction = 0,005`, `reheatFactor = 0,5` (konfigurējami). Atjaunošanas trigeris laika režīmā (lietotne): progress bez jauna labākā (`tau − tauBest`) nevis iterāciju skaits, jo laika režīmā nav kopējā iterāciju skaita (iepriekš `reheat` darbojās tikai iterāciju režīmā). Pārbauda `sa.test.ts`.
+
+**Brīdinājums.** Parametri izvēlēti uz 9 instancēm un 10 sēklām (pārmērīgas pielāgošanas risks); validācija: pilns `bench all` uz visām 27 instancēm, 20 sēklas, abiem mērķiem (ADR-028).
