@@ -72,17 +72,17 @@ Eksperimentos izmantoti noklusējuma parametri: $p_0 = "0,8"$, $p_"end" = "0,001
 )
 
 #figure(
-  image("/" + res + "/plots/G1.svg", width: 82%),
+  image("/" + res + "/plots/G1.svg", width: 74%),
   caption: [G1. SA konverģence: labākais $B$ līdz attiecīgajam novērtējumu skaitam (vidējais un min–max pa 20 sēklām), pa vienai vidēja lieluma telpai no katras ģimenes (P4, R2, L1, S1, O1, C1); visas instances ir `results/tables/g1_convergence.csv`.],
 )
 
 #figure(
-  image("/" + res + "/plots/G3.svg", width: 80%),
+  image("/" + res + "/plots/G3.svg", width: 66%),
   caption: [G3. Iepriekšējas griešanas vērtība: $B$ procentos pret B-INST (klāšanas laikā griežot); SA-onsite ir tas pats SA ar atlikumu izmantošanu uz vietas, SA ir iepriekšēja griešana.],
 )
 
 #figure(
-  image("/" + res + "/plots/G2.svg", width: 85%),
+  image("/" + res + "/plots/G2.svg", width: 76%),
   caption: [G2. H-rakstura cena: vidējais $B$ atkarībā no šuvju nobīdes attāluma $D$ (mm).],
 )
 
@@ -117,4 +117,4 @@ Eksperimentos izmantoti noklusējuma parametri: $p_0 = "0,8"$, $p_"end" = "0,001
 
 = Saite uz repozitoriju
 
-#todo("publiskā GitHub repozitorija URL; git tag v0.1-kurss; viena rindkopa par lietotni (PWA), ja ir ekrānuzņēmums")
+Kods, instances, rezultāti un šī atskaite: #link("https://github.com/WilsonDaCrab/laminate-planner")[github.com/WilsonDaCrab/laminate-planner] (tag `v0.1-kurss`). Skaitļus un grafikus atkārto `pnpm bench all --jobs auto` (~2,7 h). Web lietotne (PWA) vēl nav izveidota (fāzes F7+).

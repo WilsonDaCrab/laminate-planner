@@ -105,12 +105,12 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [x] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown` — 27 instances (ADR-020); `bestKnown` no 10 × 2 M SA 21 instancei (`results/f6/bestknown.txt`); `knownOptimum` P1–P6 (plantētās) un pierādīts B = LB: T1, T2, T4, R1, L3, O2; `multi` (M1 pēc F13) un `real` netiek veidotas
 - [x] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv` — palaists pilnā apjomā (2854 skrējieni, 2 h 41 min, commit `c318900`; ADR-022, ADR-023, ADR-024); ārējā cilpa, pārlase un plantētie paliek atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`)
 - [x] Grafiki G1–G3 → `results/plots/*.svg` (Vega-Lite); G4/G5 (neobligāti) nav
-- [ ] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — `report/main.typ` gatava 3 lpp. ar tabulu, G1–G3, secinājumiem un ierobežojumiem; **trūkst tikai saites uz repozitoriju** (sarkanais "JĀPABEIDZ" 4. sadaļā)
-- [ ] Publisks GitHub repozitorijs; git tag `v0.1-kurss` — **atstāts lietotājam kā pēdējais solis** (ārēja darbība; vajag apstiprinājumu)
+- [x] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — `report/main.typ` un `report/main.pdf` (3 lpp.): tabula, G1–G3, secinājumi, ierobežojumi, saite uz repozitoriju
+- [x] GitHub repozitorijs (`WilsonDaCrab/laminate-planner`), git tag `v0.1-kurss` — kods un tags nosūtīti; repozitorijs paliek **PRIVĀTS**, lietotājs to padarīs publisku, kad vajadzēs (saite atskaitē strādās pēc tam)
 
 **Kritēriji:** `pnpm bench all` no tīra klona atkārto visas tabulas; PDF satur visas četras prasītās sadaļas un saiti uz repozitoriju.
 
-**Statuss (2026-10-01):** izpildīts viss, izņemot repozitorija publicēšanu, tagu un saiti atskaitē. Kritērijs "no tīra klona" nav pārbaudīts burtiski: skrējiens (2 h 41 min) palaists uz darba koka ar nekomitētām izmaiņām, kas rezultātus neietekmē (ADR-024). **F5 kritēriji (a) un (b) paliek neizpildīti** (SA nav būtiski labāks par HC; plantētos optimumus P2–P6 neatrod; ADR-017, ADR-024) un atskaitē ziņoti godīgi.
+**Statuss (2026-10-01): F6 noslēgta.** Izpildīts viss; repozitorijs nav publisks (lietotāja lēmums). Kritērijs "no tīra klona" nav pārbaudīts burtiski: skrējiens (2 h 41 min) palaists uz darba koka ar nekomitētām izmaiņām, kas rezultātus neietekmē (ADR-024). **F5 kritēriji (a) un (b) paliek neizpildīti** (SA nav būtiski labāks par HC; plantētos optimumus P2–P6 neatrod; ADR-017, ADR-024) un atskaitē ziņoti godīgi.
 
 ### Kursa atskaites struktūra
 
