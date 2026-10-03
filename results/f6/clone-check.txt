@@ -1,0 +1,6 @@
+Clean-clone reproduction (2026-10-03)
+git clone of commit 2b1deee -> pnpm install --frozen-lockfile -> pnpm bench all --jobs 12
+4474 runs executed, 0 reused, 3942 s elapsed (12 threads).
+results/summary.csv and summary_bonly.csv: identical to the committed ones except the *_ms (timing) columns (0 differing lines without them, 28 lines each).
+results/tables/g1_convergence.csv, g2_aesthetics.csv, g3_precut.csv: identical (0 differing lines).
+results/env.json differs only in commit, startedAt and threads.
