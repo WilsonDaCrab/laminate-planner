@@ -1,0 +1,3 @@
+$ pnpm -F @lp/bench bench "difficulty" "--n" "6" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif10/n6"
+$ tsx src/index.ts "difficulty" "--n" "6" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif10/n6"
+n          m2         segs       optimum    B-INST     RS         HC         SA           (found/runs at the planted optimum; 20 seeds, 200000 evaluations; generator seed = n)

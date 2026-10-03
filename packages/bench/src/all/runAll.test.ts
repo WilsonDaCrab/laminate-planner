@@ -63,7 +63,10 @@ describe('runAll', { timeout: 60_000 }, () => {
       expect(readFileSync(join(dir, 'plots', `${g}.svg`), 'utf8')).toContain('<svg');
     }
 
+    const envBefore = readFileSync(join(dir, 'env.json'), 'utf8');
     const second = await runAll({ instances, preset, dir });
+    // a pass with nothing to run leaves the description of the producing session alone
+    expect(readFileSync(join(dir, 'env.json'), 'utf8')).toBe(envBefore);
     expect(second).toMatchObject({ total: 36, skipped: 36, ran: 0 });
     expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);
     expect(second.rows).toHaveLength(36);

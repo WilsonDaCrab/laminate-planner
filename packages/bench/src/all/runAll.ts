@@ -9,7 +9,7 @@
  *   results/plots/G1|G2|G3.svg            the plots (plots.ts)
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readEnv } from './env';
 import { executeSequential, type Execute } from './execute';
@@ -65,10 +65,14 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
 
   mkdirSync(opts.dir, { recursive: true });
   const env = readEnv();
-  writeFileSync(
-    join(opts.dir, 'env.json'),
-    `${JSON.stringify({ ...env, threads: opts.threads ?? 1 }, null, 2)}\n`,
-  );
+  // `env.json` describes the session that produced rows: a pass that only regenerates the tables
+  // from finished rows must not overwrite it (it would claim another thread count and start time).
+  if (todo.length > 0 || !existsSync(join(opts.dir, 'env.json'))) {
+    writeFileSync(
+      join(opts.dir, 'env.json'),
+      `${JSON.stringify({ ...env, threads: opts.threads ?? 1 }, null, 2)}\n`,
+    );
+  }
   // Rows of earlier sessions stay in the files; their code may differ from this checkout.
   const foreign = currentRows(opts.dir, jobs).filter((r) => r.commit !== env.commit);
   if (foreign.length > 0) {

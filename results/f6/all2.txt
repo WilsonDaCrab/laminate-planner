@@ -1,0 +1,50 @@
+$ pnpm -F @lp/bench bench "all" "--jobs" "8"
+$ tsx src/index.ts "all" "--jobs" "8"
+bench all: 27 instances, 20 seeds, 200000 evaluations, 8 threads, output results
+4474 runs in the matrix, 0 already done, 4474 to run
+100/4474 runs, 1 s elapsed, about 59 s left
+200/4474 runs, 14 s elapsed, about 296 s left
+300/4474 runs, 28 s elapsed, about 393 s left
+400/4474 runs, 159 s elapsed, about 1622 s left
+500/4474 runs, 467 s elapsed, about 3708 s left
+600/4474 runs, 926 s elapsed, about 5978 s left
+700/4474 runs, 1358 s elapsed, about 7322 s left
+800/4474 runs, 1934 s elapsed, about 8884 s left
+900/4474 runs, 2032 s elapsed, about 8069 s left
+1000/4474 runs, 2106 s elapsed, about 7315 s left
+1100/4474 runs, 2173 s elapsed, about 6664 s left
+1200/4474 runs, 2256 s elapsed, about 6155 s left
+1300/4474 runs, 2345 s elapsed, about 5726 s left
+1400/4474 runs, 2438 s elapsed, about 5352 s left
+1500/4474 runs, 2624 s elapsed, about 5203 s left
+1600/4474 runs, 2812 s elapsed, about 5051 s left
+1700/4474 runs, 2908 s elapsed, about 4745 s left
+1800/4474 runs, 3041 s elapsed, about 4518 s left
+1900/4474 runs, 3139 s elapsed, about 4253 s left
+2000/4474 runs, 3333 s elapsed, about 4123 s left
+2100/4474 runs, 3479 s elapsed, about 3933 s left
+2200/4474 runs, 3635 s elapsed, about 3758 s left
+2300/4474 runs, 3643 s elapsed, about 3443 s left
+2400/4474 runs, 3664 s elapsed, about 3166 s left
+2500/4474 runs, 3687 s elapsed, about 2911 s left
+2600/4474 runs, 3752 s elapsed, about 2704 s left
+2700/4474 runs, 3851 s elapsed, about 2530 s left
+2800/4474 runs, 3960 s elapsed, about 2367 s left
+2900/4474 runs, 4000 s elapsed, about 2171 s left
+3000/4474 runs, 4054 s elapsed, about 1992 s left
+3100/4474 runs, 4113 s elapsed, about 1823 s left
+3200/4474 runs, 4169 s elapsed, about 1660 s left
+3300/4474 runs, 4241 s elapsed, about 1509 s left
+3400/4474 runs, 4341 s elapsed, about 1371 s left
+3500/4474 runs, 4398 s elapsed, about 1224 s left
+3600/4474 runs, 4454 s elapsed, about 1081 s left
+3700/4474 runs, 4524 s elapsed, about 946 s left
+3800/4474 runs, 4597 s elapsed, about 815 s left
+3900/4474 runs, 4659 s elapsed, about 686 s left
+4000/4474 runs, 4705 s elapsed, about 558 s left
+4100/4474 runs, 4758 s elapsed, about 434 s left
+4200/4474 runs, 4838 s elapsed, about 316 s left
+4300/4474 runs, 4952 s elapsed, about 200 s left
+4400/4474 runs, 5008 s elapsed, about 84 s left
+4474/4474 runs, 5045 s elapsed, about 0 s left
+done: 4474 runs executed, 0 reused; results/summary.csv and results/tables/

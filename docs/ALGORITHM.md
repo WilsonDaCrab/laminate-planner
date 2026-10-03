@@ -238,8 +238,8 @@ M4 ir vienīgais gājiens, kas precīzi trāpa nepārtrauktā telpā šaurajos p
 SA(inst, cfg, rng, clock):
   x ← initial(inst)                       // B-INST fāzes (derīgas pēc konstrukcijas)
   fx ← f(x); best ← x; bestFeas ← feasible(x) ? x : ∅
-  T0   ← calibrate(x, p0 = 0.8, samples = 200)
-  Tend ← 1 / ln(1 / p_end)                // p_end = 0.001: +1 dēli pieņem ar varbūtību 0,001
+  T0   ← calibrate(x, p0 = 0.3, samples = 200)
+  Tend ← 1 / ln(1 / p_end)                // p_end = 1e-8: +1 dēli pieņem ar varbūtību 1e-8 (ADR-027)
   it ← 0
   while not budgetExhausted(it, clock):
     τ ← progress(it, clock)               // 0…1 (iterāciju vai laika daļa)
@@ -256,20 +256,21 @@ SA(inst, cfg, rng, clock):
   return bestFeas ?? best
 ```
 
-- `calibrate`: no x izpilda `samples` nejaušus gājienus (tos nepieņem), savāc Δ > 0 un aprēķina `T0 = −median(Δ⁺)/ln(p0)` (ADR-016). Gājienus, kas palielina V, neņem vērā: sods λ_V·V nav dēļu skaita solis un uzpūš T₀ par kārtu (L1, p₀ = 0,8: ≈ 27). Ja tādu Δ⁺ ir < 10, izmanto visus; ja Δ⁺ nav, `T0 = 1`.
+- `calibrate`: no x izpilda `samples` nejaušus gājienus (tos nepieņem), savāc Δ > 0 un aprēķina `T0 = −median(Δ⁺)/ln(p0)` (ADR-016). Gājienus, kas palielina V, neņem vērā: sods λ_V·V nav dēļu skaita solis un uzpūš T₀ par kārtu (L1, p₀ = 0,8: ≈ 27; ar B mērķi un p₀ = 0,8 T₀ ≈ 4,5, tāpēc noklusējums ir p₀ = 0,3, ADR-027). Ja tādu Δ⁺ ir < 10, izmanto visus; ja Δ⁺ nav, `T0 = 1`.
 - **Budžets:** eksperimentos — iterāciju skaits N (`τ = it/N`), lai rezultāti nebūtu atkarīgi no datora ātruma; laiku tikai mēra. Lietotnē — laika limits (`τ = elapsed/limit`); `clock()` izsauc ik pēc 256 iterācijām.
-- **Pārkarsēšana (neobligāti):** ja labākais derīgais nav uzlabojies 25 % budžeta, turpina no tā ar `T0/2`.
+- **Atjaunošana (`reheat`, noklusējumā ieslēgta, ADR-027):** ja labākais derīgais nav uzlabojies 0,5 % budžeta (iterāciju režīmā: iterāciju daļa; laika režīmā: progresa daļa `tau − tauBest`), meklēšana turpinās no labākā risinājuma ar `T0 · 0,5` un atlikušajam budžetam atkal atdzesē līdz `T_end` (vēlāk `tau < 0,95`). Biežāka atjaunošana ir labāka: uz 9 instancēm ar B mērķi 88/90 skrējienu sasniedz labāko zināmo optimumu (52/90 bez atjaunošanas un ar p₀ = 0,8).
 - **Vairāki starti:** lietotnē katrā Web Worker ir neatkarīgs SA ar sēklu `hash(seed, i)`; eksperimentos katra sēkla ir atsevišķs palaidiens.
 
 | Parametrs | Noklusējums |
 |---|---|
-| p0 | 0,8 |
-| p_end | 0,001 |
+| p0 | 0,3 |
+| p_end | 1e-8 |
+| atjaunošana | ik pēc 0,5 % budžeta bez uzlabojuma, T₀ · 0,5 |
 | laika limits (UI) | 3000 ms |
 | iterāciju budžets (eksperimenti) | 200 000 |
 | gājienu varbūtības | §6 |
 
-**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−median(Δ⁺)/ln p₀, T_end)` (Δ⁺ bez V palielinošiem gājieniem, sk. §7 `calibrate`); τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Pārkarsēšana (`reheat`) ir realizēta, bet pēc noklusējuma izslēgta. Novērtētājs: `precut` režīmā tipizēto masīvu versija (§14), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
+**Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−median(Δ⁺)/ln p₀, T_end)` (Δ⁺ bez V palielinošiem gājieniem, sk. §7 `calibrate`); τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Atjaunošana (`reheat`) ir noklusējumā ieslēgta (ADR-027; `reheatFraction`, `reheatFactor` konfigurējami). Novērtētājs: abiem režīmiem tipizēto masīvu versija (§14, ADR-025), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
 
 ## 8. Ārējā cilpa (θ, sākuma puse, y0)
 
