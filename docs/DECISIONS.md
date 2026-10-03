@@ -464,4 +464,20 @@ Trends: zemāks p0 un pEnd palīdz, un jo biežāk SA restartē no labākā risi
 
 **Lēmums.** Noklusējumi: `p0 = 0,3`, `pEnd = 1e-8`, `reheat = true`, `reheatFraction = 0,005`, `reheatFactor = 0,5` (konfigurējami). Atjaunošanas trigeris laika režīmā (lietotne): progress bez jauna labākā (`tau − tauBest`) nevis iterāciju skaits, jo laika režīmā nav kopējā iterāciju skaita (iepriekš `reheat` darbojās tikai iterāciju režīmā). Pārbauda `sa.test.ts`.
 
-**Brīdinājums.** Parametri izvēlēti uz 9 instancēm un 10 sēklām (pārmērīgas pielāgošanas risks); validācija: pilns `bench all` uz visām 27 instancēm, 20 sēklas, abiem mērķiem (ADR-028).
+**Brīdinājums.** Parametri izvēlēti uz 9 instancēm un 10 sēklām (pārmērīgas pielāgošanas risks); validācija: pilns `bench all` uz visām 27 instancēm, 20 sēklas, abiem mērķiem (rezultāti: ROADMAP atjauninājums 2026-10-03; n = 38 analīze: ADR-028).
+
+## ADR-028 — Kāpēc n = 38 (grūtības sērija) ir grūts, un kāpēc noklusējumus nemainām (2026-10-03)
+
+**Konteksts.** Grūtības sērijā (ADR-024, pārskrēta ar ADR-027 SA) SA atrod plantēto optimumu 20/20 gandrīz visos izmēros, bet n = 38 tikai 2/20 (vienmēr B* vai B* + 1; B* = LB = 152, B-INST = 155).
+
+**Eksperimenti** (n = 38, 20 sēklas, tā pati instance, H nav): 
+- Budžets: 200 k → 2/20; 1 M → 8/20; 2 M → 17/20. Panākumi aug monotoni, tātad tā ir meklēšanas pūļu, nevis konstrukcijas (dekodera vai gājienu) problēma.
+- `p0` 0,1 un 0,5 → 0/20; `pEnd` 1e-4 → 0/20; `reheatFactor` 0,25 un 1,0 → 2/20 (bez uzlabojuma).
+- Atjaunošanas biežums (`reheatFraction`): 0,002 → 1/20; 0,005 (noklusējums) → 2/20; 0,02 → 2/20; 0,05 → 6/20; 0,1 un 0,2 → 8/20; bez atjaunošanas → 6/20.
+- Citi izmēri (n = 26, 34, 42): 20/20 neatkarīgi no `reheatFraction`; n = 30: 18/20 (0,005), 16/20 (0,05), 17/20 (0,1).
+
+**Pārbaude uz ADR-027 noskaņošanas kopas** (L1, L2, L3, P3, P4, P5, R2, S2, U1; H izslēgts, 10 sēklas, 200 k): vidējo B summa 968,20 pie 0,005 (sakrīt ar ADR-027), 968,80 pie 0,05 un 969,50 pie 0,2. Retāka atjaunošana ir sliktāka uz L1, P4 un P5.
+
+**Lēmums.** Noklusējumus (`reheatFraction = 0,005`) **nemainām**: n = 38 dod labumu no retākas atjaunošanas, bet noskaņošanas kopa (9 instances) — no biežākas; tas ir kompromiss, nevis kļūda, un mainīt parametrus pēc vienas instances būtu pielāgošana tai. n = 38 ir godīgi grūtāka instance (cita nejauša ģeneratora sēkla), kurai SA vajag ≈ 10× lielāku budžetu.
+
+**Iespējamais turpinājums.** Adaptīva atjaunošana (biežums atkarīgs no tā, cik ilgi labākais nav uzlabojies) vai laika režīmā vairāki neatkarīgi starti (jau paredzēti lietotnē, `docs/ALGORITHM.md` §7).
