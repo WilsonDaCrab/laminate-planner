@@ -1,0 +1,3 @@
+$ tsx src/index.ts "bestknown" "instances/tiny/T3.json" "--seeds" "10" "--iters" "2000000" "--write-meta"
+instance   LB         known      SA best    SA mean    ms           (SA, 10 seeds x 2000000 evaluations; instances with knownOptimum are skipped unless --force)
+T3         5          7          7          7.00       239092       -> bestKnown=7

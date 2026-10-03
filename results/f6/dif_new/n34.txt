@@ -1,0 +1,4 @@
+$ tsx src/index.ts "difficulty" "--n" "34" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif_new/n34"
+n          m2         segs       optimum    B-INST     RS         HC         SA           (found/runs at the planted optimum; 20 seeds, 200000 evaluations; generator seed = n)
+34         33.5       34         136        0/1 (2.00) 0/20 (-)   0/20 (1.00) 20/20 (0.00)
+-> results\f6\dif_new\n34\difficulty.csv (cell: found/runs (mean B - optimum))

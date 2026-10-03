@@ -405,6 +405,8 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 
 ## ADR-024 — F6 galīgie rezultāti (2026-10-01)
 
+> **Vēsturisks ieraksts.** Skaitļi zemāk ir no 2026-10-01 skrējiena ar veco SA; tos aizstāj atjauninājums 2026-10-03 (ADR-025…027, `docs/ROADMAP.md`, `report/main.typ`): grūtības sērija, SA pret HC, plantētās P1–P6, G2/G3 un laiki ir pārrēķināti.
+
 **Konteksts.** `pnpm bench all` (ADR-022) izpildīts pilnā apjomā uz commit `c318900` (ar ADR-023 labojumu): 27 instances, 20 sēklas, 200 000 novērtējumu, 2854 skrējieni, 15 pavedieni, 2 h 41 min (`results/env.json`, `results/summary.csv`, `results/tables/`, `results/plots/G1–G3.svg`). Laika apakškopa ar vienu pavedienu: `results/timing/` (R1–R4, 3 sēklas, 12 min).
 
 **Rezultāti.**
@@ -414,7 +416,7 @@ Secinājumi: HC un SA sakrīt ar pārlasi visās četrās (gap 0). T1, T2 ir pre
 - **SA pret HC: nav būtiskas atšķirības.** Vidējais B pa 20 sēklām sakrīt 16 no 23 telpām, SA labāks 3 (P1, L2, L3), HC labāks 4 (P4, P5, L1, S2); zīmju tests p = 1,0. **F5 kritēriji (a) un (b) paliek neizpildīti** (ADR-017, ADR-019); atskaitē tas ziņots godīgi.
 - Plantētās P2–P6: SA vienmēr atrod B* + 1 (labākais 89, 121, 169, 201, 249 pret 88, 120, 168, 200, 248); tikai P1 atrod B* (20/20).
 - Grūtības sērija (n = 6…42): SA atrod B* 20/20 pie n = 6, 8/20 pie 10, 14/20 pie 14, 5/20 pie 18, 1/20 pie 26, nekad pie 22 un n ≥ 30; B-INST un RS nekad; HC tikai n = 6. Sērija nav monotona, jo katram n ir cita instance.
-- SA (200 000) labākais sakrīt ar `bestKnown` (10 × 2 M) visās 21 instancē, kurām tas ir ierakstīts, tātad labākais rezultāts 10× lielākā budžetā nemainījās; vidējais gan uzlabojās par ≤ 0,7 dēļiem (L1, L2, L3), un sešās no tām (T1, T2, T4, R1, L3, O2) sakritība ir triviāla, jo LB ir sasniegta.
+- Atkārtots `bestknown` (10 × 2 M ar jauno SA) 15 telpās (C1–C3, L1, L2, O1, R2–R4, S1–S4, T3, U1); pārējās 12 (T1, T2, T4, R1, L3, O2, P1–P6) nav pārskrietas, jo tām ir `knownOptimum`. Visas 15 vērtības sakrīt ar `meta.bestKnown`; S2 pret veco skrējienu uzlabots 37 → 36. SA ar 200 000 novērtējumiem sakrīt ar `bestKnown` visās šajās telpās, izņemot S2 (summary: 37 pret 36).
 - SA-onsite vidēji nekad nav labāks par SA (precut) (starpība 0…1,3 dēļi); B-INST nav labāks ne par vienu. Tas ir novērojums pie vienāda budžeta, ne pierādījums, ka precut ir vienmēr labāks (B_onsite ≥ B_precut nav garantēts, ALGORITHM §4.2).
 - G2: H-raksta attālums D = 200…500 mm maina vidējo B tikai L1 (86,7 bez H pret 87,0–87,5, t.i., līdz +0,8 dēļiem) un R2 (≤ 0,05); S1 un O1 tas nemainās. Atlikušais H pārkāpums aug līdz ar D (R2: 4,7 → 22,3).
 - Laiks (1 pavediens, 200 000 novērtējumu): B-NEXT/B-INST 5–40 ms, HC 0,9–1,4 s, SA 2,1–2,9 s, RS 4,6–10 s, SA-onsite 37–110 s (18–38× lēnāks par SA: nav ātrā novērtētāja).

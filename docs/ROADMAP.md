@@ -112,7 +112,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 **Statuss (2026-10-01): F6 noslēgta.** Izpildīts viss; repozitorijs nav publisks (lietotāja lēmums). Kritērijs "no tīra klona" nav pārbaudīts burtiski: skrējiens (2 h 41 min) palaists uz darba koka ar nekomitētām izmaiņām, kas rezultātus neietekmē (ADR-024). **F5 kritēriji (a) un (b) paliek neizpildīti** (SA nav būtiski labāks par HC; plantētos optimumus P2–P6 neatrod; ADR-017, ADR-024) un atskaitē ziņoti godīgi.
 
-**Atjauninājums (2026-10-03):** pēc ADR-025…027 (ātrais on-site novērtētājs, plantētās bez H-rakstura, SA parametri un atjaunošana) pilnā matrica pārskrieta (4474 skrējieni, 8 pavedieni, 1 h 24 min), tabulas, grafiki un atskaite atjaunoti. F5 kritērijs (b) ir izpildīts 5 no 6 plantētajām (P5: 80 %); kritērijs (a) nav stingri izpildīts (L1: HC 86,6 pret SA 86,8). F6 paliek noslēgta.
+**Atjauninājums (2026-10-03):** pēc ADR-025…027 (ātrais on-site novērtētājs, plantētās bez H-rakstura, SA parametri un atjaunošana) pilnā matrica pārskrieta (4474 skrējieni, 8 pavedieni, 1 h 24 min), tabulas, grafiki un atskaite atjaunoti. F5 kritērijs (b) ir izpildīts 5 no 6 plantētajām (P5: 80 %); kritērijs (a) nav stingri izpildīts (L1: HC 86,6 pret SA 86,8). Ar jauno SA pārskrieta arī grūtības sērija (n = 6…42, 20 sēklas; `results/f6/difficulty.csv`, SA atrod plantēto optimumu 8 no 10 izmēriem 20/20, n = 30: 18/20, n = 38: 2/20) un `bestknown` (10 × 2 M ar jauno SA 15 telpās; 12 ar `knownOptimum` nav pārskrietas; visas 15 vērtības sakrīt ar `meta.bestKnown`, S2 pret veco skrējienu 37 → 36). Atskaite pārbūvēta (3 lpp.). F6 paliek noslēgta.
 
 ### Kursa atskaites struktūra
 
