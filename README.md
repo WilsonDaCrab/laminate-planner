@@ -8,7 +8,6 @@ Optimizācijas kodols: simulētā rūdīšana (SA) pār rindu šuvju fāzēm ar 
 
 ## Kursa darbs
 
-- Atskaite: [`report/main.pdf`](report/main.pdf) (avots `report/main.typ`).
 - Optimizācijas kodols (SA, gājieni, dekoders, apakšējās robežas): `packages/core/src` (`optimize/`, `plan/`, `evaluate/`, `bounds/`).
 - Testa piemēri: `instances/` (27 telpas); rezultāti: `results/summary.csv`, `results/f6/difficulty.csv`.
 - Viens skrējiens: `pnpm bench run instances/rect/R2.json --method sa --seed 1 --iters 200000 --svg`
@@ -26,7 +25,6 @@ Projekts ir noslēgts kā kursa darbs.
 | `packages/bench` | CLI eksperimentiem un instanču ģenerēšanai |
 | `instances/` | testa telpas |
 | `results/` | eksperimentu rezultāti |
-| `report/` | kursa atskaite |
 
 ## Palaišana
 

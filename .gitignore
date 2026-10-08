@@ -11,3 +11,5 @@ results/f4/
 results/**/raw/
 docs/
 CLAUDE.md
+.claude/
+report/main.typ
