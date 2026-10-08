@@ -9,10 +9,7 @@ import { evaluate, type EvaluateOptions, type Evaluation } from './evaluate';
 import { createFastEvaluator } from './fast';
 import type { DecodeMode } from '../plan/run';
 
-export type QuickEval = Pick<
-  Evaluation,
-  'B' | 'V' | 'H' | 'R' | 'N' | 'f' | 'feasible' | 'lengthDeficit'
->;
+export type QuickEval = Pick<Evaluation, 'B' | 'V' | 'N' | 'f' | 'feasible' | 'lengthDeficit'>;
 
 /**
  * Unpaired start or end pieces of stage A (whole-width class), in piece-id order: for each piece

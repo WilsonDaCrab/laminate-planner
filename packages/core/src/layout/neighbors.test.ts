@@ -79,11 +79,6 @@ describe('rectangle: a stack of rows', () => {
     expect(graph.openLow['2a']).toEqual([[10, 3990]]);
     expect(graph.openHigh['1a']).toEqual([[10, 3990]]);
   });
-
-  it('second-order pairs are the rows two apart', () => {
-    expect(graph.secondOrder).toHaveLength(n - 2);
-    expect(graph.secondOrder[0]).toEqual({ lower: '1a', upper: '3a', via: ['2a'] });
-  });
 });
 
 describe('L-shaped room', () => {
@@ -147,11 +142,6 @@ describe('U-shaped room: rows in the arms stay separate', () => {
     expect(graph.up['9a']).toEqual(['10a']);
     expect(graph.up['9b']).toEqual(['10b']);
     expect(graph.down['9b']).toEqual(['8a']);
-  });
-
-  it('second-order pairs from the U row go to both arms two rows up', () => {
-    const pairs = graph.secondOrder.filter((p) => p.lower === '8a').map((p) => p.upper);
-    expect(pairs.sort()).toEqual(['10a', '10b']);
   });
 });
 

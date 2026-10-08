@@ -70,9 +70,11 @@ describe('runSa behaviour', () => {
   it('calibrates T0 from the median uphill step: T0 scales with -1 / ln p0 for one seed', () => {
     const { ctx } = load('R2');
     const t0 = (p0: number) => runSa(ctx, createRng(3), { iters: 600, p0 }).stats.T0;
-    const a = t0(0.8);
-    const b = t0(0.2);
-    expect(b / a).toBeCloseTo(Math.log(0.8) / Math.log(0.2), 6);
+    // p0 = 0.9 and 0.8, not 0.8 and 0.2: on R2 the median uphill step is now an ε·N step (the H
+    // pattern term is gone), so T0 at p0 = 0.2 would sit on the T_end floor and break the scaling.
+    const a = t0(0.9);
+    const b = t0(0.8);
+    expect(b / a).toBeCloseTo(Math.log(0.9) / Math.log(0.8), 6);
     // With the V-raising moves in the median T0 was ≈ 26 on R2; without them it is a board step.
     expect(a).toBeLessThan(10);
   });

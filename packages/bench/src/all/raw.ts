@@ -1,15 +1,14 @@
 /**
- * Storage of the raw rows: `results/raw/<experiment>.jsonl`, one JSON object per line, appended
+ * Storage of the raw rows: `results/raw/main.jsonl`, one JSON object per line, appended
  * as soon as a run finishes. A run that is interrupted can be resumed: finished keys are skipped.
  */
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, truncateSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { jobKey, type ExperimentId, type Job } from './protocol';
+import { jobKey, type Job } from './protocol';
 import type { RawRow } from './runJob';
 
-export const rawPath = (dir: string, experiment: ExperimentId): string =>
-  join(dir, 'raw', `${experiment}.jsonl`);
+export const rawPath = (dir: string): string => join(dir, 'raw', 'main.jsonl');
 
 /** Drops an incomplete last line (a write cut short), so that the next append starts a new line. */
 export function repairTail(file: string): void {
@@ -40,18 +39,10 @@ export function appendRow(file: string, row: RawRow): void {
   appendFileSync(file, `${JSON.stringify(row)}\n`);
 }
 
-/** The jobs whose key is not yet in the file of their experiment, in the original order. */
+/** The jobs whose key is not yet in the file, in the original order. */
 export function pendingJobs(dir: string, jobs: readonly Job[]): Job[] {
-  const done = new Map<ExperimentId, Set<string>>();
-  const doneOf = (e: ExperimentId): Set<string> => {
-    let s = done.get(e);
-    if (!s) {
-      const file = rawPath(dir, e);
-      repairTail(file);
-      s = new Set(readRows(file).map((r) => r.key));
-      done.set(e, s);
-    }
-    return s;
-  };
-  return jobs.filter((j) => !doneOf(j.experiment).has(jobKey(j)));
+  const file = rawPath(dir);
+  repairTail(file);
+  const done = new Set(readRows(file).map((r) => r.key));
+  return jobs.filter((j) => !done.has(jobKey(j)));
 }

@@ -181,9 +181,7 @@ function attempt(base: Project, p: PlantedParams, rng: Rng): PlantedInstance | u
   const project = createProject({
     name,
     product: base.product,
-    // The optimum is that of the pure board-count problem: with the H pattern on, the objective f
-    // trades boards for aesthetics and the planted plan (H > 0) is no longer the minimum of f (ADR-026).
-    rules: { ...base.rules, hPattern: { ...base.rules.hPattern, enabled: false } },
+    rules: base.rules,
     rooms: [roomFor(lengths, W, g, name)],
     settings: { ...base.settings, angleDeg: 0, stackSide: 'left', rowOffset: 0, seed: 1 },
     meta: { source: 'planted', knownOptimum: optimum },

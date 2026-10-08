@@ -4,11 +4,9 @@ import type { RawRow } from './runJob';
 
 const row = (over: Partial<RawRow>): RawRow => ({
   key: 'k',
-  experiment: 'main',
   instance: 'A',
   group: 'rect',
   method: 'sa',
-  variant: '-',
   seed: 1,
   iters: 1000,
   y0: 0,
@@ -19,7 +17,6 @@ const row = (over: Partial<RawRow>): RawRow => ({
   lb: 10,
   B: 11,
   V: 0,
-  H: 0,
   N: 0,
   feasible: true,
   provenOptimal: false,
@@ -28,7 +25,6 @@ const row = (over: Partial<RawRow>): RawRow => ({
   evalsToFinalB: 10,
   ms: 100,
   commit: null,
-  trace: [],
   ...over,
 });
 
@@ -63,12 +59,11 @@ describe('mainTableCsv', () => {
         row({ method: 'sa', B: 11, seed: 1 }),
         row({ method: 'sa', B: 12, seed: 2 }),
         row({ instance: 'B', method: 'sa', B: 20, lb: 18, segments: 9 }),
-        row({ experiment: 'aesthetics', instance: 'Z', variant: 'D300' }),
       ],
       new Map([['A', { knownOptimum: null, bestKnown: 11 }]]),
     );
     const [head, a, b, ...rest] = csv.trim().split('\n');
-    expect(rest).toEqual([]); // the aesthetics row belongs to another table
+    expect(rest).toEqual([]);
     const cols = head!.split(',');
     expect(cols.slice(0, 7)).toEqual([
       'instance',

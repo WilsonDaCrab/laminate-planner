@@ -23,13 +23,6 @@ export interface NeighborLink {
   intervals: Interval[];
 }
 
-export interface SecondOrderPair {
-  lower: string;
-  upper: string;
-  /** Segments in the band between them that connect both (shared for the H pattern penalty). */
-  via: string[];
-}
-
 export interface NeighborGraph {
   links: NeighborLink[];
   /** O_s^low: open part of the bottom edge of each segment. */
@@ -39,8 +32,6 @@ export interface NeighborGraph {
   /** Segments of the next band that touch s (its upper neighbours). */
   up: Record<string, string[]>;
   down: Record<string, string[]>;
-  /** Pairs two bands apart connected through a common neighbour (rows whose seams interact). */
-  secondOrder: SecondOrderPair[];
 }
 
 /**
@@ -72,7 +63,6 @@ export function buildNeighbors(layout: Layout): NeighborGraph {
     openHigh: {},
     up: {},
     down: {},
-    secondOrder: [],
   };
   for (const s of layout.segments) {
     graph.openLow[s.id] = [];
@@ -97,14 +87,6 @@ export function buildNeighbors(layout: Layout): NeighborGraph {
       graph.openHigh[s.id] = normalizeIntervals([...graph.openHigh[s.id]!, ...overlap]);
       graph.openLow[t.id] = normalizeIntervals([...graph.openLow[t.id]!, ...overlap]);
     }
-  }
-
-  for (const s of layout.segments) {
-    const pairs = new Map<string, string[]>();
-    for (const t of graph.up[s.id]!) {
-      for (const u of graph.up[t]!) pairs.set(u, [...(pairs.get(u) ?? []), t]);
-    }
-    for (const [u, via] of pairs) graph.secondOrder.push({ lower: s.id, upper: u, via });
   }
   return graph;
 }

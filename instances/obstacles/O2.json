@@ -16,10 +16,6 @@
     "expansionGap": 10,
     "minGap": 7,
     "maxGap": 14,
-    "hPattern": {
-      "enabled": true,
-      "distance": 100
-    },
     "pattern": {
       "kind": "free"
     },
@@ -104,7 +100,6 @@
     "rowOffset": "auto",
     "mode": "precut",
     "trimMargin": 0,
-    "aesthetics": 0.5,
     "seed": 1,
     "timeLimitMs": 3000
   },

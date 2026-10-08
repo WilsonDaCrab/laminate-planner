@@ -5,7 +5,7 @@ import { parseProject } from '../model/index';
 import { buildPlan } from '../plan/build';
 import { buildContext, type PlanContext } from '../plan/context';
 import { createRng } from '../rng/index';
-import { defaultWeights, evaluate, patternPenalty, seamViolation } from './evaluate';
+import { defaultWeights, evaluate, seamViolation } from './evaluate';
 import { fastPathApplies, seamPenalty, seamPenaltyFast } from './seams';
 
 const project = (id: string) => parseProject(instanceFiles.find((f) => f.id === id)!.raw);
@@ -90,10 +90,10 @@ describe.each(instanceFiles.map((f) => [f.id, f.raw] as const))('evaluate on %s'
   });
 
   it('f is the weighted sum and feasibility means V = 0 and no L_min shortfall', () => {
-    const w = defaultWeights(ctx.project.rules, ctx.project.settings);
+    const w = defaultWeights();
     for (let seed = 1; seed <= 10; seed++) {
       const e = evaluate(ctx, randomPhi(ctx, seed), { weights: w });
-      expect(e.f).toBeCloseTo(e.B + w.lambdaV * e.V + w.lambdaH * e.H + w.epsilon * e.N, 9);
+      expect(e.f).toBeCloseTo(e.B + w.lambdaV * e.V + w.epsilon * e.N, 9);
       expect(e.feasible).toBe(e.V === 0 && e.lengthDeficit <= 0);
     }
   });
@@ -105,15 +105,14 @@ describe.each(instanceFiles.map((f) => [f.id, f.raw] as const))('evaluate on %s'
   });
 });
 
-describe('V, H and the feasibility flag on a rectangle', () => {
+describe('V and the feasibility flag on a rectangle', () => {
   const ctx = buildContext(project('R1'));
   const n = ctx.layout.segments.length;
 
-  it('equal phases in every row violate the stagger rule and the H pattern', () => {
+  it('equal phases in every row violate the stagger rule', () => {
     const phi = new Array<number>(n).fill(0);
     const e = evaluate(ctx, phi);
     expect(e.V).toBeGreaterThan(0);
-    expect(e.H).toBeGreaterThan(0);
     expect(e.feasible).toBe(false);
   });
 
@@ -123,14 +122,5 @@ describe('V, H and the feasibility flag on a rectangle', () => {
     // Consecutive rows differ by `step`, and step ≤ L/2, so their circular distance is `step` ≥ D.
     const { V } = evaluate(ctx, phi);
     expect(V).toBe(0);
-  });
-
-  it('H is zero when the pattern is switched off', () => {
-    const p = project('R1');
-    const off = buildContext({
-      ...p,
-      rules: { ...p.rules, hPattern: { ...p.rules.hPattern, enabled: false } },
-    });
-    expect(patternPenalty(off, new Array<number>(n).fill(0))).toBe(0);
   });
 });

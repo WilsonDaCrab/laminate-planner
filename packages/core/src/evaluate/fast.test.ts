@@ -34,7 +34,7 @@ function expectSame(fast: Evaluator, ref: Evaluator, phi: readonly number[], lab
   const r = ref.evaluate(phi);
   expect(f.B, `${label} B`).toBe(r.B);
   expect(f.feasible, `${label} feasible`).toBe(r.feasible);
-  for (const k of ['V', 'H', 'R', 'N', 'f', 'lengthDeficit'] as const) {
+  for (const k of ['V', 'N', 'f', 'lengthDeficit'] as const) {
     expect(close(f[k], r[k]), `${label} ${k}: ${f[k]} vs ${r[k]}`).toBe(true);
   }
   const plain = (u: ReturnType<Evaluator['unpaired']>) => ({
@@ -104,13 +104,7 @@ for (const mode of ['precut', 'onsite'] as const) {
 
     it('agrees with a custom weight set', () => {
       const ctx = load('R2');
-      const weights = {
-        lambdaV: 3,
-        lambdaH: 0.9,
-        lambdaR: 0.5,
-        epsilon: 0.1,
-        regularityDistance: 120,
-      };
+      const weights = { lambdaV: 3, epsilon: 0.1 };
       const fast = createFastEvaluator(ctx, { weights, mode })!;
       const space = new PhaseSpace(ctx);
       const rng = createRng(4);
@@ -118,7 +112,6 @@ for (const mode of ['precut', 'onsite'] as const) {
       const r = evaluate(ctx, phi, { mode, weights });
       const f = fast.evaluate(phi);
       expect(close(f.f, r.f)).toBe(true);
-      expect(close(f.R, r.R)).toBe(true);
     });
   });
 }

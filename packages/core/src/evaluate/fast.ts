@@ -2,7 +2,7 @@
  * Typed-array evaluator (ALGORITHM §14, ADR-016): the same objective as `evaluate` in `precut`
  * mode, without strings, objects or `Map`s in the hot path. It is a port of `plan/decode.ts` that
  * keeps only what the decisions depend on — a leftover is (w, h, profile flags) and their creation
- * order, positions are irrelevant — and the tests require B, V, H, N, f, the L_min deficit and the
+ * order, positions are irrelevant — and the tests require B, V, N, f, the L_min deficit and the
  * unpaired pieces to equal `evaluate`'s exactly (CLAUDE.md rule 5).
  *
  * Tie-breaking by piece id (`byId`) is reproduced with a numeric key: segments ranked by their
@@ -19,7 +19,6 @@ import {
 } from '../layout/pieces';
 import { MIN_OPEN_LENGTH } from '../layout/neighbors';
 import { EPS, FIT_EPS, mod } from '../num/index';
-import { regularityPenalty } from './evaluate';
 import { defaultWeights, type EvalWeights } from './evaluate';
 import type { Evaluator, QuickEval, UnpairedInfo, UnpairedList } from './evaluator';
 import { fastPathApplies } from './seams';
@@ -141,7 +140,7 @@ export interface FastEvaluatorOptions {
   weights?: EvalWeights;
   /**
    * Decoder: `precut` (default, ALGORITHM §4) or `onsite` (sequential best fit in laying order, §4.5;
-   * ADR-025). The pieces, the penalties V, H, R and the L_min deficit are the same for both.
+   * ADR-025). The pieces, the penalty V and the L_min deficit are the same for both.
    */
   mode?: 'precut' | 'onsite';
 }
@@ -189,7 +188,7 @@ export function createFastEvaluator(
   const D = project.rules.minStagger;
   const minLen = project.rules.minPieceLength;
   const C = L - kerf;
-  const weights = opts.weights ?? defaultWeights(project.rules, project.settings);
+  const weights = opts.weights ?? defaultWeights();
   const segs = ctx.layout.segments;
   const nSeg = segs.length;
 
@@ -237,7 +236,7 @@ export function createFastEvaluator(
     segRank[seg] = rank;
   });
 
-  // ---- links, second-order pairs -----------------------------------------------------------
+  // ---- links -----------------------------------------------------------
   const segIndex = new Map(segs.map((s, i) => [s.id, i]));
   const links = ctx.graph.links.map((link) => {
     const lower = segIndex.get(link.lower)!;
@@ -251,23 +250,10 @@ export function createFastEvaluator(
       length: link.intervals.length > 0 ? link.intervals[0]![1] - link.intervals[0]![0] : 0,
     };
   });
-  const hRule = project.rules.hPattern;
-  const hPairs = hRule.enabled
-    ? ctx.graph.secondOrder.map((pair) => {
-        const lower = segIndex.get(pair.lower)!;
-        const upper = segIndex.get(pair.upper)!;
-        return {
-          lower,
-          upper,
-          lo: Math.max(a[lower]!, a[upper]!),
-          hi: Math.min(b[lower]!, b[upper]!),
-        };
-      })
-    : [];
 
-  // Penalty terms, flattened in the order of the reference sums (V: per link interval or one fast
-  // term per link, then H per second-order pair); a term is recomputed only when one of its two
-  // segments changed, which keeps the sums identical to the reference.
+  // Seam terms of V, flattened in the order of the reference sum (per link interval, or one fast
+  // term per link); a term is recomputed only when one of its two segments changed, which keeps the
+  // sum identical to the reference.
   const term = {
     a: [] as number[],
     b: [] as number[],
@@ -297,11 +283,6 @@ export function createFastEvaluator(
   for (const link of links) {
     if (link.fast) pushTerm(link.lower, link.upper, 0, 0, link.length, 1, D);
     else for (const [lo, hi] of link.intervals) pushTerm(link.lower, link.upper, lo, hi, 0, 0, D);
-  }
-  const vTerms = term.a.length;
-  for (const pair of hPairs) {
-    if (pair.hi <= pair.lo) continue;
-    pushTerm(pair.lower, pair.upper, pair.lo, pair.hi, 0, 0, hRule.distance);
   }
   const nTerms = term.a.length;
   const tA = Int32Array.from(term.a);
@@ -1383,14 +1364,9 @@ export function createFastEvaluator(
           } else val[k] = seamPen(ta[k]!, tb[k]!, tLo[k]!, tHi[k]!, tDist[k]!);
         }
       }
-      // Sums in the order of the reference (links, then second-order pairs).
+      // Sum in the order of the reference (links).
       let V = 0;
-      let H = 0;
-      const nV = vTerms;
-      const nT = nTerms;
-      for (let k = 0; k < nV; k++) V += val[k]!;
-      for (let k = nV; k < nT; k++) H += val[k]!;
-      const R = weights.lambdaR > 0 ? regularityPenalty(ctx, phi, weights.regularityDistance) : 0;
+      for (let k = 0; k < nTerms; k++) V += val[k]!;
 
       let N = 0;
       if (nUnpEnd > 0 && nUnpStart > 0) {
@@ -1407,11 +1383,8 @@ export function createFastEvaluator(
       return {
         B,
         V,
-        H,
-        R,
         N,
-        f:
-          B + weights.lambdaV * V + weights.lambdaH * H + weights.lambdaR * R + weights.epsilon * N,
+        f: B + weights.lambdaV * V + weights.epsilon * N,
         feasible: V === 0 && deficit <= 0,
         lengthDeficit: deficit,
       };

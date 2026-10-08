@@ -1,19 +1,16 @@
 /**
  * Executes one job of the `bench all` matrix and returns a flat, JSON-serialisable row
- * (one line of `results/raw/<experiment>.jsonl`). Pure with respect to the file system.
+ * (one line of `results/raw/main.jsonl`). Pure with respect to the file system.
  */
 
-import { lowerBounds, runMethod, shapesArea, type TracePoint } from '@lp/core';
-import { applyVariant, jobKey, variantLabel, type InstanceInfo, type Job } from './protocol';
+import { lowerBounds, runMethod, shapesArea } from '@lp/core';
+import { jobKey, type InstanceInfo, type Job } from './protocol';
 
 export interface RawRow {
   key: string;
-  experiment: Job['experiment'];
   instance: string;
   group: string;
   method: Job['method'];
-  /** `-` (none), `D300` or `Hoff`. */
-  variant: string;
   seed: number;
   iters: number;
   y0: number;
@@ -26,7 +23,6 @@ export interface RawRow {
   lb: number;
   B: number;
   V: number;
-  H: number;
   N: number;
   feasible: boolean;
   provenOptimal: boolean;
@@ -38,16 +34,11 @@ export interface RawRow {
   ms: number;
   /** Commit the row was produced at (set by `runAll`; null outside a git checkout). */
   commit: string | null;
-  /** Best B against the evaluation count; kept only for the SA methods (G1). */
-  trace: TracePoint[];
 }
 
-const keepsTrace = (method: Job['method']): boolean => method === 'sa' || method === 'sa-onsite';
-
 export function runJob(job: Job, instance: InstanceInfo): RawRow {
-  const project = applyVariant(instance.project, job.variant);
   const t0 = performance.now();
-  const { ctx, y0, result } = runMethod(project, job.method, {
+  const { ctx, y0, result } = runMethod(instance.project, job.method, {
     seed: job.seed,
     budget: { iters: job.iters },
   });
@@ -56,11 +47,9 @@ export function runJob(job: Job, instance: InstanceInfo): RawRow {
   const ev = result.evaluation;
   return {
     key: jobKey(job),
-    experiment: job.experiment,
     instance: job.instance,
     group: instance.group,
     method: job.method,
-    variant: variantLabel(job.variant),
     seed: job.seed,
     iters: job.iters,
     y0,
@@ -71,7 +60,6 @@ export function runJob(job: Job, instance: InstanceInfo): RawRow {
     lb: bounds.lb,
     B: ev.B,
     V: ev.V,
-    H: ev.H,
     N: ev.N,
     feasible: ev.feasible,
     provenOptimal: result.provenOptimal,
@@ -80,6 +68,5 @@ export function runJob(job: Job, instance: InstanceInfo): RawRow {
     evalsToFinalB: result.trace.find((p) => p.B <= ev.B)?.eval ?? 0,
     ms,
     commit: null,
-    trace: keepsTrace(job.method) ? result.trace : [],
   };
 }

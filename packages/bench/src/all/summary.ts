@@ -9,7 +9,7 @@
  */
 
 import type { Method } from '@lp/core';
-import { MAIN_METHODS } from './protocol';
+import { METHODS } from './protocol';
 import type { RawRow } from './runJob';
 
 export interface Stats {
@@ -81,9 +81,7 @@ export interface KnownValues {
 export function mainTableCsv(
   rows: readonly RawRow[],
   known: ReadonlyMap<string, KnownValues> = new Map(),
-  experiment: 'main' | 'bonly' = 'main',
 ): string {
-  const main = rows.filter((r) => r.experiment === experiment);
   const head = [
     'instance',
     'group',
@@ -92,12 +90,12 @@ export function mainTableCsv(
     'lb',
     'knownOptimum',
     'bestKnown',
-    ...MAIN_METHODS.flatMap((m) =>
+    ...METHODS.flatMap((m) =>
       ['best', 'mean', 'std', 'ms', 'feasible'].map((c) => `${methodKey(m)}_${c}`),
     ),
   ];
   const lines = [head.join(',')];
-  for (const [instance, list] of groupBy(main, (r) => r.instance)) {
+  for (const [instance, list] of groupBy(rows, (r) => r.instance)) {
     const first = list[0]!;
     const cells: (number | string | null | undefined)[] = [
       instance,
@@ -108,7 +106,7 @@ export function mainTableCsv(
       known.get(instance)?.knownOptimum,
       known.get(instance)?.bestKnown,
     ];
-    for (const m of MAIN_METHODS) {
+    for (const m of METHODS) {
       const s = stats(list.filter((r) => r.method === m));
       cells.push(s.best, s.mean, s.std, s.meanMs, s.runs > 0 ? `${s.feasible}/${s.runs}` : '');
     }

@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,12 +13,7 @@ const tmp = mkdtempSync(join(tmpdir(), 'lp-all-'));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 const root = fileURLToPath(new URL('../../../../instances', import.meta.url));
 
-const preset: Preset = {
-  seeds: 2,
-  iters: 100,
-  aestheticsInstances: ['T1'],
-  aestheticsDistances: [200, null],
-};
+const preset: Preset = { seeds: 2, iters: 100 };
 
 describe('loadInstances', () => {
   const all = loadInstances(root);
@@ -34,7 +29,7 @@ describe('loadInstances', () => {
   });
 });
 
-// Each test runs a whole matrix (two instances, three experiments, plots): seconds alone, more under load.
+// Each test runs a whole matrix (two instances): seconds alone, more under load.
 describe('runAll', { timeout: 60_000 }, () => {
   const instances = loadInstances(root).filter((i) => ['T1', 'T2'].includes(i.id));
 
@@ -42,14 +37,10 @@ describe('runAll', { timeout: 60_000 }, () => {
     const dir = join(tmp, 'a');
     const lines: string[] = [];
     const first = await runAll({ instances, preset, dir, log: (l) => lines.push(l) });
-    // by hand: main 2 instances x (2 + 3·2) = 16; aesthetics T1 x 2 variants x 2 seeds = 4;
-    // bonly 2 instances x 3 methods x 2 seeds = 12
-    expect(first).toMatchObject({ total: 32, skipped: 0, ran: 32 });
-    expect(lines[0]).toContain('32 runs in the matrix, 0 already done, 32 to run');
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(16);
-    expect(readRows(rawPath(dir, 'aesthetics'))).toHaveLength(4);
-    expect(readRows(rawPath(dir, 'bonly'))).toHaveLength(12);
-    expect(existsSync(join(dir, 'summary_bonly.csv'))).toBe(true);
+    // by hand: 2 instances x (2 + 3·2) = 16
+    expect(first).toMatchObject({ total: 16, skipped: 0, ran: 16 });
+    expect(lines[0]).toContain('16 runs in the matrix, 0 already done, 16 to run');
+    expect(readRows(rawPath(dir))).toHaveLength(16);
     expect(JSON.parse(readFileSync(join(dir, 'env.json'), 'utf8'))).toMatchObject({
       node: process.version,
     });
@@ -59,15 +50,15 @@ describe('runAll', { timeout: 60_000 }, () => {
     const second = await runAll({ instances, preset, dir });
     // a pass with nothing to run leaves the description of the producing session alone
     expect(readFileSync(join(dir, 'env.json'), 'utf8')).toBe(envBefore);
-    expect(second).toMatchObject({ total: 32, skipped: 32, ran: 0 });
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(16);
-    expect(second.rows).toHaveLength(32);
+    expect(second).toMatchObject({ total: 16, skipped: 16, ran: 0 });
+    expect(readRows(rawPath(dir))).toHaveLength(16);
+    expect(second.rows).toHaveLength(16);
   });
 
   it('stamps every row with the commit, warns about rows of other commits, takes meta from the instances', async () => {
     const dir = join(tmp, 'd');
-    await runAll({ instances, preset, dir, only: ['main'] });
-    const file = rawPath(dir, 'main');
+    await runAll({ instances, preset, dir });
+    const file = rawPath(dir);
     const rows = readRows(file);
     const commit = rows[0]!.commit;
     expect(rows.every((r) => r.commit === commit)).toBe(true);
@@ -86,7 +77,7 @@ describe('runAll', { timeout: 60_000 }, () => {
         meta: { ...i.project.meta, source: 'manual' as const, bestKnown: 4 },
       },
     }));
-    await runAll({ instances: edited, preset, dir, only: ['main'], log: (l) => lines.push(l) });
+    await runAll({ instances: edited, preset, dir, log: (l) => lines.push(l) });
     expect(
       lines.some((l) => l.startsWith('WARNING: 16 finished rows come from other commits (abcdef0')),
     ).toBe(true);
@@ -98,28 +89,20 @@ describe('runAll', { timeout: 60_000 }, () => {
 
   it('a changed budget is a new matrix: old rows stay in the file but not in the tables', async () => {
     const dir = join(tmp, 'b');
-    await runAll({ instances, preset, dir, only: ['main'] });
-    const again = await runAll({
-      instances,
-      preset: { ...preset, iters: 120 },
-      dir,
-      only: ['main'],
-    });
+    await runAll({ instances, preset, dir });
+    const again = await runAll({ instances, preset: { ...preset, iters: 120 }, dir });
     expect(again).toMatchObject({ skipped: 0, ran: 16 });
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(32);
+    expect(readRows(rawPath(dir))).toHaveLength(32);
     expect(again.rows).toHaveLength(16);
     expect(again.rows.every((r) => r.iters === 120)).toBe(true);
   });
 
-  it('bench all --quick --only main runs through the CLI and rejects unknown experiments', async () => {
+  it('bench all --quick runs through the CLI', async () => {
     const dir = join(tmp, 'c');
     const lines: string[] = [];
-    const code = await mainAsync(['all', '--quick', '--only', 'main', '--out', dir], (l) =>
-      lines.push(l),
-    );
+    const code = await mainAsync(['all', '--quick', '--out', dir], (l) => lines.push(l));
     expect(code).toBe(0);
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(16); // quick: 2 instances x (2 + 4·2)
+    expect(readRows(rawPath(dir))).toHaveLength(16); // quick: 2 instances x (2 + 3·2)
     expect(lines.at(-1)).toContain('16 runs executed');
-    expect(await mainAsync(['all', '--only', 'nope'], () => undefined)).toBe(2);
   });
 });

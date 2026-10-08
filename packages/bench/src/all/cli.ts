@@ -2,7 +2,7 @@ import { cpus } from 'node:os';
 import { parseArgs } from 'node:util';
 import { executePool } from './execute';
 import { loadInstances } from './instances';
-import { EXPERIMENTS, FULL_PRESET, QUICK_PRESET, type ExperimentId, type Preset } from './protocol';
+import { FULL_PRESET, QUICK_PRESET, type Preset } from './protocol';
 import { runAll } from './runAll';
 
 const toCount = (name: string, v: string | undefined, fallback: number): number => {
@@ -12,13 +12,12 @@ const toCount = (name: string, v: string | undefined, fallback: number): number 
   return n;
 };
 
-/** `bench all [--quick] [--only main,aesthetics] [--jobs N|auto] [--seeds N] [--iters N] [--out dir] [--instances dir]` */
+/** `bench all [--quick] [--jobs N|auto] [--seeds N] [--iters N] [--out dir] [--instances dir]` */
 export async function allCommand(args: string[], log: (line: string) => void): Promise<number> {
   const { values } = parseArgs({
     args,
     options: {
       quick: { type: 'boolean' },
-      only: { type: 'string' },
       jobs: { type: 'string' },
       seeds: { type: 'string' },
       iters: { type: 'string' },
@@ -32,9 +31,6 @@ export async function allCommand(args: string[], log: (line: string) => void): P
     seeds: toCount('seeds', values.seeds, base.seeds),
     iters: toCount('iters', values.iters, base.iters),
   };
-  const only = (values.only?.split(',').map((x) => x.trim()) ?? [...EXPERIMENTS]) as ExperimentId[];
-  const bad = only.filter((e) => !EXPERIMENTS.includes(e));
-  if (bad.length > 0) throw new Error(`--only: unknown experiment ${bad.join(', ')}`);
   const threads =
     values.jobs === 'auto' ? Math.max(1, cpus().length - 1) : toCount('jobs', values.jobs, 1);
   const root = values.instances ?? 'instances';
@@ -50,13 +46,10 @@ export async function allCommand(args: string[], log: (line: string) => void): P
     instances,
     preset,
     dir,
-    only,
     log,
     execute: threads > 1 ? executePool(threads, root) : undefined,
     threads,
   });
-  log(
-    `done: ${report.ran} runs executed, ${report.skipped} reused; ${dir}/summary.csv and ${dir}/tables/`,
-  );
+  log(`done: ${report.ran} runs executed, ${report.skipped} reused; ${dir}/summary.csv`);
   return 0;
 }

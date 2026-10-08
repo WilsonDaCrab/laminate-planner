@@ -2,23 +2,15 @@
  * `bench all`: build the matrix, run what is not yet in `results/raw/`, write the tables.
  *
  *   results/env.json                      machine and commit
- *   results/raw/<experiment>.jsonl        one row per run (resumable)
- *   results/summary.csv                   main table (E1)
- *   results/summary_bonly.csv             the same table for E4 (H pattern off)
+ *   results/raw/main.jsonl                one row per run (resumable)
+ *   results/summary.csv                   the table of the report, one line per instance
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readEnv } from './env';
 import { executeSequential, type Execute } from './execute';
-import {
-  buildJobs,
-  EXPERIMENTS,
-  jobKey,
-  type ExperimentId,
-  type InstanceInfo,
-  type Preset,
-} from './protocol';
+import { buildJobs, jobKey, type InstanceInfo, type Preset } from './protocol';
 import { appendRow, pendingJobs, rawPath, readRows } from './raw';
 import type { RawRow } from './runJob';
 import { mainTableCsv } from './summary';
@@ -28,7 +20,6 @@ export interface RunAllOptions {
   preset: Preset;
   /** Results directory (`results`). */
   dir: string;
-  only?: readonly ExperimentId[];
   execute?: Execute;
   /** Worker threads used (recorded in `env.json`: wall times of parallel runs are noisy). */
   threads?: number;
@@ -48,13 +39,13 @@ export interface RunAllReport {
 /** Rows of the current matrix only: rows written with another budget or instance set are ignored. */
 export function currentRows(dir: string, jobs: ReturnType<typeof buildJobs>): RawRow[] {
   const byKey = new Map<string, RawRow>();
-  for (const e of EXPERIMENTS) for (const r of readRows(rawPath(dir, e))) byKey.set(r.key, r);
+  for (const r of readRows(rawPath(dir))) byKey.set(r.key, r);
   return jobs.map((j) => byKey.get(jobKey(j))).filter((r): r is RawRow => r !== undefined);
 }
 
 export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
   const log = opts.log ?? (() => undefined);
-  const jobs = buildJobs(opts.instances, opts.preset, opts.only);
+  const jobs = buildJobs(opts.instances, opts.preset);
   const todo = pendingJobs(opts.dir, jobs);
   log(
     `${jobs.length} runs in the matrix, ${jobs.length - todo.length} already done, ${todo.length} to run`,
@@ -84,7 +75,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
   let done = 0;
   const every = opts.progressEvery ?? 100;
   await (opts.execute ?? executeSequential)(todo, opts.instances, (row) => {
-    appendRow(rawPath(opts.dir, row.experiment), { ...row, commit: env.commit });
+    appendRow(rawPath(opts.dir), { ...row, commit: env.commit });
     done++;
     if (done % every === 0 || done === todo.length) {
       const s = (performance.now() - t0) / 1000;
@@ -101,6 +92,5 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
     ]),
   );
   writeFileSync(join(opts.dir, 'summary.csv'), mainTableCsv(rows, known));
-  writeFileSync(join(opts.dir, 'summary_bonly.csv'), mainTableCsv(rows, known, 'bonly'));
   return { total: jobs.length, skipped: jobs.length - todo.length, ran: todo.length, rows };
 }

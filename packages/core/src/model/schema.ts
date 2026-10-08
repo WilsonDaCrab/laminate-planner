@@ -45,10 +45,6 @@ export const RulesSchema = z.object({
   /** g_min / g_max: tolerances for measurement errors. */
   minGap: nonNegMm.default(7),
   maxGap: nonNegMm.default(14),
-  /** "H" pattern: seams of rows two apart should not line up within `distance` (D_H). */
-  hPattern: z
-    .object({ enabled: z.boolean().default(true), distance: nonNegMm.default(100) })
-    .prefault({}),
   pattern: PatternSchema.default({ kind: 'free' }),
   maxRunLength: posMm.optional(),
   maxRunWidth: posMm.optional(),
@@ -151,8 +147,6 @@ export const LayoutSettingsSchema = z.object({
   rowOffset: z.union([mm, z.literal('auto')]).default('auto'),
   mode: z.enum(['precut', 'onsite']).default('precut'),
   trimMargin: nonNegMm.default(0),
-  /** 0..1 → λ_H. */
-  aesthetics: z.number().min(0).max(1).default(0.5),
   seed: z.number().int().default(1),
   timeLimitMs: posMm.default(3000),
 });

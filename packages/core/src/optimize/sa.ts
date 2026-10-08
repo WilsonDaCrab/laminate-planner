@@ -1,6 +1,6 @@
 /**
- * Simulated annealing on the phase vector (ALGORITHM §7). The objective is `f = B + λ_V·V + λ_H·H
- * + ε·N` from the evaluator; the best feasible solution (V = 0, L_min met) is kept separately and
+ * Simulated annealing on the phase vector (ALGORITHM §7). The objective is `f = B + λ_V·V + ε·N`
+ * from the evaluator; the best feasible solution (V = 0, L_min met) is kept separately and
  * the search stops as soon as B reaches the lower bound (proven optimum).
  */
 

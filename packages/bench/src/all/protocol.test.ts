@@ -3,12 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { parseProject } from '@lp/core';
 import { describe, expect, it } from 'vitest';
 import {
-  applyVariant,
   buildJobs,
   FULL_PRESET,
   jobKey,
   QUICK_PRESET,
-  variantLabel,
   type InstanceInfo,
   type Preset,
 } from './protocol';
@@ -25,46 +23,24 @@ const inst = (id: string): InstanceInfo => ({ id, group: 'rect', project, hash: 
 const three = [inst('R2'), inst('L1'), inst('X9')];
 
 describe('buildJobs', () => {
-  const preset: Preset = {
-    seeds: 3,
-    iters: 100,
-    aestheticsInstances: ['R2', 'L1', 'absent'],
-    aestheticsDistances: [200, 300, null],
-  };
+  const preset: Preset = { seeds: 3, iters: 100 };
 
-  it('E1: per instance 2 deterministic runs + 3 stochastic methods x seeds', () => {
-    const jobs = buildJobs(three, preset, ['main']);
+  it('per instance 2 deterministic runs + 3 stochastic methods x seeds', () => {
+    const jobs = buildJobs(three, preset);
     // by hand: 3 instances x (b-next 1 + b-inst 1 + hc, sa, sa-onsite 3 seeds each = 9) = 33
     expect(jobs).toHaveLength(33);
     const r2 = jobs.filter((j) => j.instance === 'R2');
     expect(r2.filter((j) => j.method === 'b-inst')).toHaveLength(1);
     expect(r2.filter((j) => j.method === 'sa').map((j) => j.seed)).toEqual([1, 2, 3]);
-    expect(jobs.every((j) => j.experiment === 'main' && j.variant === null)).toBe(true);
-  });
-
-  it('E3: SA only, instances of the preset that exist, every distance x seeds', () => {
-    const jobs = buildJobs(three, preset, ['aesthetics']);
-    // by hand: R2 and L1 (X9 is not in the preset, "absent" is not in the list) x 3 variants x 3 seeds
-    expect(jobs).toHaveLength(18);
-    expect(jobs.every((j) => j.method === 'sa' && j.variant !== null)).toBe(true);
-    expect(new Set(jobs.map((j) => variantLabel(j.variant)))).toEqual(
-      new Set(['D200', 'D300', 'Hoff']),
+    expect(new Set(r2.map((j) => j.method))).toEqual(
+      new Set(['b-next', 'b-inst', 'hc', 'sa', 'sa-onsite']),
     );
   });
 
   it('the key changes with the content of the instance (an edited room is new work)', () => {
-    const a = buildJobs([inst('R2')], preset, ['main'])[0]!;
-    const b = buildJobs([{ ...inst('R2'), hash: 'other' }], preset, ['main'])[0]!;
+    const a = buildJobs([inst('R2')], preset)[0]!;
+    const b = buildJobs([{ ...inst('R2'), hash: 'other' }], preset)[0]!;
     expect(jobKey(a)).not.toBe(jobKey(b));
-  });
-
-  it('E4: HC, SA and SA-onsite with the H pattern off on every instance', () => {
-    const jobs = buildJobs(three, preset, ['bonly']);
-    // by hand: 3 instances x 3 methods x 3 seeds
-    expect(jobs).toHaveLength(27);
-    expect(new Set(jobs.map((j) => j.method))).toEqual(new Set(['hc', 'sa', 'sa-onsite']));
-    expect(jobs.every((j) => j.variant?.hDistance === null && j.experiment === 'bonly')).toBe(true);
-    expect(applyVariant(project, jobs[0]!.variant).rules.hPattern.enabled).toBe(false);
   });
 
   it('keys are unique and change with the budget', () => {
@@ -76,22 +52,9 @@ describe('buildJobs', () => {
 
   it('is deterministic, and the presets have the documented size', () => {
     expect(buildJobs(three, preset)).toEqual(buildJobs(three, preset));
-    // quick: 2 instances x (2 + 3·2) = 16 main runs; R2 x 2 variants x 2 seeds = 4 E3 runs;
-    // 2 instances x 3 methods x 2 seeds = 12 E4 runs
-    expect(buildJobs([inst('R2'), inst('L1'), inst('M')], QUICK_PRESET)).toHaveLength(32);
-    // full: one instance = 2 + 3·20 = 62 main runs; R2 = 8 distances x 20 seeds = 160 E3 runs;
-    // 3 methods x 20 seeds = 60 E4 runs
-    expect(buildJobs([inst('R2')], FULL_PRESET)).toHaveLength(62 + 160 + 60);
-  });
-});
-
-describe('applyVariant', () => {
-  it('sets the H-pattern in a copy and leaves the original alone', () => {
-    const d = applyVariant(project, { hDistance: 350 });
-    expect(d.rules.hPattern).toMatchObject({ enabled: true, distance: 350 });
-    const off = applyVariant(project, { hDistance: null });
-    expect(off.rules.hPattern.enabled).toBe(false);
-    expect(project.rules.hPattern).toEqual({ enabled: true, distance: 100 });
-    expect(applyVariant(project, null)).toBe(project);
+    // quick: 2 instances x (2 + 3·2) = 16 runs
+    expect(buildJobs([inst('R2'), inst('L1'), inst('M')], QUICK_PRESET)).toHaveLength(16);
+    // full: one instance = 2 + 3·20 = 62 runs
+    expect(buildJobs([inst('R2')], FULL_PRESET)).toHaveLength(62);
   });
 });
