@@ -18,7 +18,8 @@
 #align(center)[
   #text(size: 15pt, weight: "bold")[Lamināta izkārtojuma optimizācija ar simulēto rūdīšanu]\
   #v(2pt)
-  Praktiskais darbs kursā "Praktiskā kombinatoriālā optimizācija" (LU)
+  Mazais praktiskais darbs kursā "Praktiskā kombinatoriālā optimizācija" (LU)\
+  Aigars Rācenis, ar26104
 ]
 
 = Uzdevuma formulējums
@@ -130,4 +131,4 @@ $V$ mēra šuvju nobīdes pārkāpumus: $V = sum (D - |x - x'|) slash D$ pa visi
 
 = Saite uz repozitoriju
 
-Kods, testa piemēri, rezultāti un atskaite: #link("https://github.com/WilsonDaCrab/laminate-planner")[https://github.com/WilsonDaCrab/laminate-planner]. Kods ir rakstīts TypeScript valodā; optimizācijas kodols ir `packages/core`, eksperimenti — `packages/bench`. Rezultātus atkārto #box[`pnpm bench all --jobs auto`]. Izstrādē kā palīgrīks izmantots AI asistents Claude Code (Anthropic); tā darba instrukcijas ir failā `CLAUDE.md`.
+Kods, testa piemēri, rezultāti un atskaite: #link("https://github.com/WilsonDaCrab/laminate-planner")[https://github.com/WilsonDaCrab/laminate-planner]. Kods ir rakstīts TypeScript valodā; optimizācijas kodols ir `packages/core`, eksperimenti — `packages/bench`. Rezultātus atkārto #box[`pnpm bench all --jobs auto`]. Izstrādē kā palīgrīks izmantots AI asistents Claude Code.
