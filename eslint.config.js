@@ -17,10 +17,6 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}'],
-    languageOptions: { globals: globals.browser },
-  },
-  {
     // Pure core: no DOM, no Node API, no hidden nondeterminism (randomness comes from core/rng,
     // time from a passed-in clock).
     files: ['packages/core/src/**/*.ts'],

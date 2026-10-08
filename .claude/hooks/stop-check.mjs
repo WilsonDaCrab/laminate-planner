@@ -48,7 +48,7 @@ if (checks.length === 0) process.exit(0);
 function hasSourceChanges() {
   const r = spawnSync(
     'git',
-    ['status', '--porcelain', '--untracked-files=all', '--', 'packages', 'apps', 'package.json', 'pnpm-lock.yaml', 'eslint.config.js', 'tsconfig.base.json'],
+    ['status', '--porcelain', '--untracked-files=all', '--', 'packages', 'package.json', 'pnpm-lock.yaml', 'eslint.config.js', 'tsconfig.base.json'],
     { cwd: root, encoding: 'utf8' },
   );
   if (r.error || r.status !== 0) return true; // not a git repo → check anyway
