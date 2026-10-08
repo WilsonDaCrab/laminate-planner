@@ -4,8 +4,8 @@
 
 ## 0. Kopsavilkums (kursa atskaites struktūrā)
 
-- **a) Domēns.** Katram rindas segmentam s šuvju fāze φ_s no pieļaujamās kopas F_s ⊆ [0, L). Risinājums ir vektors φ ∈ ∏ F_s. Ārējie diskrētie lēmumi (klāšanas virziens θ, sākuma puse, rindu nobīde y0) tiek pārlasīti ārējā cilpā.
-- **b) Novērtēšana.** Dekoders no φ uzbūvē konkrētu griešanas plānu un saskaita dēļus B. Mērķa funkcija `f = B + λ_V·V + λ_H·H + ε·N` sastāv no dēļu skaita, šuvju nobīdes pārkāpumu soda, estētikas soda un maza vadošā locekļa, kas mēra "tuvumu nākamajam pārim".
+- **a) Domēns.** Katram rindas segmentam s šuvju fāze φ_s no pieļaujamās kopas F_s ⊆ [0, L). Risinājums ir vektors φ ∈ ∏ F_s. Rindu virziens θ, sākuma puse un nobīde y0 eksperimentos ir fiksēti (§8).
+- **b) Novērtēšana.** Dekoders no φ uzbūvē konkrētu griešanas plānu un saskaita dēļus B. Mērķa funkcija `f = B + λ_V·V + ε·N` sastāv no dēļu skaita, šuvju nobīdes pārkāpumu soda un maza vadošā locekļa, kas mēra "tuvumu nākamajam pārim".
 - **c) Gājieni.** Fāzes nomaiņa, neliela nobīde, divu segmentu fāžu apmaiņa, mērķtiecīga pāra veidošana, joslu bloka nobīde.
 - **d) Algoritms.** Simulētā rūdīšana ar ģeometrisku dzesēšanu, T₀ kalibrāciju pēc pieņemšanas varbūtības, labākā derīgā risinājuma saglabāšanu un agru apstāšanos, ja sasniegta apakšējā robeža (pierādīts optimums).
 
@@ -14,10 +14,10 @@
 **Dots:**
 
 - telpa: vienkāršs daudzstūris P ar malu tipiem un spraugām g_e, šķēršļi (daudzstūri ar spraugām), caurules;
-- produkts: dēļa garums L un platums W; noteikumi k, L_min, D, w_min (un D_H estētikai);
-- klāšanas virziens θ (vai kandidātu kopa) un rindu krāšanās puse.
+- produkts: dēļa garums L un platums W; noteikumi k, L_min, D, w_min;
+- klāšanas virziens θ un rindu krāšanās puse (fiksēti).
 
-**Jāatrod** rindu nobīde y0, šuvju fāzes φ = (φ_s) katram segmentam un griešanas plāns (katram gabalam — dēlis un taisnstūris dēlī), lai:
+**Jāatrod** šuvju fāzes φ = (φ_s) katram segmentam un griešanas plāns (katram gabalam — dēlis un taisnstūris dēlī), lai:
 
 1. gabali pārklāj uzstādāmo zonu Z un savstarpēji nepārklājas;
 2. katram gabalam vajadzīgie profili atrodas uz pareizajām dēļa malām (§3.2), un dēlis netiek pagriezts;
@@ -25,7 +25,7 @@
 4. katrs sākuma un beigu gabals gar katru atvērto garo malu ir vismaz L_min garš; katra strēmele ir vismaz w_min plata, ja ģeometrija to atļauj;
 5. šuves blakus rindās ir vismaz D attālumā;
 
-un **minimizēt** izmantoto dēļu skaitu B. Sekundāri minimizē estētikas sodus.
+un **minimizēt** izmantoto dēļu skaitu B (rindu nobīde y0 ir fiksēta, §8).
 
 **Sarežģītība.** Ar fiksētām fāzēm pilna platuma gabalu pārošana ir polinomiāla (§4.1). Grūtība rodas no fāžu izvēles kopā ar nobīdes ierobežojumiem (cirkulāri attālumi starp kaimiņu segmentiem) un no strēmeļu un brīvo gabalu izvietošanas, kas ir griešanas krājuma (cutting stock) tipa apakšuzdevums. Tāpēc izvēlēta metaheiristika kopā ar stingru apakšējo robežu, pret kuru var novērtēt kvalitāti.
 
@@ -39,7 +39,7 @@ un **minimizēt** izmantoto dēļu skaitu B. Sekundāri minimizē estētikas sod
 - **Mainīga platuma iekšējais offset.** Katras malas taisni nobīda uz iekšu par tās spraugu g_e. Jaunā virsotne ir blakus malu nobīdīto taisnu krustpunkts (miter). Ja blakus malas ir paralēlas ar vienādu spraugu, virsotne ir projekcija uz nobīdīto taisni; ar dažādām spraugām (pakāpiens) vai pretparalēlas — virsotne kļūst par diviem punktiem (abu malu nobīžu galapunktiem).
 - Ja offset rada pašķrustošanos (īsas malas, šauras nišas), rezultātu tīra ar Clipper `union` (FillRule.Positive).
 - Asos leņķos (pagrieziens > 150°, t.i. iekšējais leņķis < 30° vai > 330°) izdod brīdinājumu `sharpCorner`. Izliektā asā stūrī miter smaile paliek (tas ir precīzs iekšējais offset); tā netiek apcirpta. Sk. ADR-011.
-- **Durvju aila.** Zonai pievieno taisnstūri uz āru no malas: platums `width + 2·jambUndercut`, dziļums `depth` no sienas līnijas (sk. ADR-011; DOMAIN B5 to precīzi neapraksta).
+- **Durvju aila.** Zonai pievieno taisnstūri uz āru no malas: platums `width + 2·jambUndercut`, dziļums `depth` no sienas līnijas (sk. ADR-011).
 - Šķēršļus paplašina ar Clipper `inflatePaths` (JoinType.Miter) un atņem ar `difference`.
 - **Caurules neatņem no Z.** Tās neietekmē dēļu patēriņu un profilus, tikai rada urbumu. Plāna konstruktors tās piesaista gabalam kā `drill` pazīmi. Validētājs pārbauda, ka katra caurule atrodas tieši vienā gabalā (vai uz šuves) un ka urbums ir pareizajā vietā.
 
@@ -153,7 +153,7 @@ maxPairs(E, S, C):
 - nesapārots e → labā daļa `L − e − k` (labā gala profils);
 - pāris (e, s) → vidus `L − e − s − 2k` bez īso galu profiliem, ja > 0.
 
-Slīpiem gabaliem A posms izmanto `extent` (konservatīvi, taisnstūra griezums vienmēr derīgs). Precīzā pārošana pēc abām malām (`e_low + s_low + k ≤ L ∧ e_high + s_high + k ≤ L`) ir F14. Tā ir divdimensiju dominances pārošana, un tai vajag vispārīgu divdaļīga grafa maksimālo pārošanu (pašu Hopcroft–Karp vai Kuhn).
+Slīpiem gabaliem A posms izmanto `extent` (konservatīvi, taisnstūra griezums vienmēr derīgs). Precīzā pārošana pēc abām malām (`e_low + s_low + k ≤ L ∧ e_high + s_high + k ≤ L`) nav ieviesta (projekts noslēgts, ADR-029). Tā būtu divdimensiju dominances pārošana, un tai vajag vispārīgu divdaļīga grafa maksimālo pārošanu (pašu Hopcroft–Karp vai Kuhn).
 
 ### 4.2 B posms — strēmeles (K_low, K_high)
 
@@ -171,9 +171,9 @@ Sakārto pēc laukuma dilstoši. Katram gabalam izvēlas **best fit** krājumā:
 ### 4.4 Rezultāts
 
 - `B = B_A + B_B + B_C`.
-- Plāns: dēļi ar `placements` (taisnstūri dēļa koordinātās). Dēļu numuri seko dekodera secībai (`D01`, `D02`, …); grupēšana pēc griezuma garuma ir griešanas sarakstā (atdura saraksts, `cutlist`).
+- Plāns: dēļi ar `placements` (taisnstūri dēļa koordinātās). Dēļu numuri seko dekodera secībai (`D01`, `D02`, …).
 - **Determinisms:** visas kārtošanas ir stabilas ar sasaisti pēc gabala ID.
-- Novērtētājs (`evaluate`) un plāna konstruktors (`buildPlan`) izmanto **vienu dekodera kodolu** (`plan/decode.ts`, izvēli pēc režīma dara `plan/run.ts`), tāpēc B sakrīt pēc konstrukcijas; `evaluate` atgriež arī nesapārotos sarakstus (N un M4 vajadzībām) un statistiku. Ātrā versija bez objektiem (typed arrays) ir F5 uzdevums, ar tiem pašiem ekvivalences testiem. Īpašību tests: `evaluate(φ).B === plan(φ).boards.length === validate(plan).boards`.
+- Novērtētājs (`evaluate`) un plāna konstruktors (`buildPlan`) izmanto **vienu dekodera kodolu** (`plan/decode.ts`, izvēli pēc režīma dara `plan/run.ts`), tāpēc B sakrīt pēc konstrukcijas; `evaluate` atgriež arī nesapārotos sarakstus (N un M4 vajadzībām) un statistiku. Ātrā versija bez objektiem (typed arrays) ir `evaluate/fast.ts` (§14), ar tiem pašiem ekvivalences testiem. Īpašību tests: `evaluate(φ).B === plan(φ).boards.length === validate(plan).boards`.
 - Dēļa novietojums (`boardRect`): sākuma gabals pie dēļa labā gala, beigu gabals pie kreisā, apakšmalas profils pie `y = 0`, augšmalas pie `y = W`; pirmās rindas strēmele (`long = high`) sēž dēļa augšā, pēdējās (`low`) apakšā.
 
 ### 4.5 Secīgais režīms (`mode: onsite`)
@@ -192,21 +192,17 @@ Modelē klāšanu bez iepriekšējas griešanas: atgriezumu var izmantot tikai v
 ## 5. Mērķa funkcija
 
 ```
-f(φ) = B(φ) + λ_V·V(φ) + λ_H·H(φ) + λ_R·R(φ) + ε·N(φ)
+f(φ) = B(φ) + λ_V·V(φ) + ε·N(φ)
 ```
 
 - **V — šuvju nobīde.** Katram kaimiņu pārim (s, t) un katram šuvju pārim x ∈ šuves_s, x' ∈ šuves_t, kas atrodas `I_st` (paplašinātā par D), un kam `|x − x'| < D`, pieskaita `(D − |x − x'|)/D`.
   - Ātrais ceļš: ja `I_st` ir viens intervāls ar garumu ≥ L + D, tad `V_st = ⌈|I_st|/L⌉ · max(0, D − circDist(φ_s, φ_t))/D`. Nosacījums `V_st = 0 ⇔ circDist ≥ D` šeit ir precīzs.
   - Citādi uzskaita reālās šuves pārklāšanās intervālā.
-- **H — "H" raksts.** Tas pats joslām j un j+2 ar D_H vietā D (x apjomu pārklāšanās ietvaros).
-- **R — regularitāte (neobligāti).** Trīs secīgām joslām ar garu pārklāšanos: ja `circDist(Δ₁, Δ₂) < D_R`, kur `Δ₁ = (φ_t − φ_s) mod L`, `Δ₂ = (φ_r − φ_t) mod L`, pieskaita `(D_R − dist)/D_R`.
 - **N — tuvums nākamajam pārim.** Pēc A posma, ja ir gan nesapāroti beigu E', gan sākuma S' gabali: `N = (min E' + min S' + k − L)/L ∈ (0, 1]` (tas ir pozitīvs, jo citādi pārošana nebūtu maksimāla); citādi `N = 0`. Tas dod SA virzienu uz "plato", kur B nemainās.
 
 | Svars | Noklusējums | Piezīme |
 |---|---|---|
 | λ_V | 2,0 | viens pārkāpums "maksā" ~2 dēļus: meklēšana var šķērsot nederīgus apgabalus, bet galarezultāts ir derīgs |
-| λ_H | 0,6 · `aesthetics` | UI slīdnis 0…1 |
-| λ_R | 0 | ieslēdz pēc vajadzības |
 | ε | 0,2 | ε·N < 1, tāpēc nekad neatsver vienu dēli |
 
 - **Derīgums:** risinājums ir derīgs ⇔ V = 0 un L_min ir izpildīts (`lengthDeficit = 0`; tas ir garantēts, ja φ ∈ F_s, un sods tikai tad, ja F_s ir tukša); w_min nodrošina y0.
@@ -257,33 +253,29 @@ SA(inst, cfg, rng, clock):
 ```
 
 - `calibrate`: no x izpilda `samples` nejaušus gājienus (tos nepieņem), savāc Δ > 0 un aprēķina `T0 = −median(Δ⁺)/ln(p0)` (ADR-016). Gājienus, kas palielina V, neņem vērā: sods λ_V·V nav dēļu skaita solis un uzpūš T₀ par kārtu (L1, p₀ = 0,8: ≈ 27; ar B mērķi un p₀ = 0,8 T₀ ≈ 4,5, tāpēc noklusējums ir p₀ = 0,3, ADR-027). Ja tādu Δ⁺ ir < 10, izmanto visus; ja Δ⁺ nav, `T0 = 1`.
-- **Budžets:** eksperimentos — iterāciju skaits N (`τ = it/N`), lai rezultāti nebūtu atkarīgi no datora ātruma; laiku tikai mēra. Lietotnē — laika limits (`τ = elapsed/limit`); `clock()` izsauc ik pēc 256 iterācijām.
+- **Budžets:** eksperimentos — iterāciju skaits N (`τ = it/N`), lai rezultāti nebūtu atkarīgi no datora ātruma; laiku tikai mēra. Laika režīmā (`timeMs` ar padotu `clock`) `τ = elapsed/limit`; `clock()` izsauc ik pēc 256 iterācijām.
 - **Atjaunošana (`reheat`, noklusējumā ieslēgta, ADR-027):** ja labākais derīgais nav uzlabojies 0,5 % budžeta (iterāciju režīmā: iterāciju daļa; laika režīmā: progresa daļa `tau − tauBest`), meklēšana turpinās no labākā risinājuma ar `T0 · 0,5` un atlikušajam budžetam atkal atdzesē līdz `T_end` (vēlāk `tau < 0,95`). Biežāka atjaunošana ir labāka: uz 9 instancēm ar B mērķi 88/90 skrējienu sasniedz labāko zināmo optimumu (52/90 bez atjaunošanas un ar p₀ = 0,8).
-- **Vairāki starti:** lietotnē katrā Web Worker ir neatkarīgs SA ar sēklu `hash(seed, i)`; eksperimentos katra sēkla ir atsevišķs palaidiens.
+- **Vairāki starti:** katra sēkla ir atsevišķs palaidiens.
 
 | Parametrs | Noklusējums |
 |---|---|
 | p0 | 0,3 |
 | p_end | 1e-8 |
 | atjaunošana | ik pēc 0,5 % budžeta bez uzlabojuma, T₀ · 0,5 |
-| laika limits (UI) | 3000 ms |
+| laika režīms | `timeMs` + padotais `clock` (pēc noklusējuma nav) |
 | iterāciju budžets (eksperimenti) | 200 000 |
 | gājienu varbūtības | §6 |
 
 **Realizācija (F5).** `runSa`: sākums ir B-INST φ; kalibrācija 200 gājieni (skaitās budžetā), `T₀ = max(−median(Δ⁺)/ln p₀, T_end)` (Δ⁺ bez V palielinošiem gājieniem, sk. §7 `calibrate`); τ = novērtējumi/budžets (laika režīmā laiks, pulksteni lasot ik pēc 256 iterācijām); gājiens tiek pielietots vietā un pēc noraidīšanas atcelts; labākais derīgais tiek glabāts atsevišķi (`Incumbent`); apstājas pie B = LB. Statistika: `byMove` (`proposed`, `accepted`, `downhill`, `newBest`), trajektorija ik N/200 novērtējumiem (labākais un pašreizējais f), iterācijas un laiks līdz labākajam. Atjaunošana (`reheat`) ir noklusējumā ieslēgta (ADR-027; `reheatFraction`, `reheatFactor` konfigurējami). Novērtētājs: abiem režīmiem tipizēto masīvu versija (§14, ADR-025), citādi atsauces `evaluate`; SA trajektorija ar abiem sakrīt (tests).
 
-## 8. Ārējā cilpa (θ, sākuma puse, y0)
+## 8. Rindu konfigurācija (θ, sākuma puse, y0)
 
-1. **Konfigurācijas.** Ja `angleDeg = 'auto'`, θ kandidāti ir virzieni, kas paralēli malām ≥ 1000 mm (unikāli mod 180°). Katram θ pārbauda {θ, θ + 180°} × {left, right}, tātad sākuma sienu un klāšanas virzienu rindā. Parasti lietotājs θ fiksē (estētika), un automātiski salīdzina tikai sākuma pusi.
-2. **y0 skenēšana.** y0 = 0, 1, …, W − 1 mm. Katram y0 izveido joslas un segmentus (pagriezto Z kešo).
-   - Stingrais filtrs: katra siena, kas ir paralēla rindām, dod strēmeli ar platumu 0 vai ≥ w_min.
-   - Ja neviens y0 neder, ņem to ar mazāko pārkāpumu skaitu un izdod brīdinājumu (G12).
-   - Ja skenēšana ir lēna, pārbauda tikai kritiskos y0 (kur kāds strēmeles platums sasniedz 0 vai w_min) un rupju režģi.
-3. **Ātrs vērtējums:** LB1(y0) un B-INST rezultāts. Kārto pēc (B-INST, LB1, pirmās un pēdējās rindas līdzsvara |a − b|).
-4. **SA top-K** (K = 3) katrai konfigurācijai; no laika budžeta vispirms atskaita atlases laiku (vismaz 1 ms paliek SA), atlikumu sadala vienādi.
-5. **Rezultāts:** labākais kopumā un salīdzinājuma tabula pa konfigurācijām (UI to rāda kā virzienu salīdzinājumu).
+Eksperimentos rindu konfigurācija ir fiksēta (ADR-029; agrākā ārējā cilpa, kas pārlasīja θ un sākuma pusi, ir izņemta):
 
-**Realizācija (F5).** `runOuter`: konfigurācijas — `angleDeg = 'auto'` dod taisno sienu (≥ 1000 mm) virzienus mod 180°, katru ar θ un θ + 180°, `stackSide = 'auto'` dod {left, right}; fiksēti iestatījumi (arī `rowOffset`) tiek respektēti. y0 filtrs ir analītisks (`y0Violations`): horizontālo malu augstumi rindu koordinātās uz Clipper režģa, pārkāpums = josla šaurāka par `w_min` (tests salīdzina ar joslu skenēšanu). Ja derīga y0 nav, ņem nobīdes ar mazāko pārkāpumu skaitu (`relaxed`). Skrīninga kandidāti ≤ 24 uz konfigurāciju (derīgo skrējienu gali + vienmērīgs tīkls), kārtoti pēc (derīgums, B-INST, LB1, y0); SA top-K katrai (θ, pusei); kopējais budžets tiek sadalīts vienādi starp SA palaidieniem.
+- instancēs `angleDeg = 0`, `stackSide = left`;
+- ja `rowOffset = 'auto'`, y0 izvēlas `resolveY0` (`goodY0`): pirmais veselais y0 = 0, 1, …, W − 1 mm, kuram katra rindām paralēla siena dod strēmeli ar platumu 0 vai ≥ w_min. Ja neviens y0 neder, izmanto 0. Plantētajām instancēm `rowOffset = 0` ir fiksēts failā.
+
+Plānotājs pats y0 nefiltrē, tāpēc plāns ar nelabvēlīgu y0 var pārkāpt `w_min`; validētājs to ziņo.
 
 ## 9. Bāzes metodes
 
@@ -291,8 +283,6 @@ SA(inst, cfg, rng, clock):
 |---|---|
 | B-NEXT | klasiskā klāšana: atgriezums tikai nākamās rindas sākumam |
 | B-INST | klājēja metode ar atgriezumu kaudzi (secīgs dekoders, §4.5) |
-| B-INST + precut | B-INST fāzes, bet novērtētas ar precut dekoderu: cik dod iepriekšēja griešana bez optimizācijas |
-| RS | nejauša meklēšana: φ ~ U(F), tikpat novērtējumu cik SA; labākais derīgais |
 | HC | SA ar T = 0 (pieņem tikai Δ ≤ 0) ar restartiem; parāda, ko dod "sliktāku" gājienu pieņemšana |
 | LAHC (neobl.) | Late Acceptance Hill Climbing, vēstures garums 1000 |
 
@@ -313,7 +303,7 @@ B-INST(inst):                         // atgriež φ; B skaita secīgais dekoder
 
 B-NEXT ir tas pats, tikai `stackS` satur vienīgi pēdējo radīto atgriezumu, un `stackE` neizmanto.
 
-**Realizācija (F4).** Pseidokods izvēlas tikai φ (`sequentialPhases`); dēļu skaitu B vienmēr mēra `evaluate` ar `mode: onsite`, tāpēc simulācijas kļūda nevar sabojāt B. Kandidāts φ_s tiek pieņemts, ja φ ∈ F_s un nobīde ≥ D pret jau nolemtajiem apakšējiem kaimiņiem. Segments bez apakšējā kaimiņa arī drīkst ņemt `stackS` atgriezumu. Bāzes līnijas RS un HC (F4) izmanto tikai M1 Reset un M2 Shift; HC sāk no B-INST φ un restartē no nejaušiem pēc 2000 neuzlabojošiem novērtējumiem (ADR-014).
+**Realizācija (F4).** Pseidokods izvēlas tikai φ (`sequentialPhases`); dēļu skaitu B vienmēr mēra `evaluate` ar `mode: onsite`, tāpēc simulācijas kļūda nevar sabojāt B. Kandidāts φ_s tiek pieņemts, ja φ ∈ F_s un nobīde ≥ D pret jau nolemtajiem apakšējiem kaimiņiem. Segments bez apakšējā kaimiņa arī drīkst ņemt `stackS` atgriezumu. Bāzes līnija HC (F4) izmanto tikai M1 Reset un M2 Shift; HC sāk no B-INST φ un restartē no nejaušiem pēc 2000 neuzlabojošiem novērtējumiem (ADR-014).
 
 ## 10. Apakšējās robežas
 
@@ -341,12 +331,12 @@ Ievade: `Project` un `Plan`. Izmanto tikai `geometry` un `model` (un `num`); zon
 2. **Dēļi** (`boardBounds`, `overlap`, `kerf`, `shapeNotOnBoard`, `orientation`): katrs `rect` ir [0, L] × [0, W] robežās; taisnstūri nepārklājas, un starp tiem x vai y virzienā ir ≥ k; gabala forma dēļa koordinātās ir tā `rect` iekšpusē un ir tikai **pārbīde** no rindas koordinātu formas (dēli nevar pagriezt vai spoguļot).
 3. **Profili** (`profile`): neatkarīgi nosaka, kuras gabala malas pieskaras citiem gabaliem (kopīga kolineāra mala > 0,02 mm). Vajag kreiso → `rect.x = 0`; labo → `rect.x + rect.w = L`; apakšmalu → `rect.y = 0`; augšmalu → `rect.y + rect.h = W`.
 4. **L_min** (`minLength`): gabalam ar tieši vienu šuvi (sākuma/beigu) — kopīgais garums gar katru pieslēgto garo malu ≥ L_min; ja garās malas nav pieslēgtas, `extent ≥ L_min` (ADR-012).
-5. **w_min** (`ripWidth`): tikai strēmelēm (augstums < W), kuru kontūra ir paralēla asīm; slīpas sienas strēmeles (scribe) netiek pārbaudītas, jo y0 filtrs (§8) attiecas uz rindām paralēlām sienām.
+5. **w_min** (`ripWidth`): tikai strēmelēm (augstums < W), kuru kontūra ir paralēla asīm; slīpas sienas strēmeles (scribe) netiek pārbaudītas, jo y0 izvēle (§8) attiecas uz rindām paralēlām sienām.
 6. **Nobīde** (`stagger`): šuves (vertikālas kopīgas malas vienas rindas gabalu starpā) un kopīgā horizontālā robeža `I_st` (no blakus rindu gabalu kopīgajām malām); konflikts, ja abas šuves ir `I_st` paplašinātā par D un `|x − x′| < D − 0,01 mm` (režģa pielaide). Tā pati semantika kā V (§5), tāpēc `V = 0 ⇔` nav `stagger` pārkāpuma.
 7. **Caurules** (`pipe`): katra caurule, kuras centrs ir gabalā vai kuras caurums sasniedz gabalu, tur ir urbumā (`drill`), koordinātas sakrīt (±0,05 mm), un nav urbumu bez caurules.
 8. **Skaits** (`count`): plāna dēļu skaits = `stats.boards`; unikāli dēļu un gabalu ID, katrs gabals tieši vienā dēlī ar to pašu `rect`; `packs = ⌈boards·(1 + reserve)/perPack⌉`.
 
-Izvade: `{ boards, violations }`; pārkāpums ir `{ code, message, refs }` ar atsaucēm uz gabaliem, segmentiem vai dēļiem. Plānotājs `y0` nefiltrē (tas ir ārējās cilpas darbs, F5), tāpēc plāns ar nelabvēlīgu y0 var pārkāpt `w_min`; validētājs to pareizi ziņo.
+Izvade: `{ boards, violations }`; pārkāpums ir `{ code, message, refs }` ar atsaucēm uz gabaliem, segmentiem vai dēļiem. Plānotājs `y0` nefiltrē (§8), tāpēc plāns ar nelabvēlīgu y0 var pārkāpt `w_min`; validētājs to pareizi ziņo.
 
 ## 12. Instances ar zināmu optimumu
 
@@ -355,7 +345,7 @@ Izvade: `{ boards, violations }`; pārkāpums ir `{ code, message, refs }` ar at
 - ≤ 2 segmenti: režģis 1 mm (taisnleņķa segmentiem tā ir pilna pārlase pār veseliem mm, ADR-013); ≤ 3 segmenti: 5 mm; ≤ 4 segmenti: 10 mm. Kandidāti segmentam: `a_s + j·solis` (taisnleņķa) vai soļa daudzkārtņi (citiem), kas ietilpst `F_s`, plus visi `F_s` intervālu galapunkti.
 - Rezultāts ir labākais uz režģa, tātad augšējā robeža optimumam. Ja tas sakrīt ar LB, optimums ir pierādīts.
 - **Uzmanību:** ar soli > 1 šuvju pārošana (`e + s + k = L`) prasa precīzas nobīdes, ko režģis var neaizķert, tāpēc HC/SA var uzvarēt pārlasi. Ticams optimums ir tikai ar soli 1; soļi > 1 dod tikai augšējo robežu.
-- Pārlase strādā ar fiksētiem θ un y0 (y0 kā `runMethod`: `resolveY0`) un `precut` režīmu, tāpēc to salīdzina ar HC/SA, nevis ar B-INST (tas ir `onsite`). Aizsargs: režģis lielāks par `--max-evals` (50 M) tiek noraidīts. M3 simetrijas netiek izmantotas, jo mainītos V/H.
+- Pārlase strādā ar fiksētiem θ un y0 (y0 kā `runMethod`: `resolveY0`) un `precut` režīmu, tāpēc to salīdzina ar HC/SA, nevis ar B-INST (tas ir `onsite`). Aizsargs: režģis lielāks par `--max-evals` (50 M) tiek noraidīts. M3 simetrijas netiek izmantotas, jo mainītos V.
 - Komanda: `pnpm bench exhaustive [ceļi] --step 5`; `--write-meta` ieraksta `meta.knownOptimum` (tikai ja B = LB1) vai `meta.bestKnown`.
 
 ### 12.2 Plantētais ģenerators ("kāpņu" telpas)
@@ -374,7 +364,7 @@ generatePlanted(n, mRange, L, W, k, L_min, D, g, rng):
   knownOptimum ← Σ m_i + n
 ```
 
-Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, lai ārējā cilpa nemaina rindu tīklu.
+Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`.
 
 **Pierādījums.** Konstruētajā plānā katrs dēlis ir vai nu pilns, vai dod precīzu pāri `e_i + s_{π(i)} + k = L`, tātad `B* = Σ m_i + n`. No otras puses, `LB1 = ⌈Σ R_i / L⌉ = ⌈Σ m_i + n(L − k)/L⌉ = Σ m_i + n`, jo `0 ≤ nk < L`. Tātad `B* = LB1`, un plāns ir optimāls. ∎
 
@@ -393,39 +383,32 @@ Instancē fiksē `angleDeg = 0`, `stackSide = left`, `rowOffset = 0`, lai ārēj
 | slanted | S1 trapece, S2 paralelograms, S3 erkers, S4 diagonāli 45° | LB1 |
 | obstacles | O1 kolonna + caurules, O2 virtuves bloks | LB1 |
 | curved | C1 pusapaļš erkers, C2 apaļa kolonna, C3 noapaļoti stūri + V izgriezums | LB1 |
-| multi | M1 dzīvoklis (pēc F13) | LB1 |
-| real | reālas telpas no klājējiem (ja būs) | LB1 |
 
 "Labākais zināmais" ir labākais rezultāts no 10 gariem SA palaidieniem (10× budžets). To ieraksta instances `meta.bestKnown`. Komanda: `pnpm bench bestknown [path...] --seeds 10 --iters 2000000 --write-meta` (instances ar `knownOptimum` izlaiž; `knownOptimum` ieraksta tikai tad, ja B = LB, t.i., max(LB0, LB1)).
 
 ### 13.2 Protokols
 
-- Metodes: B-NEXT, B-INST, B-INST+precut, RS, HC, SA, SA-onsite (un LAHC, ja ir).
+- Metodes: B-NEXT, B-INST, HC, SA, SA-onsite.
 - 20 sēklas katrai (instance, metode) kombinācijai.
 - Vienāds iterāciju budžets (noklusējums 200 000 novērtējumu).
-- θ, sākuma puse un y0 fiksēti, izņemot ārējās cilpas eksperimentu.
+- θ, sākuma puse un y0 fiksēti.
 - Mēra: B, atgriezumu %, LB, gap, laiks līdz labākajam, kopējais laiks, derīgums, gājienu statistika.
 - Pieraksta datora aprakstu (CPU, Node versija) un git commit.
 
 ### 13.3 Tabulas un grafiki atskaitei
 
-- **Tabula:** instance | m² | segmenti | LB | B-NEXT | B-INST | RS | HC | SA (labākais / vid. ± std) | laiks.
-- **G1 Konverģence:** labākais f pret iterāciju (vairākas sēklas, vidējais ± josla).
-- **G2 "Estētikas cena":** B pret D (200…500 mm).
-- **G3 Iepriekšējas griešanas vērtība:** B-INST pret SA-onsite pret SA (precut).
-- **G4 (neobl.):** gājienu ieguldījums (uzlabojumu daļa pa gājienu tipiem).
-- **G5 (neobl.):** SA pret LAHC.
+- **Tabula** (`results/summary.csv`): instance | m² | segmenti | LB | B-NEXT | B-INST | HC | SA (labākais / vid. ± std) | SA-onsite | laiks.
+- **Grūtības sērija** (`results/f6/difficulty.csv`): cik skrējienu atrod plantēto optimumu pieaugošā telpas izmērā.
 
 ### 13.4 Reproducējamība
 
-`pnpm bench all [--jobs N|auto] [--quick] [--only main,aesthetics]` (ADR-022) izveido:
+`pnpm bench all [--jobs N|auto] [--quick]` (ADR-022, ADR-029) izveido:
 
-- `results/env.json` — CPU, Node, commit, vai darba koks bija tīrs;
-- `results/raw/main.jsonl`, `results/raw/aesthetics.jsonl` — viena rinda katram skrējienam (instance, metode, sēkla, B, LB, V, H, N, derīgums, iterācijas, `evalsToFinalB`, laiks, commit, SA trase); atsākams: pabeigtās atslēgas (ar budžetu un instances satura jaucējkodu) tiek izlaistas, rindas no cita commit izraisa brīdinājumu;
-- `results/summary.csv` — §13.3 galvenā tabula; `results/tables/g1_convergence.csv`, `g2_aesthetics.csv`, `g3_precut.csv` — grafiku dati;
-- `results/plots/G1.svg`, `G2.svg`, `G3.svg` — grafiki (Vega-Lite).
+- `results/env.json` — CPU, Node, commit, vai darba koks bija tīrs, pavedienu skaits;
+- `results/raw/main.jsonl` — viena rinda katram skrējienam (instance, metode, sēkla, B, LB, V, N, derīgums, iterācijas, `evalsToFinalB`, laiks, commit); atsākams: pabeigtās atslēgas (ar budžetu un instances satura jaucējkodu) tiek izlaistas, rindas no cita commit izraisa brīdinājumu;
+- `results/summary.csv` — galvenā tabula (§13.3), viena rinda instancei.
 
-Eksperimenti: **E1** — visas instances × B-NEXT, B-INST, RS, HC, SA, SA-onsite (G1 un G3 nāk no tām pašām rindām); **E3** — SA ar `hPattern.distance` = 200…500 mm un "H izslēgts" uz R2, L1, S1, O1 (G2; instance tiek mainīta atmiņā, faili netiek aiztikti). Ārējā cilpa, pilnā pārlase un plantētie eksperimenti ir atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`), ne daļa no `all`. Laika kolonna ir godīga tikai ar `--jobs 1`; ar vairākiem pavedieniem skrējieni dala datoru, bet B rezultāti ir identiski (pārbaudīts). `evalsToFinalB` ir pirmā iterācija, kurā sasniegts galīgais B (nevis sekundes). `env.json` satur arī pavedienu skaitu.
+Viens eksperiments: visas instances × B-NEXT, B-INST (deterministiski, viens skrējiens), HC, SA, SA-onsite (20 sēklas, 200 000 novērtējumu), mērķis ir tikai B. Pilnā pārlase, `bestknown`, `difficulty` un `tune` ir atsevišķas komandas, ne daļa no `all`. Laika kolonna ir godīga tikai ar `--jobs 1`; ar vairākiem pavedieniem skrējieni dala datoru, bet B rezultāti ir identiski. `evalsToFinalB` ir pirmā iterācija, kurā sasniegts galīgais B (nevis sekundes).
 
 ## 14. Veiktspēja
 
@@ -434,13 +417,12 @@ Eksperimenti: **E1** — visas instances × B-NEXT, B-INST, RS, HC, SA, SA-onsit
 - Paņēmieni:
   - `Float64Array` garumiem, iepriekš alocēti buferi, iekšējā ciklā nerada objektus;
   - typed array `sort()` (skaitlisks);
-  - inkrementāla atjaunināšana: gājiens maina 1–6 segmentus, tāpēc atjauno tikai to gabalus un sakārtotos masīvus (jaunie gabali — ne vairāk kā viens katram segmentam — tiek sakārtoti atsevišķi un apvienoti ar esošajiem no beigām ar bināro meklēšanu; vecos izmet pēc slota zīmoga, nevis pēc segmenta `dirty` karoga; nesapārotie A posma gabali glabājas pēc segmenta ranga, jo segmentā ir ≤ 1 sākuma un ≤ 1 beigu gabals — `layout/pieces.ts` `shortOf`; paaudžu skaitītāji aizstāj `fill(0)`; `mod(x, L)` ātrajā ceļā aizstāj bitu precīzs `modL`); V un H pārrēķina tikai skartajiem kaimiņu pāriem.
+  - inkrementāla atjaunināšana: gājiens maina 1–6 segmentus, tāpēc atjauno tikai to gabalus un sakārtotos masīvus (jaunie gabali — ne vairāk kā viens katram segmentam — tiek sakārtoti atsevišķi un apvienoti ar esošajiem no beigām ar bināro meklēšanu; vecos izmet pēc slota zīmoga, nevis pēc segmenta `dirty` karoga; nesapārotie A posma gabali glabājas pēc segmenta ranga, jo segmentā ir ≤ 1 sākuma un ≤ 1 beigu gabals — `layout/pieces.ts` `shortOf`; paaudžu skaitītāji aizstāj `fill(0)`; `mod(x, L)` ātrajā ceļā aizstāj bitu precīzs `modL`); V pārrēķina tikai skartajiem kaimiņu pāriem.
 - Inkrementālo versiju raksta tikai pēc tam, kad vienkāršā versija ir pareiza un nomērīta. Tās rezultātiem jāsakrīt ar vienkāršo (īpašību tests).
-- `pnpm bench perf` — mikrobenchmark.
 
 **Realizācija (F6 turpinājums, ADR-025).** `createFastEvaluator(ctx, { mode: 'onsite' })` ir tā pati tipizēto masīvu versija ar sekvenciālo dekoderi (`decodeSeq`); SA-onsite R2 uz 200 000 novērtējumu 69,6 s → 4,5 s ar identisku trajektoriju.
 
-**Realizācija (F5, ADR-016).** `evaluate/fast.ts` ir `precut` dekodera tipizēto masīvu versija: leftover ir (w, h, profilu karogi) un radīšanas secība (pozīcijas nav vajadzīgas); atlikumi, kurus neviena strēmele vairs nevar izmantot, netiek veidoti; gabalu `byId` secība tiek atveidota ar skaitlisku atslēgu (segmenta etiķetes rangs, loma `NN` < `B` < `S`). Gabali dzīvo katra segmenta pastāvīgā slotā un tiek pārrēķināti tikai, ja φ_s mainījās; veselie dēļi vidējiem "vienkāršiem" rindas gabaliem tiek tikai skaitīti; A posma gali un sākumi tiek uzturēti sakārtoti starp novērtējumiem; V un H locekļi tiek pārrēķināti tikai skartajiem segmentu pāriem (summas tajā pašā secībā kā atsauces versijā). Tests salīdzina B, V, H, N, f, `lengthDeficit` un nesapārotos gabalus ar `evaluate` uz 10 instancēm no 12 (P3, P4 netiek iekļautas), uz nejaušām taisnleņķa telpām (brīvie gabali, C posms) un garām gājienu virknēm ar vienu un to pašu novērtētāju.
+**Realizācija (F5, ADR-016).** `evaluate/fast.ts` ir `precut` dekodera tipizēto masīvu versija: leftover ir (w, h, profilu karogi) un radīšanas secība (pozīcijas nav vajadzīgas); atlikumi, kurus neviena strēmele vairs nevar izmantot, netiek veidoti; gabalu `byId` secība tiek atveidota ar skaitlisku atslēgu (segmenta etiķetes rangs, loma `NN` < `B` < `S`). Gabali dzīvo katra segmenta pastāvīgā slotā un tiek pārrēķināti tikai, ja φ_s mainījās; veselie dēļi vidējiem "vienkāršiem" rindas gabaliem tiek tikai skaitīti; A posma gali un sākumi tiek uzturēti sakārtoti starp novērtējumiem; V locekļi tiek pārrēķināti tikai skartajiem segmentu pāriem (summas tajā pašā secībā kā atsauces versijā). Tests salīdzina B, V, N, f, `lengthDeficit` un nesapārotos gabalus ar `evaluate` uz 10 instancēm no 12 (P3, P4 netiek iekļautas), uz nejaušām taisnleņķa telpām (brīvie gabali, C posms) un garām gājienu virknēm ar vienu un to pašu novērtētāju.
 
 ## 15. Statistika un žurnāls
 
@@ -450,6 +432,6 @@ SA atgriež:
 - pieņemšanas daļu kopā un pa gājienu tipiem;
 - uzlabojumu skaitu pa gājienu tipiem;
 - laiku un iterāciju līdz labākajam;
-- trajektoriju (labākais un pašreizējais f ik pēc N/200 iterācijām) grafikiem.
+- trajektoriju (labākais un pašreizējais f ik pēc N/200 iterācijām).
 
-Tas vajadzīgs atskaitei (kuri gājieni strādā) un parametru pielāgošanai.
+Tas vajadzīgs kuru gājienu darbības analīzei un parametru pielāgošanai.

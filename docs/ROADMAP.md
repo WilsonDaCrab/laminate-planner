@@ -2,7 +2,7 @@
 
 Fāzes izpilda secīgi. Katrai fāzei ir uzdevumi un **pieņemšanas kritēriji**. Fāze ir pabeigta, kad visi kritēriji ir izpildīti, `pnpm typecheck && pnpm lint && pnpm test` ir zaļi un paveiktais ir atzīmēts šajā failā.
 
-**F0–F6 ir kursa nodevums** (kodols, testēšana, atskaite). F7–F12 ir produkts. F13–F16 ir paplašinājumi.
+**Projekts ir noslēgts kā kursa darbs (2026-10-08, ADR-029).** F0–F6 ir kursa nodevums (kodols, testēšana, atskaite). Produkta daļa (web lietotne, redaktors, mērījumi, izvades, vairāku telpu projekti un citi paplašinājumi, agrākās fāzes F7–F16) vairs nav šī repozitorija uzdevums: tā ir atsevišķā v2 projektā. Zemāk F0–F6 ir saglabātas kā darba vēsture; ar [x] atzīmētie punkti par `cutlist`, ārējo cilpu, RS, H sodu, grafikiem G1–G3, `apps/web` un komandām `perf`, `compare`, `planted`, `outer`, `baselines`, `render-samples` ir izpildīti, bet vēlāk izņemti (ADR-029).
 
 Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
@@ -120,124 +120,15 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 
 1. **Uzdevuma formulējums** (~½ lpp.): lamināta izkārtojums ar profilu orientāciju, noteikumiem un mērķi minimizēt dēļus. Īsi par iepriekšēju griešanu un globālo pārošanu. Viens attēls (plāns ar krāsotiem pāriem).
 2. **Algoritms** (~1 lpp.):
-   - a) domēns — φ vektors, F_s, ārējā cilpa;
+   - a) domēns — φ vektors, F_s;
    - b) novērtēšana — dekoders (A/B/C posmi, `maxPairs` pareizība), mērķa funkcija, LB1;
    - c) gājiens — M1–M5, uzsvars uz M4;
    - d) algoritms — SA pseudokods, parametri.
-3. **Testēšana** (~1 lpp.): instanču komplekts, protokols, galvenā tabula, G1 un G3, secinājumi (gap pret LB, plantēto optimumu atrašanas daļa, laiks, iepriekšējas griešanas vērtība).
-4. **Saite** uz repozitoriju. Viena rindkopa par lietotni (ekrānuzņēmums), ja tā jau ir.
+3. **Testēšana** (~1 lpp.): instanču komplekts, protokols, galvenā tabula, secinājumi (gap pret LB, plantēto optimumu atrašanas daļa, laiks, iepriekšējas griešanas vērtība).
+4. **Saite** uz repozitoriju.
 
 ---
 
-## F7. Web lietotnes karkass (PWA) (~2–3 d)
+## Noslēgums: repozitorija minimizēšana (2026-10-08)
 
-- [ ] Vite + React + TS; Tailwind + shadcn/ui; izkārtojums (`UI.md` §3)
-- [ ] Zustand stores (`project`, `ui`, `result`), Immer patch vēsture
-- [ ] IndexedDB automātiska saglabāšana, projektu saraksts, JSON imports/eksports
-- [ ] i18n (lv, en) ar atslēgu saderības testu
-- [ ] vite-plugin-pwa: manifests, ikonas, offline kešs; izvietošana GitHub Pages (Actions)
-
-**Kritēriji:** lietotni var instalēt (Chrome/Edge un Android); pēc pirmās ielādes tā atveras un strādā bez interneta; parauga projekts tiek ielādēts, saglabāts un atjaunots pēc lapas pārlādes.
-
-## F8. Telpu redaktors (~8–10 d)
-
-- [ ] Audekls: kamera, pan/zoom (pele, skārienekrāns), režģis, lineāli, mēroga josla
-- [ ] Sagataves (taisnstūris, L, U, T) ar parametru dialogu
-- [ ] Līnijas rīks ar dinamisko ievadi (garums, relatīvs leņķis) un piesaisti (`UI.md` §4.3–4.4)
-- [ ] Izvēle, virsotņu un malu vilkšana, malas garuma rediģēšana ar "pabīdīšanas" semantiku
-- [ ] Punkts sienā un brīvs izgriezums, velkot punktu (V forma), ar skaitlisku dziļuma un pozīcijas ievadi
-- [ ] Posma push/pull (`Shift` + vilkšana) → taisnstūra niša vai izvirzījums
-- [ ] Formu ielikumi: taisnstūris, trapece, trīsstūris, pusaplis, loka segments, brīva līnija (`UI.md` §4.6) ar priekšskatījumu
-- [ ] Rediģējamas formu grupas (`Room.wallShapes`): parametru maiņa, pārvietošana pa sienu, dzēšana, "izjaukšana"
-- [ ] Malas izliekšana (loks), stūru noapaļošana un nošķelšana
-- [ ] Loku attēlošana, rokturi, izmēri (horda, bultas augstums, rādiuss) un piesaiste (centrs, viduspunkts, pieskare)
-- [ ] Virsotnes dzēšana
-- [ ] Sienu tabula (sinhronizēta ar zīmējumu, ar loka kolonnu), saslēgšanās kļūda
-- [ ] Malu īpašības; šķēršļi (arī apaļi un ar lokiem); caurules; durvis
-- [ ] Validācija ar paziņojumiem; undo/redo
-- [ ] Playwright e2e (`UI.md` §11.6, 1.–5. scenārijs)
-
-**Kritēriji:** 10 atsauces telpas (saraksts `instances/editor-refs.md`, tostarp ar pusapaļu erkeru, V izgriezumu un noapaļotu stūri) var ievadīt precīzi līdz mm bez precīzas peles lietošanas; katru ≤ 3 min; formu grupas pēc parametru maiņas saglabā pareizu ģeometriju; e2e zaļi.
-
-## F9. Mērījumi (~3–4 d)
-
-- [ ] `core/survey`: mērījumu tipi, Gauss–Newton/LM, atlikumi, brīvības pakāpju analīze ("vajag vēl N mērījumus")
-- [ ] Mērījumu režīms UI ar atlikumu krāsām
-- [ ] Loku mērījumi: horda + bultas augstums, trīs punkti; "pusapļa" pārbaude (dziļums pret platumu/2)
-- [ ] Ordinātas no atskaites līnijas
-
-**Kritēriji:** sintētiska telpa, kas nav taisnleņķa, no precīziem mērījumiem tiek rekonstruēta ar kļūdu < 0,5 mm; ar ±2 mm troksni un vienu kļūdainu mērījumu (+20 mm) tieši tas ir izcelts sarkanā krāsā.
-
-## F10. Optimizācija lietotnē (~3 d)
-
-- [ ] Worker pool ar Comlink, progress, atcelšana
-- [ ] Aprēķina iestatījumu panelis (`UI.md` §7)
-- [ ] B-INST uzreiz, SA fonā; LB un "Pierādīts minimums"
-- [ ] Virzienu/konfigurāciju salīdzinājums ar sīkattēliem
-- [ ] Rezultāta novecošana un automātisks pārrēķins
-
-**Kritēriji:** 30 m² L telpa — pirmais rezultāts < 200 ms, SA rezultāts ≤ 5 s vidēja datorā; UI neaizķeras (ievade reaģē aprēķina laikā).
-
-## F11. Rezultāti un izvades (~5–6 d)
-
-- [ ] Plāna skats ar krāsotiem pāriem, marķējumiem, inspektoru, brīdinājumiem
-- [ ] Griešanas kartes (SVG), atdura saraksts, "sagriezts" atzīmes
-- [ ] Līkumoto griezumu sadaļa: ordinātu tabulas un 1:1 šabloni A4 lapās ar savietošanas zīmēm un kontrolizmēru
-- [ ] Klāšanas secība pa rindām
-- [ ] Materiāli: dēļi, pakas, rezerve, atgriezumi, izmantojamie atlikumi, cena
-- [ ] Pielaides, pirmās rindas nospraušana, kontrolmērījumi
-- [ ] Drukāšana (A4 print CSS), uzlīmju lapas, CSV, saite `#p=…`
-
-**Kritēriji:** izdrukātais komplekts ir lietojams bez lietotnes — to pārbauda ar reālu klājēju (sk. "Lauka tests").
-
-## F12. Klāšanas režīms telefonā (~2 d)
-
-- [ ] Rindu stepper, "Gatavs", progress, Wake Lock, offline
-- [ ] Mobilā izkārtojuma pārbaude (360 px platums)
-
-**Kritēriji:** visu telpu var "noklāt" lietotnē ar vienu roku; progress saglabājas pēc lietotnes aizvēršanas.
-
-### Lauka tests (pēc F11/F12)
-
-Sadarbībā ar klājēju: viena reāla telpa → mērījumi → plāns → iepriekšēja griešana → klāšana. Pieraksta, kas nesakrita (mm), cik laika aizņēma griešana un klāšana, un ko klājējs gribētu citādi. Secinājumus pieraksta `DECISIONS.md`, telpu pievieno `instances/real/`.
-
----
-
-## F13. Vairāku telpu projekti (~4–5 d)
-
-- [ ] Vairākas telpas projektā; durvju savienojumi `continuous` / `profile`
-- [ ] Grupas ar kopīgu (θ, y0); zonu apvienošana caur durvju ailām
-- [ ] Kopīga atgriezumu krātuve (viens dekoders); atsevišķas krātuves dažādiem produktiem
-- [ ] Maks. izmēru brīdinājumi un dilatācijas šuvju ieteikumi
-- [ ] Instances `instances/multi/`
-
-## F14. Precīzā griešana (~5–7 d)
-
-- [ ] Slīpo gabalu precīzā pārošana pēc abām malām (pašu Hopcroft–Karp/Kuhn)
-- [x] B.3: strēmeļu gabali no A posma atlikumiem (izpildīts F3, sk. ADR-013)
-- [ ] Urbumu instrukcijas; neobligāta priekšroka šuvei caur caurules centru
-- [ ] Fiksētā raksta režīms (1/2, 1/3) ar pilno pārlasi
-- [ ] Hibrīdrežīms ar `trimMargin`
-- [ ] Trauslu gabalu noteikšana un sods
-
-## F15. Papildu materiāli (~3–4 d)
-
-- [ ] Grīdlīstes: garumi no perimetra (bez durvīm), stūru griezumi, 1D griešana ar pašu dekoderu + SA/LAHC
-- [ ] Pārejas profili, pamatne (ruļļi, pārlaide), izmaksu kopsavilkums
-
-## F16. Izplatīšana (neobligāti)
-
-- [ ] Tauri instalētājs (Windows/macOS)
-- [ ] Capacitor (Android/iOS), ja būs vajadzība pēc lietotņu veikala
-
----
-
-## Riski
-
-| Risks | Mazināšana |
-|---|---|
-| Dekodera sarežģītība (strēmeles, robi) aizkavē kodolu | Posmi: vispirms taisnstūra ātrais ceļš un konservatīvi pieņēmumi; precizitāte F14 |
-| Ģeometrijas deģenerēti gadījumi | Clipper, `EPS`, īpašību testi ar nejaušām telpām |
-| Redaktora apjoms izplešas | Sagataves un skaitliska ievade pirms "skaistas" zīmēšanas |
-| Modelis neatbilst realitātei | Lauka tests pēc F11; pielaides un hibrīdrežīms |
-| Atskaite par plašu | 2–3 lpp. tikai par kodolu; lietotne — viena rindkopa |
+Repozitorijs paliek tikai kursa nodevumam (ADR-029): izņemti `apps/web`, `docs/UI.md`, H sods un aesthetics eksperiments, RS, ārējā cilpa, `cutlist`, grafiki G1–G3 un liekās `bench` komandas; eksperimenti `main` un `bonly` apvienoti vienā (`pnpm bench all` → `results/summary.csv`: B-NEXT, B-INST, HC, SA, SA-onsite ar tīru B mērķi). Pārrēķinātie dēļu skaiti sakrīt ar iepriekšējo atskaiti.

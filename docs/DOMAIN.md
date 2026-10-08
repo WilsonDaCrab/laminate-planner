@@ -1,22 +1,12 @@
 # DOMAIN.md — Problēmas domēns
 
-Šis dokuments apraksta lamināta klāšanu tā, kā tā notiek dzīvē, un to, kā katru situāciju attēlo modelī. Algoritmi ir aprakstīti `ALGORITHM.md`, saskarne — `UI.md`.
+Šis dokuments apraksta lamināta klāšanu tā, kā tā notiek dzīvē, un to, kā katru situāciju attēlo modelī. Algoritmi ir aprakstīti `ALGORITHM.md`. Repozitorijs ir kursa darbs (ADR-029): produkta daļa (lietotne, redaktors, mērījumi, izvades klājējam) šeit nav.
 
-## 1. Mērķis un lietotāji
+## 1. Mērķis
 
-| Lietotājs | Vajadzība |
-|---|---|
-| Profesionāls klājējs / brigāde | Sagriezt visu vienā piegājienā pirms klāšanas; precīzs pasūtāmais daudzums; skaidra klāšanas secība |
-| Darbu vadītājs, tāmētājs | Vairākas telpas, pakas, izmaksas, atgriezumu procents |
-| Mājsaimnieks (DIY) | Vienkārša telpa, instrukcija bez žargona |
-| (Vēlāk) veikala konsultants | Ātrs paku skaits no dažiem izmēriem |
+Dota telpa (daudzstūris ar šķēršļiem) un lamināta produkts (dēļa izmēri, noteikumi). Jāatrod griešanas plāns, kas **minimizē izmantoto dēļu skaitu** B (līdz ar to atgriezumus), ievērojot ražotāja prasības: šuvju nobīde, minimālais gabala garums un strēmeles platums, spraugas, profilu orientācija. Plāns tiek sastādīts **pirms** klāšanas (iepriekšēja griešana), tāpēc atgriezumu var izmantot jebkurā rindā.
 
-Produkta veiksmes kritēriji:
-
-1. **Materiāls:** tipiskām telpām ≤ LB + 1 dēlis; paku skaits pareizs.
-2. **Izpildāmība:** katram dēlim ir skaidri griezumi, katram gabalam — marķējums, katrai rindai — secība. Klājējam nav jādomā.
-3. **Noteikumi:** plāns ievēro ražotāja prasības (šuvju nobīde, minimālais garums un platums, spraugas).
-4. **Ātrums:** tipisku telpu var ievadīt ≤ 3 minūtēs ar precizitāti līdz milimetram.
+Vērtēšanas kritēriji: B pret pierādāmu apakšējo robežu LB vai pret zināmu optimumu (plantētās instances); izpildes laiks; plāna derīgums, ko pārbauda neatkarīgs validētājs.
 
 ## 2. Termini
 
@@ -101,8 +91,7 @@ Klasiskais process ir **secīgs**: katru gabalu mēra un griež tad, kad to vaja
 
 ## 5. Noteikumi un parametri
 
-Tipiskās vērtības ir tikai orientējošas. Vienmēr jāņem konkrētā produkta instalācijas instrukcija. Lietotnē tie ir rediģējami produktu profili.
-
+Tipiskās vērtības ir tikai orientējošas. Vienmēr jāņem konkrētā produkta instalācijas instrukcija. 
 | Parametrs | Simbols | Tipiski | Noklusējums | Veids |
 |---|---|---|---|---|
 | Dēļa garums (redzamais) | L | 1200–1400, arī 2000+ | 1285 | ievade |
@@ -115,149 +104,101 @@ Tipiskās vērtības ir tikai orientējošas. Vienmēr jāņem konkrētā produk
 | Izplešanās sprauga | g | 8–15 | 10 | ievade (katrai malai atsevišķi) |
 | Min. sprauga (kustībai) | g_min | — | 7 | pielaidēm |
 | Maks. sprauga (nosedz grīdlīste) | g_max | grīdlīstes biezums − ~2 | 14 | pielaidēm |
-| "H" raksta attālums | D_H | — | 100 | mīksts (estētika) |
-| Maks. garums/platums bez dilatācijas | — | pēc produkta | — | brīdinājums |
-| Raksts | — | brīvs / fiksēts 1/2, 1/3 | brīvs | ievade |
 | Rezerve | — | 0–5 % | 2 % | ievade |
 
-- **Stingrs** nozīmē, ka plānam tas jāizpilda. **Mīksts** nozīmē sodu mērķa funkcijā.
+- **Stingrs** nozīmē, ka plānam tas jāizpilda; šuvju nobīde meklēšanas laikā ir sods V mērķa funkcijā (ALGORITHM §5), bet galarezultātā tā ir stingra.
 - Parametru validācija: `L_min ≤ L/2`, `D < L/2`, `w_min < W/2`, `g_min ≤ g ≤ g_max`.
 
 ## 6. Gadījumu katalogs
 
-Kolonna "Fāze" norāda `ROADMAP.md` fāzi, kurā gadījumu atbalsta. ✗ nozīmē ārpus tvēruma.
+Kolonna "Statuss": ✓ ieviests kodolā, ✗ ārpus tvēruma.
 
 ### A. Telpas forma
 
-| # | Gadījums | Modelēšana | Fāze |
+| # | Gadījums | Modelēšana | Statuss |
 |---|---|---|---|
-| A1 | Taisnstūris | daudzstūris ar 4 virsotnēm | F1 |
-| A2 | Taisnleņķa daudzstūri: L, U, T, Z, nišas, izvirzījumi | vispārīgs daudzstūris; josla var dot vairākus segmentus; iekšējos stūros robi | F1–F3 |
-| A3 | Sienas nav 90° (trapece, paralelograms, "šķība" telpa) | vispārīgs daudzstūris; gala gabali ir trapeces | F1–F3 (konservatīvi), F14 (precīzi) |
-| A4 | Erkers (135° leņķi) | tas pats, kas A3 | F1–F3 |
-| A5 | Izliekta siena (loks, pusaplis) | mala ar `bulge` (precīzs loks); kodols to diskretizē ar ≤ 0,5 mm novirzi | F1 (ģeometrija), F8 (rīki) |
-| A6 | "Taisna" siena, kas patiesībā ir izliekta vai viļņaina | ordinātas no atskaites līnijas → lauzta līnija | F9 |
-| A7 | Vairākas daļas, ko savieno šaura eja | segmenti un kaimiņu grafs to apstrādā automātiski | F2 |
-| A8 | Šaura niša (šaurāka par vienu rindu) | brīvi gabali un strēmeles bez garo malu profiliem | F3 |
-| A9 | Siena gandrīz paralēla rindām (telpa "nav taisna") | pirmā/pēdējā rinda ar mainīgu platumu (strēmele pēc sienas) | F3 |
-| A10 | Izgriezumi un ielikumi sienā: V, taisnstūris, trapece, pusaplis, loka segments, brīva līnija | redaktora formu rīki → tas pats daudzstūris ar taisnēm un lokiem; parametri saglabāti kā rediģējama grupa | F8 |
-| A11 | Noapaļoti vai nošķelti stūri | noapaļojums = loka mala, nošķēlums = taisna mala | F8 |
+| A1 | Taisnstūris | daudzstūris ar 4 virsotnēm | ✓ |
+| A2 | Taisnleņķa daudzstūri: L, U, T, Z, nišas, izvirzījumi | vispārīgs daudzstūris; josla var dot vairākus segmentus; iekšējos stūros robi | ✓ |
+| A3 | Sienas nav 90° (trapece, paralelograms) | vispārīgs daudzstūris; gala gabali ir trapeces; A posmā konservatīvi (`extent`) | ✓ |
+| A4 | Erkers (135° leņķi) | tas pats, kas A3 | ✓ |
+| A5 | Izliekta siena (loks, pusaplis) | mala ar `bulge` (precīzs loks); kodols to diskretizē ar ≤ 0,5 mm novirzi | ✓ |
+| A7 | Vairākas daļas, ko savieno šaura eja | segmenti un kaimiņu grafs to apstrādā automātiski | ✓ |
+| A8 | Šaura niša (šaurāka par vienu rindu) | brīvi gabali un strēmeles bez garo malu profiliem | ✓ |
+| A9 | Siena gandrīz paralēla rindām | pirmā/pēdējā rinda ar mainīgu platumu (strēmele pēc sienas) | ✓ |
+| A11 | Noapaļoti vai nošķelti stūri | noapaļojums = loka mala, nošķēlums = taisna mala | ✓ (instance C3) |
 
 ### B. Šķēršļi un atveres
 
-| # | Gadījums | Modelēšana | Fāze |
+| # | Gadījums | Modelēšana | Statuss |
 |---|---|---|---|
-| B1 | Kolonna, skurstenis, izvirzījums | caurums (daudzstūris) + sprauga | F1–F3 |
-| B2 | Fiksētas mēbeles (virtuves skapji, iebūvēts skapis) — zem tām neklāj | caurums vai telpas robeža; malas tips `fixed` | F1 |
-| B3 | Radiatoru caurules | urbuma pazīme uz gabala (Ø + 2·sprauga), nevis segmentu ģeometrija | F3 (pazīme), F14 (instrukcija) |
-| B4 | Revīzijas lūka | caurums ar savu malas tipu | F1 |
-| B5 | Durvju kārba (laminats iet zem kārbas) | zona paplašināta durvju ailā un zem kārbas | F1 (ģeometrija), F8 (rīks) |
-| B6 | Durvju aila uz citu telpu | `continuous` (vienots rindu tīkls) vai `profile` (atsevišķa zona) | F13 |
-| B7 | Kāpņu augšmala | malas tips `stairs` ar savu spraugu | F1 |
+| B1 | Kolonna, skurstenis, izvirzījums | caurums (daudzstūris) + sprauga | ✓ |
+| B2 | Fiksētas mēbeles — zem tām neklāj | caurums vai telpas robeža | ✓ |
+| B3 | Radiatoru caurules | urbuma pazīme uz gabala (Ø + 2·sprauga), nevis segmentu ģeometrija | ✓ (pazīme; validētājs pārbauda) |
+| B5 | Durvju kārba (laminats iet zem kārbas) | zona paplašināta durvju ailā un zem kārbas | ✓ (instance L1) |
+| B6 | Durvju aila uz citu telpu | atsevišķa zona | ✗ |
 | B8 | Grīdas apkure | ģeometriju neietekmē | ✗ |
-| B9 | Apaļa vai pusapaļa kolonna | aplis vai daudzstūris ar lokiem + sprauga (atšķirībā no caurules — īsts caurums ģeometrijā) | F1–F3 |
+| B9 | Apaļa vai pusapaļa kolonna | aplis vai daudzstūris ar lokiem + sprauga (īsts caurums ģeometrijā) | ✓ |
 
 ### C. Malas un spraugas
 
-| # | Gadījums | Modelēšana | Fāze |
+| # | Gadījums | Modelēšana | Statuss |
 |---|---|---|---|
-| C1 | Sprauga gar visām sienām | noklusējuma g | F1 |
-| C2 | Atšķirīga sprauga katrai malai | `edges[i].gap` | F1 |
-| C3 | Sprauga ap šķēršļiem un caurulēm | `obstacle.gap` | F1 |
-| C4 | Maks. izmēri bez dilatācijas šuves | brīdinājums un ieteikums, kur likt profilu | F13 |
-| C5 | Pielaides mērījumu kļūdām | no g_min…g_max iegūst pieļaujamo kļūdu katrai sienai | F11 |
+| C1 | Sprauga gar visām sienām | noklusējuma g | ✓ |
+| C2 | Atšķirīga sprauga katrai malai | `edges[i].gap` | ✓ |
+| C3 | Sprauga ap šķēršļiem un caurulēm | `obstacle.gap` | ✓ |
 
 ### D. Dēlis un produkts
 
-| # | Gadījums | Modelēšana | Fāze |
+| # | Gadījums | Modelēšana | Statuss |
 |---|---|---|---|
-| D1 | L, W, pakas | produkta profils | F2 |
-| D2 | Profilu orientācija (nevar pagriezt) | gabalu klases: īsie gali × garās malas (§3) | F2–F3 |
+| D1 | L, W, pakas | produkta profils | ✓ |
+| D2 | Profilu orientācija (nevar pagriezt) | gabalu klases: īsie gali × garās malas (§3) | ✓ |
 | D3 | Īso galu savienojuma tips (angle/drop/tap) | griešanu neietekmē | ✗ |
-| D4 | Kerf: 0 giljotīnai, 2–3 mm zāģim | k | F3 |
-| D5 | Bojāti dēļi, kļūdas | rezerve % | F11 |
-| D6 | Ierobežots dekoru skaits (raksts atkārtojas) | vēlāk, iespējams: ieteikums pilno dēļu secībai | ✗ |
-| D7 | Garas plankas (2000+ mm) | tas pats modelis | F2 |
+| D4 | Kerf: 0 giljotīnai, 2–3 mm zāģim | k | ✓ |
+| D7 | Garas plankas (2000+ mm) | tas pats modelis | ✓ |
 
-### E. Raksts un noteikumi
+### E. Noteikumi
 
-| # | Gadījums | Modelēšana | Fāze |
+| # | Gadījums | Modelēšana | Statuss |
 |---|---|---|---|
-| E1 | Min. šuvju nobīde | stingrs galarezultātā, sods meklēšanas laikā | F3/F5 |
-| E2 | Min. gabala garums | pieļaujamo φ kopa (nekad netiek pārkāpts) | F2 |
-| E3 | Min. strēmeles platums, rindu līdzsvarošana | y0 izvēle | F5 |
-| E4 | "H" raksts (rindu i un i+2 šuves sakrīt) | mīksts sods | F3 |
-| E5 | Regulāras "kāpnes" | mīksts sods (neobligāts) | F5 |
-| E6 | Fiksēts raksts (1/2, 1/3 nobīde, piem., flīžu imitācija) | `φ_j = φ_0 + j·p·L`; domēns (φ_0, y0), pilnā pārlase | F14 |
-| E7 | Virziens: gaisma, garākā siena, koridors, diagonāle 45° | θ; automātisks salīdzinājums | F5, F10 |
-| E8 | Skujiņa / eglīte | cits produkts un modelis | ✗ |
-| E9 | Sākuma siena un klāšanas virziens rindā | `angleDeg` + `stackSide` | F5 |
+| E1 | Min. šuvju nobīde | stingrs galarezultātā, sods V meklēšanas laikā | ✓ |
+| E2 | Min. gabala garums | pieļaujamo φ kopa (nekad netiek pārkāpts) | ✓ |
+| E3 | Min. strēmeles platums, rindu līdzsvarošana | y0 izvēle (`resolveY0`) | ✓ |
+| E7 | Virziens un sākuma siena | `angleDeg` + `stackSide` (fiksēti) | ✓ |
+| E8 | Skujiņa / eglīte, fiksēts raksts (1/2, 1/3) | cits modelis | ✗ |
 
-### F. Vairākas telpas
+### F. Griešana
 
-| # | Gadījums | Modelēšana | Fāze |
+| # | Gadījums | Modelēšana | Statuss |
 |---|---|---|---|
-| F1 | Kopīga atgriezumu krātuve | viens dekoders visiem segmentiem | F13 |
-| F2 | Nepārtraukta grīda caur durvīm | viena grupa: kopīgs θ un y0, zonas apvienotas | F13 |
-| F3 | Telpas atdalītas ar profiliem | atsevišķas grupas ar saviem θ un y0 | F13 |
-| F4 | Dažādi produkti | atsevišķas krātuves pa produktiem | F13 |
-
-### G. Griešana un izpilde
-
-| # | Gadījums | Modelēšana | Fāze |
-|---|---|---|---|
-| G1 | Iepriekšēja griešana (globāla pārošana) | `mode: precut` | F3 |
-| G2 | Secīga klāšana (atgriezumu kaudze) | `mode: onsite` — pāris tikai uz vēlāku rindu | F4 |
-| G3 | Hibrīds — dažus galus griež uz vietas | `trimMargin` un atzīmētas rindas | F14 |
-| G4 | Griešanas karte pa dēļiem, grupēta pēc garuma (atdurs) | `cutlist` | F3, F11 |
-| G5 | Marķējumi un uzlīmes | etiķešu lapas | F11 |
-| G6 | Pirmās un pēdējās rindas strēmeles no viena dēļa | dekodera B posms | F3 |
-| G7 | Slīpi griezumi | abu garo malu garumi | F3 |
-| G8 | Robi iekšējos stūros un durvīs | roba izmēri no gabala malām | F3 |
-| G9 | Urbumi caurulēm | Ø un centra koordinātas no gabala gala un malas | F14 |
-| G10 | Pakas, rezerve, izmantojamie atlikumi | kopsavilkums | F11 |
-| G11 | Nospraušana | pirmās rindas līnija, kontrolpunkti | F11 |
-| G12 | Trausli gabali (šaura "mēlīte" robā) | brīdinājums; sods y0 un φ izvēlē | F14 |
-| G13 | Līkumoti griezumi (gabali pie lokiem) | pazīme `curveCut`: figūrzāģis, ordinātu tabula, 1:1 šablons; pēc noklusējuma iesaka griezt uz vietas pēc šablona | F3 (pazīme), F11 (šabloni) |
-
-### H. Mērījumi
-
-| # | Gadījums | Modelēšana | Fāze |
-|---|---|---|---|
-| H1 | Taisnleņķa telpa ar sienu garumiem | redaktors vai sienu tabula | F8 |
-| H2 | Netaisnleņķa telpa: diagonāles, leņķi, saslēgšanās kļūda | mazāko kvadrātu saskaņošana ar atlikumiem | F9 |
-| H3 | Izliektas sienas | ordinātas no atskaites līnijas | F9 |
-| H4 | Kontrolmērījumi pirms griešanas | lietotne iesaka 2–3 attālumus pārbaudei | F11 |
-| H5 | Loka mērīšana | horda + bultas augstums vai 3 punkti; "pusaplim" pārbauda, vai dziļums = platums/2 | F9 |
-
-### I. Papildu materiāli
-
-| # | Gadījums | Modelēšana | Fāze |
-|---|---|---|---|
-| I1 | Grīdlīstes (1D griešana, stūru griezumi; lokiem — lokanas grīdlīstes) | tas pats princips, cits dekoders | F15 |
-| I2 | Pārejas profili | skaits un garumi | F15 |
-| I3 | Pamatne (ruļļi) | laukums + pārlaide | F15 |
+| F1 | Iepriekšēja griešana (globāla pārošana) | `mode: precut` | ✓ |
+| F2 | Secīga klāšana (atgriezumu kaudze) | `mode: onsite` — pāris tikai uz vēlāku rindu | ✓ |
+| F3 | Pirmās un pēdējās rindas strēmeles no viena dēļa | dekodera B posms | ✓ |
+| F4 | Slīpi griezumi | abu garo malu garumi | ✓ (konservatīvi) |
+| F5 | Robi iekšējos stūros un durvīs | roba izmēri no gabala malām | ✓ |
+| F6 | Līkumoti griezumi (gabali pie lokiem) | pazīme `curveCut` ar ordinātām | ✓ (pazīme) |
+| F7 | Griešanas karte, atdura saraksts, uzlīmes, nospraušana | izvade klājējam | ✗ (produkta daļa, ADR-029) |
+| F8 | Vairākas telpas, mērījumu saskaņošana, grīdlīstes un citi materiāli | — | ✗ |
 
 ## 7. Izpildes realitāte: kāpēc iepriekšēja griešana strādā
 
 - Dēļu izmēri ir rūpnīcas precizitātē, un rinda neuzkrāj kļūdu garumā. Gabals būs tieši tik garš, cik plānots.
 - Kļūdas avots ir **telpas mērījumi**. Tos absorbē izplešanās sprauga: siena drīkst būt par `g − g_min` tuvāk vai par `g_max − g` tālāk nekā izmērīts. Ar noklusējumiem tas ir −3…+4 mm.
-- Lāzera tālmērs (tipiski ±1,5–2 mm) ir pietiekams. Līkas sienas jāuzmēra vairākos punktos (H3).
+- Lāzera tālmērs (tipiski ±1,5–2 mm) ir pietiekams.
 - Katru rindu klāj, piespiežot to pie sākuma sienas ķīlīšiem. Sprauga rindas beigās absorbē atlikušo kļūdu.
-- Pirmās rindas novietojums ir kritisks. Plāns dod attālumu no sienas un kontrolpunktus (G11).
+- Pirmās rindas novietojums ir kritisks.
 - Pēdējo rindu pirms garengriezuma iesaka pārmērīt, jo savienojumos uzkrājas nelielas pielaides.
-- Hibrīdrežīms (G3): nedrošām sienām gala gabalus plāno ar rezervi `trimMargin` un nogriež uz vietas.
 - Izgriezumus ap caurulēm plānā norāda, bet iesaka pārbaudīt uz vietas, pirms urbj.
 
 ## 8. Datu modelis (TypeScript)
 
 Patiesības avots ir zod shēmas `packages/core/src/model/schema.ts`; TypeScript tipi ir to izvade (`z.output`). Zemāk esošais bloks ir lasāms pārskats. Atšķirības no tā, kas tika plānots pirms F2:
 
-- Noklusējumus aizpilda shēma: visiem `Rules` laukiem ir noklusējums no §5 tabulas (`hPattern.enabled` = true, `pattern` = `{ kind: 'free' }`; `fixed.fraction` ∈ (0, 1)); `EdgeProps.kind` = `wall`; `Doorway.mode` = `continuous`; `LayoutSettings` = `auto` virzienam, pusei un `y0`, `precut`, `aesthetics` 0,5, `seed` 1, `timeLimitMs` 3000.
+- Noklusējumus aizpilda shēma: visiem `Rules` laukiem ir noklusējums no §5 tabulas `EdgeProps.kind` = `wall`; `Doorway.mode` = `continuous`; `LayoutSettings` = `auto` virzienam, pusei un `y0`, `precut`, `seed` 1.
 - `Project.meta?: { source: 'planted' | 'manual' | 'real'; knownOptimum?; bestKnown? }` (testa instancēm, sk. §9).
 - Modeļa integritāti pārbauda `model/integrity.ts` (parametru diapazoni no §5, CCW un vienkāršs kontūrs ar lokiem, `edges.length === outline.length`, unikāli ID, durvju atsauces un diapazons); tā nav neatkarīgais plāna validētājs `core/validate`.
 - Ielāde: `parseProject` = migrācija (`schemaVersion`) → zod → integritāte; `saveProject` raksta kanonisku JSON (shēmas atslēgu secība).
-- `Plan`, `PlannedPiece`, `PlannedBoard` (zemāk) ir F3 izvade un modelī vēl nav.
+- `Plan`, `PlannedPiece`, `PlannedBoard` (zemāk) ir dekodera izvade (`model/plan.ts`).
 
 ```ts
 /** Visi garumi — milimetros. */
@@ -270,7 +211,6 @@ export interface Product {
   boardLength: Mm;          // L — redzamais garums (bez spundes)
   boardWidth: Mm;           // W — redzamais platums
   boardsPerPack: number;
-  pricePerPack?: number;
 }
 
 export interface Rules {
@@ -281,10 +221,6 @@ export interface Rules {
   expansionGap: Mm;         // g — noklusējums visām malām
   minGap: Mm;               // g_min — pielaidēm
   maxGap: Mm;               // g_max — ko vēl nosedz grīdlīste
-  hPattern: { enabled: boolean; distance: Mm };            // D_H
-  pattern: { kind: 'free' } | { kind: 'fixed'; fraction: number };  // 1/2, 1/3
-  maxRunLength?: Mm;
-  maxRunWidth?: Mm;
   reservePercent: number;
 }
 
@@ -299,22 +235,13 @@ export interface EdgeProps {
   bulge?: number;
 }
 
-/** Virsotne ar stabilu ID (izvēlei, undo, formu grupām). */
+/** Virsotne ar neobligātu ID. */
 export interface Vertex extends Vec2 { id?: string }
 
 export type Obstacle =
   | { kind: 'polygon'; id: string; label?: string; points: Vertex[]; bulges?: number[]; gap?: Mm }
   | { kind: 'circle'; id: string; label?: string; center: Vec2; diameter: Mm; gap?: Mm }  // apaļa kolonna
   | { kind: 'pipe'; id: string; center: Vec2; diameter: Mm; gap?: Mm };                   // tikai urbums
-
-/** Redaktorā ievietota forma, ko var rediģēt pēc parametriem (UI metadati).
- *  Ģeometrijas avots vienmēr ir outline + bulge; kodols šo lauku ignorē. */
-export interface WallShape {
-  id: string;
-  kind: 'rect' | 'trapezoid' | 'triangle' | 'semicircle' | 'arcSegment' | 'freeform' | 'fillet' | 'chamfer';
-  params: Record<string, number>;   // platums, dziļums, diametrs, rādiuss, leņķis...
-  vertexIds: string[];              // virsotnes, kas pieder formai
-}
 
 export interface Room {
   id: string;
@@ -323,7 +250,6 @@ export interface Room {
   outline: Vertex[];        // vienkāršs daudzstūris, CCW, bez pašķrustošanās (arī pēc loku diskretizācijas)
   edges: EdgeProps[];       // edges[i]: outline[i] → outline[i+1]
   obstacles: Obstacle[];
-  wallShapes?: WallShape[];
 }
 
 export interface Doorway {
@@ -341,10 +267,7 @@ export interface LayoutSettings {
   stackSide: 'left' | 'right' | 'auto';  // uz kuru pusi krājas rindas (skatoties klāšanas virzienā)
   rowOffset: Mm | 'auto';                // y0
   mode: 'precut' | 'onsite';
-  trimMargin: Mm;                        // hibrīdam (F14)
-  aesthetics: number;                    // 0..1 → λ_H
   seed: number;
-  timeLimitMs: number;
 }
 
 export interface Project {
@@ -407,7 +330,7 @@ export interface Plan {
 }
 ```
 
-Griešanas instrukcijas (secību, grupēšanu pēc garuma) no `placements` iegūst `core/cutlist`. Plānā tās neglabā.
+Griešanas instrukcijas (secība, grupēšana pēc garuma) nav kodola daļa: tās varētu iegūt no `placements` (agrākais `core/cutlist` ir izņemts, ADR-029).
 
 ## 9. Instances JSON piemērs
 
@@ -419,8 +342,7 @@ Griešanas instrukcijas (secību, grupēšanu pēc garuma) no `placements` iegū
   "rules": {
     "kerf": 3, "minPieceLength": 300, "minStagger": 300, "minRipWidth": 50,
     "expansionGap": 10, "minGap": 7, "maxGap": 14,
-    "hPattern": { "enabled": true, "distance": 100 },
-    "pattern": { "kind": "free" }, "reservePercent": 2
+    "reservePercent": 2
   },
   "rooms": [{
     "id": "r1", "name": "Dzīvojamā", "code": "DZ",
@@ -438,47 +360,19 @@ Griešanas instrukcijas (secību, grupēšanu pēc garuma) no `placements` iegū
   }],
   "doorways": [],
   "settings": {
-    "angleDeg": 0, "stackSide": "left", "rowOffset": "auto", "mode": "precut",
-    "trimMargin": 0, "aesthetics": 0.5, "seed": 1, "timeLimitMs": 3000
+    "angleDeg": 0, "stackSide": "left", "rowOffset": "auto", "mode": "precut", "seed": 1
   }
 }
 ```
 
 Testa instancēm pievieno lauku `"meta": { "knownOptimum"?: number, "bestKnown"?: number, "source": "planted" | "manual" | "real" }`.
 
-## 10. Izvade klājējam
+## 10. Izvade
 
-### Marķējumi
-
-`<telpa>-<rinda><segments>-<pozīcija>`:
+Kodola izvade ir `Plan` (JSON, §8) un SVG attēls (`core/render`). Dēļiem ir numuri `D01`, `D02`, …, gabaliem marķējums `<telpa>-<rinda><segments>-<pozīcija>`:
 
 - `DZ-05a-S` — telpa DZ, 5. rinda (skaitot no sākuma sienas), segments a, sākuma gabals;
 - `DZ-05a-03` — 3. gabals rindā;
 - `DZ-05a-B` — beigu gabals.
 
-Gabalam bez šuvēm (viss segments) marķējums ir `-01`. Ja projektā ir viena telpa, telpas kodu var izlaist. Segmenta burtu raksta tikai tad, ja joslā ir vairāki segmenti. Dēļiem ir numuri `D01`, `D02`, …
-
-### Griešanas karte (piemērs teksta formā)
-
-```
-D07  (1285 × 192)
-  ✂ šķērsgriezums pie 743 mm
-  ├─ kreisā daļa  743 mm → DZ-05-B   (5. rindas beigas)
-  └─ labā daļa    539 mm → DZ-11-S   (11. rindas sākums)
-     atgriezums:   0 mm   (kerf 3 mm)
-
-D15  (1285 × 192)
-  ✂ garengriezums: apakšējā strēmele 84 mm | augšējā 105 mm
-  ├─ apakšējā → DZ-24-01  (pēdējā rinda)
-  └─ augšējā  → DZ-01-01  (pirmā rinda)
-```
-
-Pārbaude: 743 + 3 + 539 = 1285; 84 + 3 + 105 = 192.
-
-### Atdura saraksts
-
-Vienādus šķērsgriezumus grupē, lai atduri iestata vienu reizi, piemēram: `743 mm — D07, D12, D19 (3×)`. Sakārto pēc garuma dilstošā secībā.
-
-### Klāšanas secība
-
-Katrai rindai: gabali secībā no kreisās uz labo ar marķējumiem un garumiem.
+Gabalam bez šuvēm (viss segments) marķējums ir `-01`. Segmenta burtu raksta tikai tad, ja joslā ir vairāki segmenti.

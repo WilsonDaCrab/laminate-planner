@@ -481,3 +481,27 @@ Trends: zemāks p0 un pEnd palīdz, un jo biežāk SA restartē no labākā risi
 **Lēmums.** Noklusējumus (`reheatFraction = 0,005`) **nemainām**: n = 38 dod labumu no retākas atjaunošanas, bet noskaņošanas kopa (9 instances) — no biežākas; tas ir kompromiss, nevis kļūda, un mainīt parametrus pēc vienas instances būtu pielāgošana tai. n = 38 ir godīgi grūtāka instance (cita nejauša ģeneratora sēkla), kurai SA vajag ≈ 10× lielāku budžetu.
 
 **Iespējamais turpinājums.** Adaptīva atjaunošana (biežums atkarīgs no tā, cik ilgi labākais nav uzlabojies) vai laika režīmā vairāki neatkarīgi starti (jau paredzēti lietotnē, `docs/ALGORITHM.md` §7).
+
+## ADR-029 — Repozitorija minimizēšana: tikai kursa darbs (2026-10-08)
+
+**Konteksts.** Projekts tika plānots kā lamināta plānotāja PWA un reizē kā kursa darbs. Lietotājs nolēma, ka šis repozitorijs paliek tikai kursa darbs; lietotne tiek veidota atsevišķi (v2). Kursa nodevumam vajag problēmas implementāciju ar SA, dažāda izmēra instances, testēšanu (laiks, kvalitāte pret optimumu/labāko zināmo), 2–3 lpp. atskaiti un GitHub repozitoriju. Atskaite (`report/main.typ`) izmanto tikai dēļu skaitu B.
+
+**Izņemts.**
+- `apps/web` (React PWA), `docs/UI.md`, `dev` un `build` skripti.
+- H sods (`rules.hPattern`, `settings.aesthetics`, λ_H), kā arī neizmantotais regularitātes sods R (λ_R = 0), otrās kārtas kaimiņu pāri `secondOrder`. Mērķa funkcija ir `f = B + λ_V·V + ε·N`.
+- Ārējā cilpa (`optimize/outer`, `y0Violations`, `validY0s`, komanda `outer`); θ, sākuma puse un y0 eksperimentos ir fiksēti (`resolveY0`).
+- RS bāzes metode (atskaitē netiek rādīta).
+- `core/cutlist` (griešanas secība un atdura saraksts), grafiki G1–G3 (Vega-Lite, atkarības `vega`, `vega-lite`) un to tabulas.
+- Komandas `baselines`, `compare`, `planted`, `perf`, `outer`, `render-samples`; eksperiments E3 (aesthetics).
+- Neizmantotie modeļa lauki: `rules.pattern`, `rules.maxRunLength/maxRunWidth`, `product.pricePerPack`, `room.wallShapes`, `settings.trimMargin/timeLimitMs`. Atslēgas izņemtas arī no `instances/**/*.json` (arī `hPattern`, `aesthetics`).
+- Starprezultāti: `results/f5/` (izņemot `tune.txt`), `results/f6/` apakšmapes un teksta žurnāli (izņemot `difficulty.csv`, `bestknown.txt`, `exhaustive/`), `results/plots`, `results/tables`, `results/summary_bonly.csv`, `test_output.txt`.
+
+**Eksperimentu apvienošana.** Ar izslēgtu H eksperimenti `main` (E1) un `bonly` (E4) ir viens un tas pats. `pnpm bench all` tagad veic vienu eksperimentu: visas 27 instances × B-NEXT, B-INST (deterministiski, viens skrējiens), HC, SA, SA-onsite (20 sēklas, 200 000 novērtējumu), un raksta vienu `results/summary.csv` (+ `env.json`, `results/raw/main.jsonl`). Skrējiena atslēga vairs neietver eksperimenta nosaukumu un H variantu.
+
+**Pārbaude.** `bench all --jobs 8` pārskriets uz commit `7f3792d` (1674 skrējieni, 995 s, tīrs darba koks). Salīdzināts ar iepriekšējiem `summary.csv` (B-NEXT, B-INST) un `summary_bonly.csv` (pārējais): 621 šūna 27 instancēs (lb, knownOptimum, bestKnown, zoneM2, segments un best/mean/std/feasible kolonnas visām metodēm) sakrīt **identiski**, atšķiras tikai laika kolonnas. Atskaites PDF teksts atšķiras tikai laika kolonnā un avota rindā. Iemesls: ar `hPattern.enabled = false` H locekļa termu saraksts bija tukšs, tāpēc trajektorijas un f vērtības (peldošā komata ziņā) nemainās; B-NEXT/B-INST dekoderi H neizmanto.
+
+**Sekas un piezīmes.**
+- `sa.test.ts` T₀ mērogošanas tests tagad izmanto p₀ = 0,9 un 0,8 (nevis 0,8 un 0,2): bez H soļa R2 mediānais augšupejošais solis ir ε·N lieluma, un pie p₀ = 0,2 T₀ nokrīt uz T_end grīdu, tāpēc attiecība `ln p₀` vairs nav tīra. Pārbaudāmā īpašība (T₀ ∝ −1/ln p₀) un gaidītā formula nav mainīta.
+- `results/f5/tune.txt` un `results/f6/bestknown.txt`, `difficulty.csv`, `exhaustive/` un `results/timing/` netika pārskrieti; tie ir saglabāti kā ģenerēti (daļa no tiem iegūta, kad instancēs H vēl bija ieslēgts vai definēts; plantētajām instancēm H jau agrāk bija izslēgts, ADR-026). `difficulty.csv` satur arī `rs` rindas, ko atskaite nerāda.
+- Vecie ADR (ADR-001…028) ir vēsturisks žurnāls un nav pārrakstīti; tie var atsaukties uz izņemtajām daļām.
+- `docs/ROADMAP.md`: F0–F6 saglabātas kā vēsture, F7–F16 dzēstas.
