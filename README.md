@@ -4,7 +4,7 @@ Kursa darba kods: pēc telpas zīmējuma (daudzstūris ar šķēršļiem) aprē�
 
 Optimizācijas kodols: simulētā rūdīšana (SA) pār rindu šuvju fāzēm ar dekoderu, kas atgriezumus pāro starp jebkurām rindām; kvalitāti novērtē pret pierādāmu apakšējo robežu un zināmiem optimumiem.
 
-> Izstrādāts kā praktiskais darbs LU kursā "Praktiskā kombinatoriālā optimizācija". Repozitorijs ir tikai kursa darbs; lietotne ir atsevišķā projektā (sk. ADR-029).
+> Izstrādāts kā praktiskais darbs LU kursā "Praktiskā kombinatoriālā optimizācija". Repozitorijs ir tikai kursa darbs; lietotne ir atsevišķā projektā.
 
 ## Kursa darbs
 
@@ -16,7 +16,7 @@ Optimizācijas kodols: simulētā rūdīšana (SA) pār rindu šuvju fāzēm ar 
 
 ## Statuss
 
-Projekts ir noslēgts kā kursa darbs; sk. [docs/ROADMAP.md](docs/ROADMAP.md).
+Projekts ir noslēgts kā kursa darbs.
 
 ## Struktūra
 
@@ -27,7 +27,6 @@ Projekts ir noslēgts kā kursa darbs; sk. [docs/ROADMAP.md](docs/ROADMAP.md).
 | `instances/` | testa telpas |
 | `results/` | eksperimentu rezultāti |
 | `report/` | kursa atskaite |
-| `docs/` | domēns, algoritms, plāns, lēmumi |
 
 ## Palaišana
 
