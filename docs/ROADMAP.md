@@ -106,7 +106,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [x] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv` — palaists pilnā apjomā (2854 skrējieni, 2 h 41 min, commit `c318900`; ADR-022, ADR-023, ADR-024); ārējā cilpa, pārlase un plantētie paliek atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`)
 - [x] Grafiki G1–G3 → `results/plots/*.svg` (Vega-Lite); G4/G5 (neobligāti) nav
 - [x] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — `report/main.typ` un `report/main.pdf` (3 lpp.): galvenā tabula (E4), grūtības sērija, secinājumi, ierobežojumi, saite uz repozitoriju
-- [x] GitHub repozitorijs (`WilsonDaCrab/laminate-planner`), git tag `v0.1-kurss` — kods un tags nosūtīti; repozitorijs paliek **PRIVĀTS**, lietotājs to padarīs publisku, kad vajadzēs (saite atskaitē strādās pēc tam)
+- [x] GitHub repozitorijs (`WilsonDaCrab/laminate-planner`), kods nosūtīts, repozitorijs ir publisks (2026-10-08). Tags `v0.1-kurss` dzēsts, jo repozitorijs vairs netiks papildināts: atskaite atsaucas uz `main`
 
 **Kritēriji:** `pnpm bench all` no tīra klona atkārto visas tabulas; PDF satur visas četras prasītās sadaļas un saiti uz repozitoriju.
 

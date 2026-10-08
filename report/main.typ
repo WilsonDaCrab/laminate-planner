@@ -128,4 +128,4 @@ kur $V$ ir šuvju nobīdes pārkāpumu skaits (sods ļauj meklēšanai īslaicī
 
 = Saite uz repozitoriju
 
-Kods, testa piemēri, rezultāti un atskaite: #link("https://github.com/WilsonDaCrab/laminate-planner")[github.com/WilsonDaCrab/laminate-planner] (tag `v0.1-kurss`). Kods ir TypeScript; optimizācijas kodols ir `packages/core`, eksperimenti `packages/bench`. Rezultātus atkārto #box[`pnpm bench all --jobs auto`].
+Kods, testa piemēri, rezultāti un atskaite: #link("https://github.com/WilsonDaCrab/laminate-planner")[github.com/WilsonDaCrab/laminate-planner]. Kods ir TypeScript; optimizācijas kodols ir `packages/core`, eksperimenti `packages/bench`. Rezultātus atkārto #box[`pnpm bench all --jobs auto`].
