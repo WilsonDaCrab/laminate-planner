@@ -68,8 +68,8 @@ const MIN_SEGMENT_AREA = 1e-3;
 const MIN_SEGMENT_HEIGHT = 2 * CLIPPER_GRID_MM;
 
 /**
- * Row configuration from project settings. 'auto' values are resolved by the outer loop (F5);
- * until then they fall back to the given values (default: θ = 0, stack left, y0 = 0).
+ * Row configuration from project settings. 'auto' values fall back to the given values
+ * (default: θ = 0, stack left, y0 = 0); `resolveY0` picks a y0 for 'auto' offsets.
  */
 export function rowConfigFromSettings(
   settings: Pick<LayoutSettings, 'angleDeg' | 'stackSide' | 'rowOffset'>,

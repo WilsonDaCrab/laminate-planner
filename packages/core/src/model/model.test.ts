@@ -34,7 +34,6 @@ const domainExample = () => ({
     expansionGap: 10,
     minGap: 7,
     maxGap: 14,
-    pattern: { kind: 'free' },
     reservePercent: 2,
   },
   rooms: [
@@ -67,9 +66,7 @@ const domainExample = () => ({
     stackSide: 'left',
     rowOffset: 'auto',
     mode: 'precut',
-    trimMargin: 0,
     seed: 1,
-    timeLimitMs: 3000,
   },
 });
 
@@ -103,7 +100,6 @@ describe('parseProject', () => {
     expect(p.rules.expansionGap).toBe(10);
     expect(p.rules.minGap).toBe(7);
     expect(p.rules.maxGap).toBe(14);
-    expect(p.rules.pattern).toEqual({ kind: 'free' });
     expect(p.rules.reservePercent).toBe(2);
     expect(p.settings.mode).toBe('precut');
     expect(p.doorways).toEqual([]);

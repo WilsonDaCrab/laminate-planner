@@ -16,9 +16,6 @@
     "expansionGap": 10,
     "minGap": 7,
     "maxGap": 14,
-    "pattern": {
-      "kind": "free"
-    },
     "reservePercent": 2
   },
   "rooms": [
@@ -67,9 +64,7 @@
     "stackSide": "left",
     "rowOffset": "auto",
     "mode": "precut",
-    "trimMargin": 0,
-    "seed": 1,
-    "timeLimitMs": 3000
+    "seed": 1
   },
   "meta": {
     "bestKnown": 256,

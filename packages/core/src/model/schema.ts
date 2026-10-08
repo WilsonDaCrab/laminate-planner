@@ -12,7 +12,7 @@ const posMm = z.number().positive();
 
 export const Vec2Schema = z.object({ x: mm, y: mm });
 
-/** Vertex with an optional stable ID (selection, undo, shape groups in the editor). */
+/** Vertex with an optional stable ID. */
 export const VertexSchema = Vec2Schema.extend({ id: z.string().optional() });
 
 export const ProductSchema = z.object({
@@ -23,13 +23,7 @@ export const ProductSchema = z.object({
   /** W: visible board width. */
   boardWidth: posMm.int(),
   boardsPerPack: z.number().int().positive(),
-  pricePerPack: nonNegMm.optional(),
 });
-
-export const PatternSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('free') }),
-  z.object({ kind: z.literal('fixed'), fraction: z.number().gt(0).lt(1) }),
-]);
 
 export const RulesSchema = z.object({
   /** k: saw kerf. */
@@ -45,9 +39,6 @@ export const RulesSchema = z.object({
   /** g_min / g_max: tolerances for measurement errors. */
   minGap: nonNegMm.default(7),
   maxGap: nonNegMm.default(14),
-  pattern: PatternSchema.default({ kind: 'free' }),
-  maxRunLength: posMm.optional(),
-  maxRunWidth: posMm.optional(),
   reservePercent: nonNegMm.default(2),
 });
 
@@ -92,23 +83,6 @@ export const ObstacleSchema = z.discriminatedUnion('kind', [
   }),
 ]);
 
-/** Editor metadata (editable shape groups). The core ignores it: geometry is outline + bulge. */
-export const WallShapeSchema = z.object({
-  id: z.string(),
-  kind: z.enum([
-    'rect',
-    'trapezoid',
-    'triangle',
-    'semicircle',
-    'arcSegment',
-    'freeform',
-    'fillet',
-    'chamfer',
-  ]),
-  params: z.record(z.string(), z.number()),
-  vertexIds: z.array(z.string()),
-});
-
 export const RoomSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -119,7 +93,6 @@ export const RoomSchema = z.object({
   /** edges[i] belongs to outline[i] → outline[i+1]. */
   edges: z.array(EdgeSchema),
   obstacles: z.array(ObstacleSchema).default([]),
-  wallShapes: z.array(WallShapeSchema).optional(),
 });
 
 export const DoorwaySchema = z.object({
@@ -140,15 +113,13 @@ export const DoorwaySchema = z.object({
 });
 
 export const LayoutSettingsSchema = z.object({
-  /** Direction of the rows in degrees, or 'auto' (chosen by the outer loop). */
+  /** Direction of the rows in degrees, or 'auto' (θ = 0). */
   angleDeg: z.union([z.number(), z.literal('auto')]).default('auto'),
   stackSide: z.enum(['left', 'right', 'auto']).default('auto'),
-  /** y0: row offset; 'auto' lets the outer loop choose. */
+  /** y0: row offset; 'auto' lets `resolveY0` choose. */
   rowOffset: z.union([mm, z.literal('auto')]).default('auto'),
   mode: z.enum(['precut', 'onsite']).default('precut'),
-  trimMargin: nonNegMm.default(0),
   seed: z.number().int().default(1),
-  timeLimitMs: posMm.default(3000),
 });
 
 export const ProjectMetaSchema = z.object({
@@ -174,7 +145,6 @@ export type Rules = z.output<typeof RulesSchema>;
 export type EdgeKind = z.output<typeof EdgeKindSchema>;
 export type EdgeProps = z.output<typeof EdgeSchema>;
 export type Obstacle = z.output<typeof ObstacleSchema>;
-export type WallShape = z.output<typeof WallShapeSchema>;
 export type Room = z.output<typeof RoomSchema>;
 export type Doorway = z.output<typeof DoorwaySchema>;
 export type LayoutSettings = z.output<typeof LayoutSettingsSchema>;
