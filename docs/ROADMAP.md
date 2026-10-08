@@ -105,7 +105,7 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 - [x] Pilns instanču komplekts (`ALGORITHM.md` §13.1), `meta.knownOptimum` / `meta.bestKnown` — 27 instances (ADR-020); `bestKnown` no 10 × 2 M SA 21 instancei (`results/f6/bestknown.txt`); `knownOptimum` P1–P6 (plantētās) un pierādīts B = LB: T1, T2, T4, R1, L3, O2; `multi` (M1 pēc F13) un `real` netiek veidotas
 - [x] `bench all`: visi eksperimenti → `results/raw/*.jsonl`, `results/summary.csv` — palaists pilnā apjomā (2854 skrējieni, 2 h 41 min, commit `c318900`; ADR-022, ADR-023, ADR-024); ārējā cilpa, pārlase un plantētie paliek atsevišķas komandas (`outer`, `exhaustive`, `planted`, `difficulty`)
 - [x] Grafiki G1–G3 → `results/plots/*.svg` (Vega-Lite); G4/G5 (neobligāti) nav
-- [x] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — `report/main.typ` un `report/main.pdf` (3 lpp.): tabula, G1–G3, secinājumi, ierobežojumi, saite uz repozitoriju
+- [x] `report/` Typst atskaite (2–3 lpp., struktūra zemāk) → PDF — `report/main.typ` un `report/main.pdf` (3 lpp.): galvenā tabula (E4), grūtības sērija, secinājumi, ierobežojumi, saite uz repozitoriju
 - [x] GitHub repozitorijs (`WilsonDaCrab/laminate-planner`), git tag `v0.1-kurss` — kods un tags nosūtīti; repozitorijs paliek **PRIVĀTS**, lietotājs to padarīs publisku, kad vajadzēs (saite atskaitē strādās pēc tam)
 
 **Kritēriji:** `pnpm bench all` no tīra klona atkārto visas tabulas; PDF satur visas četras prasītās sadaļas un saiti uz repozitoriju.
@@ -113,6 +113,8 @@ Laika aplēses ir orientējošas (darba dienas, strādājot ar Claude Code).
 **Statuss (2026-10-01): F6 noslēgta.** Izpildīts viss; repozitorijs nav publisks (lietotāja lēmums). Kritērijs "no tīra klona" pārbaudīts 2026-10-03: `git clone` + `pnpm install --frozen-lockfile` + `pnpm bench all --jobs 12` (4474 skrējieni, 66 min) deva identiskus `summary.csv`, `summary_bonly.csv` un G1–G3 tabulas (atšķiras tikai laika kolonnas); sk. `results/f6/clone-check.txt`. **F5 kritēriji (a) un (b) paliek neizpildīti** (SA nav būtiski labāks par HC; plantētos optimumus P2–P6 neatrod; ADR-017, ADR-024) un atskaitē ziņoti godīgi.
 
 **Atjauninājums (2026-10-03):** pēc ADR-025…027 (ātrais on-site novērtētājs, plantētās bez H-rakstura, SA parametri un atjaunošana) pilnā matrica pārskrieta (4474 skrējieni, 8 pavedieni, 1 h 24 min), tabulas, grafiki un atskaite atjaunoti. F5 kritērijs (b) ir izpildīts 5 no 6 plantētajām (P5: 80 %); kritērijs (a) nav stingri izpildīts (L1: HC 86,6 pret SA 86,8). Ar jauno SA pārskrieta arī grūtības sērija (n = 6…42, 20 sēklas; `results/f6/difficulty.csv`, SA atrod plantēto optimumu 8 no 10 izmēriem 20/20, n = 30: 18/20, n = 38: 2/20) un `bestknown` (10 × 2 M ar jauno SA 15 telpās; 12 ar `knownOptimum` nav pārskrietas; visas 15 vērtības sakrīt ar `meta.bestKnown`, S2 pret veco skrējienu 37 → 36). Atskaite pārbūvēta (3 lpp.). F6 paliek noslēgta.
+
+**Atskaites vienkāršošana (2026-10-08):** atskaite pārrakstīta ap ar pasniedzēju saskaņoto tvērumu (atgriezumu minimizēšana ⇔ dēļu skaits B, LB0 = laukums / dēļa laukums, ģenerētās telpas ar nulles atgriezumu, 12–60 m² telpas). Galvenā tabula tagad ir no E4 (tikai B, `summary_bonly.csv`) ar B-NEXT/B-INST no `summary.csv` (to B nav atkarīgs no H; y0 abos eksperimentos vienāds), un tai pievienotas kolonnas LB0, B* (optimums vai labākais zināmais), SA gap un atgriezumu % (B-NEXT → SA). Izņemti: ADR un fāžu atsauces, H-raksts, RS, SA-onsite kolonna, grafiki G1–G3 (tie ir no E1 ar H-rakstu). Paliek 2⅓ lpp.
 
 ### Kursa atskaites struktūra
 
