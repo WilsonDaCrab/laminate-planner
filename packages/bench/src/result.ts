@@ -17,7 +17,6 @@ export interface RunStats {
   /** B − max(lb0, lb1). */
   gap: number;
   V: number;
-  H: number;
   N: number;
   feasible: boolean;
   lengthDeficit: number;
@@ -31,7 +30,7 @@ export interface RunStats {
 export interface RunResult {
   version: number;
   instance: string;
-  method: Method | 'outer' | 'exhaustive';
+  method: Method | 'exhaustive';
   seed: number;
   iters: number | null;
   timeMs: number | null;

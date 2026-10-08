@@ -4,8 +4,6 @@ export * from './phaseSpace';
 export * from './moves';
 export * from './baselines/sequential';
 export * from './baselines/sequentialRuns';
-export * from './baselines/rs';
 export * from './baselines/hc';
 export * from './run';
 export * from './sa';
-export * from './outer';

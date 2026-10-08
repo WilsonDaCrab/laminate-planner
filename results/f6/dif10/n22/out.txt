@@ -1,9 +1,0 @@
-$ pnpm -F @lp/bench bench "difficulty" "--n" "22" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif10/n22"
-$ tsx src/index.ts "difficulty" "--n" "22" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif10/n22"
-n          m2         segs       optimum    B-INST     RS         HC         SA           (found/runs at the planted optimum; 20 seeds, 200000 evaluations; generator seed = n)
-[ELIFECYCLE] Command failed with exit code 1073807364.
-Error: [31mERR_PNPM_RECURSIVE_RUN_FIRST_FAIL[0m
-
-  [31m×[0m "pnpm recursive run" failed in D:\laminate-planner\packages\bench
-
-[ELIFECYCLE] Command failed with exit code 1.

@@ -1,4 +1,0 @@
-$ pnpm -F @lp/bench bench "difficulty" "--n" "30" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif10/n30"
-$ tsx src/index.ts "difficulty" "--n" "30" "--seeds" "20" "--iters" "200000" "--out" "results/f6/dif10/n30"
-n          m2         segs       optimum    B-INST     RS         HC         SA           (found/runs at the planted optimum; 20 seeds, 200000 evaluations; generator seed = n)
-[ELIFECYCLE] Command failed with exit code 1073807364.

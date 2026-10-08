@@ -32,10 +32,10 @@ describe('buildJobs', () => {
     aestheticsDistances: [200, 300, null],
   };
 
-  it('E1: per instance 2 deterministic runs + 4 stochastic methods x seeds', () => {
+  it('E1: per instance 2 deterministic runs + 3 stochastic methods x seeds', () => {
     const jobs = buildJobs(three, preset, ['main']);
-    // by hand: 3 instances x (b-next 1 + b-inst 1 + rs, hc, sa, sa-onsite 3 seeds each = 12) = 42
-    expect(jobs).toHaveLength(42);
+    // by hand: 3 instances x (b-next 1 + b-inst 1 + hc, sa, sa-onsite 3 seeds each = 9) = 33
+    expect(jobs).toHaveLength(33);
     const r2 = jobs.filter((j) => j.instance === 'R2');
     expect(r2.filter((j) => j.method === 'b-inst')).toHaveLength(1);
     expect(r2.filter((j) => j.method === 'sa').map((j) => j.seed)).toEqual([1, 2, 3]);
@@ -76,12 +76,12 @@ describe('buildJobs', () => {
 
   it('is deterministic, and the presets have the documented size', () => {
     expect(buildJobs(three, preset)).toEqual(buildJobs(three, preset));
-    // quick: 2 instances x (2 + 4·2) = 20 main runs; R2 x 2 variants x 2 seeds = 4 E3 runs;
+    // quick: 2 instances x (2 + 3·2) = 16 main runs; R2 x 2 variants x 2 seeds = 4 E3 runs;
     // 2 instances x 3 methods x 2 seeds = 12 E4 runs
-    expect(buildJobs([inst('R2'), inst('L1'), inst('M')], QUICK_PRESET)).toHaveLength(36);
-    // full: one instance = 2 + 4·20 = 82 main runs; R2 = 8 distances x 20 seeds = 160 E3 runs;
+    expect(buildJobs([inst('R2'), inst('L1'), inst('M')], QUICK_PRESET)).toHaveLength(32);
+    // full: one instance = 2 + 3·20 = 62 main runs; R2 = 8 distances x 20 seeds = 160 E3 runs;
     // 3 methods x 20 seeds = 60 E4 runs
-    expect(buildJobs([inst('R2')], FULL_PRESET)).toHaveLength(82 + 160 + 60);
+    expect(buildJobs([inst('R2')], FULL_PRESET)).toHaveLength(62 + 160 + 60);
   });
 });
 

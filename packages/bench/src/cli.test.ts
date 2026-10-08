@@ -18,7 +18,7 @@ function run(...argv: string[]): { code: number; out: string } {
 }
 
 describe('bench CLI', () => {
-  for (const method of ['b-next', 'b-inst', 'rs', 'hc']) {
+  for (const method of ['b-next', 'b-inst', 'hc']) {
     it(`run ${method} → validate round-trip`, () => {
       const r = run(
         'run',
@@ -62,16 +62,10 @@ describe('bench CLI', () => {
     expect(r.out).toMatch(/LB0=\d+ LB1=\d+ LB=\d+/);
   });
 
-  it('baselines prints one row per instance', () => {
-    const r = run('baselines', instance('rect'), '--iters', '50');
-    expect(r.out).toContain('R1');
-    expect(r.out).toContain('R2');
-  });
-
   it('reports argument errors with exit code 2', () => {
     expect(run('run', instance('rect/R1.json')).code).toBe(2);
     expect(run('run', instance('rect/R1.json'), '--method', 'annealing').code).toBe(2);
-    expect(run('run', instance('rect/R1.json'), '--method', 'rs', '--iters', 'x').code).toBe(2);
+    expect(run('run', instance('rect/R1.json'), '--method', 'hc', '--iters', 'x').code).toBe(2);
     expect(run('run', instance('rect/R1.json'), '--bogus').code).toBe(2);
     expect(run('nope').code).toBe(2);
   });
@@ -79,11 +73,11 @@ describe('bench CLI', () => {
   it('maps I/O, parse and budget errors to exit code 2 (1 means plan violations)', () => {
     const bad = join(tmp, 'bad.json');
     writeFileSync(bad, '{ not json');
-    expect(run('run', join(tmp, 'missing.json'), '--method', 'rs').code).toBe(2);
-    expect(run('run', bad, '--method', 'rs').code).toBe(2);
+    expect(run('run', join(tmp, 'missing.json'), '--method', 'hc').code).toBe(2);
+    expect(run('run', bad, '--method', 'hc').code).toBe(2);
     expect(run('validate', bad).code).toBe(2);
     expect(run('validate', join(tmp, 'missing.json')).code).toBe(2);
-    expect(run('run', instance('rect/R1.json'), '--method', 'rs', '--iters', '0').code).toBe(2);
+    expect(run('run', instance('rect/R1.json'), '--method', 'hc', '--iters', '0').code).toBe(2);
     expect(run('lb', bad).code).toBe(2);
   });
 
@@ -141,12 +135,12 @@ describe('bench difficulty', () => {
     expect(rows[0]).toBe(
       'n,areaM2,segments,optimum,method,runs,found,feasible,share,meanB,meanGap,meanMs',
     );
-    // 2 rooms x 4 methods; B-INST is deterministic (1 run), the others run once per seed.
-    expect(rows).toHaveLength(1 + 2 * 4);
+    // 2 rooms x 3 methods; B-INST is deterministic (1 run), the others run once per seed.
+    expect(rows).toHaveLength(1 + 2 * 3);
     const cells = rows.slice(1).map((r) => r.split(','));
     expect(cells.filter((c) => c[4] === 'b-inst').every((c) => c[5] === '1')).toBe(true);
     expect(cells.filter((c) => c[4] === 'sa').every((c) => c[5] === '2')).toBe(true);
-    expect(cells.map((c) => c[2])).toEqual(['6', '6', '6', '6', '10', '10', '10', '10']);
+    expect(cells.map((c) => c[2])).toEqual(['6', '6', '6', '10', '10', '10']);
     // The planted optimum is B* = LB1, so no method can beat it.
     expect(cells.every((c) => Number(c[10]) >= -1e-9)).toBe(true);
   }, 30_000);

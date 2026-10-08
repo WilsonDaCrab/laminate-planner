@@ -4,7 +4,6 @@ import type { Project } from '../model/index';
 import { buildContext, type PlanContext } from '../plan/context';
 import { fork } from '../rng/index';
 import { runHillClimb } from './baselines/hc';
-import { runRandomSearch } from './baselines/rs';
 import { runBInst, runBNext } from './baselines/sequentialRuns';
 import { runSa } from './sa';
 import type { Method, OptimizeBudget, SearchResult } from './types';
@@ -43,9 +42,6 @@ export function runMethod(project: Project, method: Method, opts: RunOptions = {
       break;
     case 'b-inst':
       result = runBInst(ctx);
-      break;
-    case 'rs':
-      result = runRandomSearch(ctx, fork(seed, 0), budget);
       break;
     case 'hc':
       result = runHillClimb(ctx, fork(seed, 0), budget, { start: runBInst(ctx).phi });

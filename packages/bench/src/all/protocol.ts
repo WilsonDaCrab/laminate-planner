@@ -18,7 +18,7 @@ export type ExperimentId = 'main' | 'aesthetics' | 'bonly';
 export const EXPERIMENTS: readonly ExperimentId[] = ['main', 'aesthetics', 'bonly'];
 
 /** Methods of E1; B-NEXT and B-INST are deterministic (one run), the rest run once per seed. */
-export const MAIN_METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc', 'sa', 'sa-onsite'];
+export const MAIN_METHODS: readonly Method[] = ['b-next', 'b-inst', 'hc', 'sa', 'sa-onsite'];
 
 /**
  * Methods of E4 "bonly": the pure board-count problem (H pattern off), where the objective f is B

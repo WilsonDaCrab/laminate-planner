@@ -79,7 +79,7 @@ describe('raw rows', () => {
       { seeds: 2, iters: 100, aestheticsInstances: [], aestheticsDistances: [] },
       ['main'],
     );
-    expect(jobs).toHaveLength(10); // 2 + 4·2
+    expect(jobs).toHaveLength(8); // 2 + 3·2
     const file = rawPath(tmp, 'main');
     for (const j of jobs.slice(0, 4)) appendRow(file, runJob(j, R1));
     expect(readRows(file).map((r) => r.key)).toEqual(jobs.slice(0, 4).map(jobKey));

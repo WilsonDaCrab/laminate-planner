@@ -1,3 +1,0 @@
-$ tsx src/index.ts "bestknown" "instances/slanted/S4.json" "--seeds" "10" "--iters" "2000000" "--write-meta"
-instance   LB         known      SA best    SA mean    ms           (SA, 10 seeds x 2000000 evaluations; instances with knownOptimum are skipped unless --force)
-S4         58         60         60         60.00      554992       -> bestKnown=60

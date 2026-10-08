@@ -1,6 +1,6 @@
 /**
- * Small reproducible experiments of F5: the comparison of the methods (`compare`, the criterion
- * "SA ≤ every baseline, on average over the seeds") and the parameter grid of SA (`tune`, ADR-016).
+ * Small reproducible experiments: the parameter grid of SA (`tune`, ADR-016), the difficulty series
+ * (`difficulty`) and the measurement helper shared by `exhaustive` and `bestknown`.
  */
 
 import {
@@ -54,8 +54,6 @@ export function measureMethod(
     meanMs: ms / runs,
   };
 }
-
-export const COMPARE_METHODS: readonly Method[] = ['b-next', 'b-inst', 'rs', 'hc', 'sa'];
 
 export interface TuningConfig {
   name: string;

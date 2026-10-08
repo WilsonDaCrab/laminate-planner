@@ -1,6 +1,0 @@
-$ pnpm -F @lp/bench bench "all" "--instances" "instances/rect" "--seeds" "3" "--jobs" "1" "--only" "main" "--out" "results/timing"
-$ tsx src/index.ts "all" "--instances" "instances/rect" "--seeds" "3" "--jobs" "1" "--only" "main" "--out" "results/timing"
-bench all: 4 instances, 3 seeds, 200000 evaluations, 1 thread, output results/timing
-56 runs in the matrix, 0 already done, 56 to run
-56/56 runs, 153 s elapsed, about 0 s left
-done: 56 runs executed, 0 reused; results/timing/summary.csv and results/timing/tables/

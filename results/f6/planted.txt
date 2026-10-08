@@ -1,8 +1,0 @@
-$ pnpm -F @lp/bench bench "planted" "--seeds" "20" "--iters" "200000"
-$ tsx src/index.ts "planted" "--seeds" "20" "--iters" "200000"
-instance   optimum    found      share      best B     mean B     mean ms      (sa, 20 seeds, 200000 evaluations)
-P1         56         20/20      100 %      56         56.00      710       
-P2         88         0/20       0 %        89         89.00      3790      
-P3         120        0/20       0 %        121        121.00     3846      
-P4         168        0/20       0 %        169        169.90     4968      
-criterion: optimum in >= 90 % of the seeds on every instance: NOT MET

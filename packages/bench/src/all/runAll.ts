@@ -5,8 +5,6 @@
  *   results/raw/<experiment>.jsonl        one row per run (resumable)
  *   results/summary.csv                   main table (E1)
  *   results/summary_bonly.csv             the same table for E4 (H pattern off)
- *   results/tables/g1|g2|g3_*.csv         data of the plots
- *   results/plots/G1|G2|G3.svg            the plots (plots.ts)
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -21,10 +19,9 @@ import {
   type InstanceInfo,
   type Preset,
 } from './protocol';
-import { writePlots } from './plots';
 import { appendRow, pendingJobs, rawPath, readRows } from './raw';
 import type { RawRow } from './runJob';
-import { aestheticsCsv, convergenceCsv, mainTableCsv, precutCsv } from './summary';
+import { mainTableCsv } from './summary';
 
 export interface RunAllOptions {
   instances: readonly InstanceInfo[];
@@ -105,10 +102,5 @@ export async function runAll(opts: RunAllOptions): Promise<RunAllReport> {
   );
   writeFileSync(join(opts.dir, 'summary.csv'), mainTableCsv(rows, known));
   writeFileSync(join(opts.dir, 'summary_bonly.csv'), mainTableCsv(rows, known, 'bonly'));
-  mkdirSync(join(opts.dir, 'tables'), { recursive: true });
-  writeFileSync(join(opts.dir, 'tables', 'g1_convergence.csv'), convergenceCsv(rows));
-  writeFileSync(join(opts.dir, 'tables', 'g2_aesthetics.csv'), aestheticsCsv(rows));
-  writeFileSync(join(opts.dir, 'tables', 'g3_precut.csv'), precutCsv(rows));
-  await writePlots(opts.dir);
   return { total: jobs.length, skipped: jobs.length - todo.length, ran: todo.length, rows };
 }

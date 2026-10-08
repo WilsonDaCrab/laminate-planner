@@ -1,10 +1,7 @@
 /**
  * Aggregation of the raw rows into the tables of ALGORITHM §13.3. Pure: rows in, CSV text out.
  *
- * - `summary.csv`      main table, one line per instance (E1)
- * - `g1_convergence.csv` best B so far against evaluations, mean/min/max over the seeds (SA, E1)
- * - `g2_aesthetics.csv`  B against the H-pattern distance D (E3)
- * - `g3_precut.csv`      B-INST (on-site) against SA-onsite against SA, per instance (E1)
+ * - `summary.csv`      main table, one line per instance
  *
  * Means and deviations are taken over the runs that ended feasible (as in `bench compare`); the
  * share of feasible runs is always reported beside them, so a mean never hides failures.
@@ -116,94 +113,6 @@ export function mainTableCsv(
       cells.push(s.best, s.mean, s.std, s.meanMs, s.runs > 0 ? `${s.feasible}/${s.runs}` : '');
     }
     lines.push(csvLine(cells));
-  }
-  return `${lines.join('\n')}\n`;
-}
-
-/** Evaluation counts of the convergence grid: about `points` values, evenly spaced on a log scale. */
-export function evalGrid(maxEval: number, points = 40): number[] {
-  const grid = new Set<number>();
-  for (let i = 0; i <= points; i++) grid.add(Math.max(1, Math.round(maxEval ** (i / points))));
-  return [...grid].sort((a, b) => a - b);
-}
-
-/** Best B found up to `evals` evaluations; before the first trace point, the first recorded B. */
-export function bestAt(
-  trace: readonly { eval: number; B: number }[],
-  evals: number,
-): number | undefined {
-  if (trace.length === 0) return undefined;
-  let best = trace[0]!.B;
-  for (const p of trace) {
-    if (p.eval > evals) break;
-    best = p.B;
-  }
-  return best;
-}
-
-/** G1: mean, min and max over the seeds of the best B so far, on a log grid of evaluations. */
-export function convergenceCsv(rows: readonly RawRow[]): string {
-  const lines = ['instance,method,eval,mean,min,max,seeds'];
-  const sa = rows.filter((r) => r.experiment === 'main' && r.method === 'sa' && r.trace.length > 0);
-  for (const [instance, list] of groupBy(sa, (r) => r.instance)) {
-    const maxEval = Math.max(...list.map((r) => r.iters));
-    for (const evals of evalGrid(maxEval)) {
-      const values = list
-        .map((r) => bestAt(r.trace, evals))
-        .filter((b): b is number => b !== undefined);
-      if (values.length === 0) continue;
-      lines.push(
-        csvLine([
-          instance,
-          'sa',
-          evals,
-          values.reduce((a, b) => a + b, 0) / values.length,
-          Math.min(...values),
-          Math.max(...values),
-          values.length,
-        ]),
-      );
-    }
-  }
-  return `${lines.join('\n')}\n`;
-}
-
-/** G2: B and H against the seam-offset distance D ("off" = no pattern). */
-export function aestheticsCsv(rows: readonly RawRow[]): string {
-  const lines = ['instance,variant,distance,runs,feasible,best,mean,std,meanH'];
-  const e3 = rows.filter((r) => r.experiment === 'aesthetics');
-  for (const [instance, list] of groupBy(e3, (r) => r.instance)) {
-    for (const [variant, runs] of groupBy(list, (r) => r.variant)) {
-      const s = stats(runs);
-      const ok = runs.filter((r) => r.feasible);
-      lines.push(
-        csvLine([
-          instance,
-          variant,
-          variant === 'Hoff' ? 'off' : variant.slice(1),
-          s.runs,
-          s.feasible,
-          s.best,
-          s.mean,
-          s.std,
-          ok.length > 0 ? ok.reduce((a, r) => a + r.H, 0) / ok.length : undefined,
-        ]),
-      );
-    }
-  }
-  return `${lines.join('\n')}\n`;
-}
-
-/** G3: the value of cutting in advance. B-INST and SA-onsite are on-site; SA is precut. */
-export function precutCsv(rows: readonly RawRow[]): string {
-  const lines = ['instance,method,mean,best,feasible'];
-  const main = rows.filter((r) => r.experiment === 'main');
-  for (const [instance, list] of groupBy(main, (r) => r.instance)) {
-    for (const m of ['b-inst', 'sa-onsite', 'sa'] as const) {
-      const s = stats(list.filter((r) => r.method === m));
-      if (s.runs === 0) continue;
-      lines.push(csvLine([instance, m, s.mean, s.best, `${s.feasible}/${s.runs}`]));
-    }
   }
   return `${lines.join('\n')}\n`;
 }

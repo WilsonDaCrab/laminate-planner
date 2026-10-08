@@ -15,7 +15,7 @@ import { PhaseSpace } from './phaseSpace';
 import { runMethod } from './run';
 import type { Method } from './types';
 
-const methods: Method[] = ['b-next', 'b-inst', 'rs', 'hc'];
+const methods: Method[] = ['b-next', 'b-inst', 'hc'];
 const ITERS = 300;
 
 describe('baselines on instances/*', () => {
@@ -41,15 +41,10 @@ describe('baselines on instances/*', () => {
         });
       }
 
-      it('rs and hc are deterministic for one seed; rs differs between seeds', () => {
-        for (const m of ['rs', 'hc'] as const) {
-          const run = (seed: number) =>
-            runMethod(project, m, { seed, budget: { iters: 60 } }).result.phi;
-          expect(run(3)).toEqual(run(3));
-          // HC starts from B-INST and may legitimately return it unchanged for any seed.
-          if (m === 'rs') expect(run(3)).not.toEqual(run(4));
-        }
-        // six runMethod calls, each rebuilding the context and scanning y0: ~3 s on the curved rooms
+      it('hc is deterministic for one seed', () => {
+        const run = (seed: number) =>
+          runMethod(project, 'hc', { seed, budget: { iters: 60 } }).result.phi;
+        expect(run(3)).toEqual(run(3));
       }, 30_000);
 
       it('hc is never worse than its B-INST start (same decoder)', () => {
@@ -67,23 +62,15 @@ describe('run budget', () => {
   it('rejects a time limit without a clock', () => {
     expect(() => new Budget({ timeMs: 100 }, 10)).toThrow(/clock/);
     const project = parseProject(instanceFiles[0]!.raw);
-    expect(() => runMethod(project, 'rs', { budget: { timeMs: 100 } })).toThrow(/clock/);
+    expect(() => runMethod(project, 'sa', { budget: { timeMs: 100 } })).toThrow(/clock/);
   });
 
   const project = parseProject(instanceFiles[0]!.raw);
 
   it('honours the evaluation budget exactly when the bound is not reached', () => {
-    const r = runMethod(project, 'rs', { seed: 2, budget: { iters: 25 } }).result;
+    const r = runMethod(project, 'sa', { seed: 2, budget: { iters: 25 } }).result;
     expect(r.evals).toBeLessThanOrEqual(25);
     expect(r.evals).toBeGreaterThan(0);
-  });
-
-  it('stops on the injected clock', () => {
-    let t = 0;
-    const clock = () => (t += 100);
-    const r = runMethod(project, 'rs', { seed: 2, budget: { timeMs: 250, clock } }).result;
-    // Clock reads: start 100; at 0 evals 200 (elapsed 100); at 256 → 300 (200); at 512 → 400 (300 ≥ 250).
-    expect(r.evals).toBe(512);
   });
 });
 

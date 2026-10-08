@@ -6,7 +6,8 @@ import type { Rng } from '../../rng/index';
 import { Budget, Incumbent } from '../incumbent';
 import { PhaseSpace } from '../phaseSpace';
 import type { OptimizeBudget, SearchResult } from '../types';
-import { DEFAULT_ITERS } from './rs';
+
+const DEFAULT_ITERS = 10_000;
 
 export interface HillClimbOptions {
   /** Restart from a random φ after this many evaluations without improvement. */

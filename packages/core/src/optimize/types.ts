@@ -1,7 +1,7 @@
 import type { QuickEval } from '../evaluate/evaluator';
 import type { DecodeMode } from '../plan/run';
 
-export type Method = 'b-next' | 'b-inst' | 'rs' | 'hc' | 'sa' | 'sa-onsite';
+export type Method = 'b-next' | 'b-inst' | 'hc' | 'sa' | 'sa-onsite';
 
 export interface OptimizeBudget {
   /** Number of evaluations (deterministic budget for experiments). */

@@ -38,15 +38,15 @@ describe('loadInstances', () => {
 describe('runAll', { timeout: 60_000 }, () => {
   const instances = loadInstances(root).filter((i) => ['T1', 'T2'].includes(i.id));
 
-  it('runs the matrix, writes env, raw rows and tables, and resumes without rerunning', async () => {
+  it('runs the matrix, writes env, raw rows and the summary, and resumes without rerunning', async () => {
     const dir = join(tmp, 'a');
     const lines: string[] = [];
     const first = await runAll({ instances, preset, dir, log: (l) => lines.push(l) });
-    // by hand: main 2 instances x (2 + 4·2) = 20; aesthetics T1 x 2 variants x 2 seeds = 4;
+    // by hand: main 2 instances x (2 + 3·2) = 16; aesthetics T1 x 2 variants x 2 seeds = 4;
     // bonly 2 instances x 3 methods x 2 seeds = 12
-    expect(first).toMatchObject({ total: 36, skipped: 0, ran: 36 });
-    expect(lines[0]).toContain('36 runs in the matrix, 0 already done, 36 to run');
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);
+    expect(first).toMatchObject({ total: 32, skipped: 0, ran: 32 });
+    expect(lines[0]).toContain('32 runs in the matrix, 0 already done, 32 to run');
+    expect(readRows(rawPath(dir, 'main'))).toHaveLength(16);
     expect(readRows(rawPath(dir, 'aesthetics'))).toHaveLength(4);
     expect(readRows(rawPath(dir, 'bonly'))).toHaveLength(12);
     expect(existsSync(join(dir, 'summary_bonly.csv'))).toBe(true);
@@ -55,21 +55,13 @@ describe('runAll', { timeout: 60_000 }, () => {
     });
     const summary = readFileSync(join(dir, 'summary.csv'), 'utf8').trim().split('\n');
     expect(summary).toHaveLength(3); // header + T1 + T2
-    for (const f of ['g1_convergence', 'g2_aesthetics', 'g3_precut']) {
-      expect(existsSync(join(dir, 'tables', `${f}.csv`))).toBe(true);
-    }
-
-    for (const g of ['G1', 'G2', 'G3']) {
-      expect(readFileSync(join(dir, 'plots', `${g}.svg`), 'utf8')).toContain('<svg');
-    }
-
     const envBefore = readFileSync(join(dir, 'env.json'), 'utf8');
     const second = await runAll({ instances, preset, dir });
     // a pass with nothing to run leaves the description of the producing session alone
     expect(readFileSync(join(dir, 'env.json'), 'utf8')).toBe(envBefore);
-    expect(second).toMatchObject({ total: 36, skipped: 36, ran: 0 });
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(20);
-    expect(second.rows).toHaveLength(36);
+    expect(second).toMatchObject({ total: 32, skipped: 32, ran: 0 });
+    expect(readRows(rawPath(dir, 'main'))).toHaveLength(16);
+    expect(second.rows).toHaveLength(32);
   });
 
   it('stamps every row with the commit, warns about rows of other commits, takes meta from the instances', async () => {
@@ -96,7 +88,7 @@ describe('runAll', { timeout: 60_000 }, () => {
     }));
     await runAll({ instances: edited, preset, dir, only: ['main'], log: (l) => lines.push(l) });
     expect(
-      lines.some((l) => l.startsWith('WARNING: 20 finished rows come from other commits (abcdef0')),
+      lines.some((l) => l.startsWith('WARNING: 16 finished rows come from other commits (abcdef0')),
     ).toBe(true);
     const cols = readFileSync(join(dir, 'summary.csv'), 'utf8').trim().split('\n');
     const head = cols[0]!.split(',');
@@ -113,9 +105,9 @@ describe('runAll', { timeout: 60_000 }, () => {
       dir,
       only: ['main'],
     });
-    expect(again).toMatchObject({ skipped: 0, ran: 20 });
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(40);
-    expect(again.rows).toHaveLength(20);
+    expect(again).toMatchObject({ skipped: 0, ran: 16 });
+    expect(readRows(rawPath(dir, 'main'))).toHaveLength(32);
+    expect(again.rows).toHaveLength(16);
     expect(again.rows.every((r) => r.iters === 120)).toBe(true);
   });
 
@@ -126,8 +118,8 @@ describe('runAll', { timeout: 60_000 }, () => {
       lines.push(l),
     );
     expect(code).toBe(0);
-    expect(readRows(rawPath(dir, 'main'))).toHaveLength(20); // quick: 2 instances x (2 + 4·2)
-    expect(lines.at(-1)).toContain('20 runs executed');
+    expect(readRows(rawPath(dir, 'main'))).toHaveLength(16); // quick: 2 instances x (2 + 4·2)
+    expect(lines.at(-1)).toContain('16 runs executed');
     expect(await mainAsync(['all', '--only', 'nope'], () => undefined)).toBe(2);
   });
 });
