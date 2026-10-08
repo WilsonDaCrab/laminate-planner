@@ -1,8 +1,8 @@
 // Kursa atskaite: "Praktiskā kombinatoriālā optimizācija".
 // Būvēšana (no repozitorija saknes):
 //   typst compile --root . report/main.typ report/main.pdf
-// Skaitļi tiek ņemti no results/ (pnpm bench all): galvenā tabula no E4 (tikai dēļu skaits,
-// results/summary_bonly.csv), konstruktīvās metodes B-NEXT un B-INST no results/summary.csv.
+// Skaitļi tiek ņemti no results/ (pnpm bench all): galvenā tabula no results/summary.csv
+// (viens eksperiments, mērķis ir tikai dēļu skaits B).
 
 #let res = sys.inputs.at("results", default: "results")
 
@@ -53,8 +53,7 @@ kur $V$ ir šuvju nobīdes pārkāpumu skaits (sods ļauj meklēšanai īslaicī
 *Metodes.* B-NEXT: klasiskā klāšana (atgriezums sāk tikai nākamo rindu). B-INST: klājēja metode, kas izmanto atgriezumu kaudzi. HC: kāpšana kalnā ar gājieniem M1–M2 un restartiem. SA. *Protokols:* 20 sēklas uz telpu un metodi, 200~000 novērtējumu uz skrējienu, mērķis ir tikai $B$.
 
 #let env = json("/" + res + "/env.json")
-#let main = csv("/" + res + "/summary.csv", row-type: dictionary)
-#let rows = csv("/" + res + "/summary_bonly.csv", row-type: dictionary)
+#let rows = csv("/" + res + "/summary.csv", row-type: dictionary)
 #let boardM2 = 1285 * 192 / 1e6
 // Latvian number format: decimal comma, `d` fixed decimals; `trim` drops them for whole numbers.
 #let num(x, d: 1, trim: false) = {
@@ -76,18 +75,17 @@ kur $V$ ir šuvju nobīdes pārkāpumu skaits (sods ļauj meklēšanai īslaicī
     inset: (x: 3pt, y: 2.2pt),
     table.header[*Telpa*][*m²*][*$"LB"_0$*][*LB*][*$B^*$*][*B-NEXT*][*B-INST*][*HC vid.*][*SA lab. / vid.*][*SA gap*][*Atgr. B-NEXT → SA*][*SA, s*],
     ..rows.map(r => {
-      let m = main.find(x => x.instance == r.instance)
       (
         r.instance, num(r.zoneM2), str(calc.ceil(float(r.zoneM2) / boardM2)), r.lb, ref(r),
-        num(m.b_next_mean, d: 2, trim: true), num(m.b_inst_mean, d: 2, trim: true), num(r.hc_mean, d: 2, trim: true),
+        num(r.b_next_mean, d: 2, trim: true), num(r.b_inst_mean, d: 2, trim: true), num(r.hc_mean, d: 2, trim: true),
         r.sa_best + " / " + num(r.sa_mean, d: 2, trim: true),
         num((float(r.sa_mean) - refB(r)) / refB(r) * 100, d: 2, trim: true) + " %",
-        waste(r.zoneM2, m.b_next_mean) + " → " + waste(r.zoneM2, r.sa_mean) + " %",
+        waste(r.zoneM2, r.b_next_mean) + " → " + waste(r.zoneM2, r.sa_mean) + " %",
         num(float(r.sa_ms) / 1000),
       )
     }).flatten(),
   ),
-  caption: [Rezultāti (dēļu skaits $B$). $B^*$: optimums (\* = pierādīts) vai labākais zināmais. HC un SA: vidējais pa 20 sēklām; SA gap $= (overline(B)_"SA" - B^*) slash B^*$. Atgriezumi $= 1 - A slash (B L W)$. Laiks ir vidējais uz skrējienu, ja 8 skrējieni vienlaikus darbojas uz #env.cpu. Avots: `results/summary_bonly.csv`, `results/summary.csv`.],
+  caption: [Rezultāti (dēļu skaits $B$). $B^*$: optimums (\* = pierādīts) vai labākais zināmais. HC un SA: vidējais pa 20 sēklām; SA gap $= (overline(B)_"SA" - B^*) slash B^*$. Atgriezumi $= 1 - A slash (B L W)$. Laiks ir vidējais uz skrējienu, ja 8 skrējieni vienlaikus darbojas uz #env.cpu. Avots: `results/summary.csv`.],
 )
 
 *Ģenerētās telpas pieaugošā izmērā.* Grūtības sērijā ģenerēju telpas ar zināmu optimumu un $n$ rindām (20 sēklas, 200~000 novērtējumu). SA optimumu atrod gandrīz vienmēr. HC to atrod tikai mazākajā telpā, citur paliek pie $B^* + 1$. Izņēmums ir $n = 38$ (2/20); ar 2~000~000 novērtējumu tur ir 17/20.
