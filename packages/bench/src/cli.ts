@@ -35,7 +35,7 @@ const DEFAULT_ITERS = 2000;
 const USAGE = `lp-bench <command>
 
   run <instance.json> --method b-next|b-inst|hc|sa|sa-onsite [--seed N] [--iters N] [--time ms]
-                      [--y0 mm] [--out dir] [--svg]
+                      [--y0 mm] [--out dir] [--svg] [--no-labels]
   validate <result.json>          check a result file with the independent validator
   lb <instance.json> [--y0 mm]    lower bounds LB0, LB1
   generate planted (--preset P1..P6 | --n N --m M --seed S) [--base instance.json] [--out file]
@@ -157,6 +157,7 @@ function runCommand(args: string[], log: (line: string) => void): number {
       y0: { type: 'string' },
       out: { type: 'string' },
       svg: { type: 'boolean' },
+      'no-labels': { type: 'boolean' },
     },
   });
   const [file] = positionals;
@@ -198,7 +199,8 @@ function runCommand(args: string[], log: (line: string) => void): number {
   mkdirSync(out, { recursive: true });
   const stem = join(out, `${id}-${method}-s${seed}`);
   writeFileSync(`${stem}.json`, JSON.stringify(record));
-  if (values.svg) writeFileSync(`${stem}.svg`, renderPlanSvg(project, plan));
+  if (values.svg)
+    writeFileSync(`${stem}.svg`, renderPlanSvg(project, plan, { labels: !values['no-labels'] }));
 
   log(
     `${id} ${method} seed=${seed} y0=${usedY0}: B=${ev.B} LB=${bounds.lb} gap=${record.stats.gap} ` +
